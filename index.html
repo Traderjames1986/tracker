@@ -1205,6 +1205,10 @@ function enhanceTableFilters(){
   }catch(e){}
 }
 function setSlicer(k,v){DF[k]=v;var ch=["component","subcomponent","contract","contractor"];var i=ch.indexOf(k);if(i>=0)for(var j=i+1;j<ch.length;j++)DF[ch[j]]="";render();}
+function dfOn(k){return DF[k]&&DF[k].length;}
+function dfHas(k,val){return !(DF[k]&&DF[k].length)||DF[k].indexOf(val)>=0;}
+function togSlicer(k,v){if(!Array.isArray(DF[k]))DF[k]=[];var i=DF[k].indexOf(v);if(i>=0)DF[k].splice(i,1);else DF[k].push(v);render();}
+function clearSlicerKey(k){DF[k]=[];render();}
 function setMobAdv(sid,cid){var s=S.schemes.find(function(x){return x.id===sid;});if(!s)return;var c=(s.contracts||[]).find(function(x){return x.id===cid;});if(!c)return;c.mobAdv=nval('ma_'+cid);save();render();}
 function pgMobAdv(){
   const ss=S.schemes.filter(s=>inScheme(s.id));
@@ -1364,21 +1368,30 @@ function askAnswer(q){
 var AISET=false;
 function aiToggleSet(){AISET=!AISET;render();}
 function aiDefModel(p){return p==="gemini"?"gemini-1.5-flash":p==="anthropic"?"claude-3-5-haiku-latest":"gpt-4o-mini";}
+function aiModels(p){return p==="openai"?["gpt-4o-mini","gpt-4o","gpt-4.1-mini","gpt-3.5-turbo"]:p==="anthropic"?["claude-3-5-haiku-latest","claude-3-5-sonnet-latest","claude-3-haiku-20240307"]:["gemini-1.5-flash","gemini-2.0-flash","gemini-1.5-pro","gemini-1.5-flash-8b"];}
+function aiModelOpts(p,cur){var ms=aiModels(p).slice();if(cur&&ms.indexOf(cur)<0)ms.unshift(cur);return ms.map(function(m){return "<option value=\""+esc(m)+"\" "+(m===cur?"selected":"")+">"+esc(m)+"</option>";}).join("");}
+function aiFillModels(p){var m=document.getElementById("ai_model");if(m)m.innerHTML=aiModelOpts(p,"");}
 function aiCfgGet(){try{return JSON.parse(localStorage.getItem("pwd_ai_cfg")||"null");}catch(e){return null;}}
 function aiCfgSave(){var cfg={provider:val("ai_prov"),key:(val("ai_key")||"").trim(),model:(val("ai_model")||"").trim()};if(!cfg.provider)cfg.provider="gemini";if(!cfg.model)cfg.model=aiDefModel(cfg.provider);if(!cfg.key){alert("Please paste an API key first.");return;}localStorage.setItem("pwd_ai_cfg",JSON.stringify(cfg));AISET=false;render();}
 function aiForget(){if(confirm("Remove the saved AI key from this device?")){localStorage.removeItem("pwd_ai_cfg");render();}}
-function aiSettingsForm(cfg){cfg=cfg||{};var p=cfg.provider||"gemini";return `<div class="card" style="background:#f8fafc"><h3>⚙ AI Settings</h3>
+function aiSettingsForm(cfg){cfg=cfg||{};var p=cfg.provider||"gemini";
+ return `<div class="card" style="background:#f8fafc"><h3>⚙ Set up AI — quick &amp; free</h3>
+  <ol style="margin:0 0 8px 18px;line-height:1.8">
+   <li>Use <b>Google Gemini</b> (free tier) → <button class="btn2 btn-sm" onclick="window.open('https://aistudio.google.com/app/apikey','_blank')">🔗 Get a free key</button> — sign in, click <b>Create API key</b>, then copy it.</li>
+   <li>Paste it below and click <b>Save &amp; Test</b>. Done — you won't need to do this again on this device.</li>
+  </ol>
   <div class="frm">
-    <div><label>AI Provider</label><select id="ai_prov" onchange="(function(v){var m=document.getElementById('ai_model');if(m&&!m.value)m.value=aiDefModel(v);})(this.value)">
-      <option value="gemini" ${p==="gemini"?"selected":""}>Google Gemini (has a free tier)</option>
+    <div><label>Provider</label><select id="ai_prov" onchange="aiFillModels(this.value)">
+      <option value="gemini" ${p==="gemini"?"selected":""}>Google Gemini (free)</option>
       <option value="openai" ${p==="openai"?"selected":""}>OpenAI (ChatGPT)</option>
       <option value="anthropic" ${p==="anthropic"?"selected":""}>Anthropic (Claude)</option>
     </select></div>
-    <div class="wide"><label>API Key — stored only on this device, never synced</label><input id="ai_key" value="${esc(cfg.key||"")}" placeholder="paste your API key"></div>
-    <div><label>Model (optional)</label><input id="ai_model" value="${esc(cfg.model||"")}" placeholder="${aiDefModel(p)}"></div>
+    <div class="wide"><label>Paste API key here</label><input id="ai_key" value="${esc(cfg.key||"")}" placeholder="AIza…  (saved only on this device)"></div>
+    <div><label>Model</label><select id="ai_model">${aiModelOpts(p,cfg.model||"")}</select></div>
   </div>
-  <div class="flex" style="margin-top:6px"><button class="btn2" onclick="aiCfgSave()">💾 Save</button><button class="btn2" onclick="aiToggleSet()">Cancel</button></div>
-  <div class="note" style="margin-top:6px">⚠ When you click <b>Ask AI</b>, your question plus a summary of your figures is sent over the internet to the chosen provider to generate the answer. The key is saved only in this browser. Get a free Gemini key at Google AI Studio (aistudio.google.com), an OpenAI key at platform.openai.com, or a Claude key at console.anthropic.com.</div></div>`;}
+  <div class="flex" style="margin-top:6px;align-items:center;gap:10px"><button class="btn2" onclick="aiTest()">✅ Save &amp; Test</button><button class="btn2" onclick="aiToggleSet()">Cancel</button><span id="ai-test" class="mini"></span></div>
+  <div class="note" style="margin-top:6px">The key stays in this browser only — it is never synced to the cloud or saved inside the file. Your question plus a summary of your figures are sent to the provider to produce the answer.</div></div>`;}
+function aiTest(){var cfg={provider:val("ai_prov"),key:(val("ai_key")||"").trim(),model:(val("ai_model")||"").trim()};if(!cfg.key){alert("Please paste an API key first.");return;}if(!cfg.provider)cfg.provider="gemini";if(!cfg.model)cfg.model=aiDefModel(cfg.provider);localStorage.setItem("pwd_ai_cfg",JSON.stringify(cfg));var s=document.getElementById("ai-test");if(s){s.style.color="var(--mut)";s.textContent="Testing…";}aiCall("Reply with just the word: OK").then(function(a){if(s){s.innerHTML='<b style="color:var(--ok)">✓ Working! AI is ready — close this and ask away.</b>';}}).catch(function(e){if(s){s.innerHTML='<b style="color:var(--bad)">✗ '+esc(String((e&&e.message)||e))+'</b>';}});}
 function aiContext(){
   var cons=askCons();
   var data={app:"PWD Fund & Works Accounting Tracker (Govt. of Manipur, PWD). All amounts in Indian Rupees.",period:(typeof periodLabel==="function"?periodLabel():""),
@@ -1418,10 +1431,19 @@ function pgAsk(){
   <div id="ai-ans"></div>
   ${res}`;
 }
+function payHead(p){var r=payRelease(p);return (r&&r.head)||'';}
+function payShareName(p){return payShareParts(p).map(function(s){return s.name;}).join(', ');}
+function paySpsPmt(p){var sps=(p.kind==='adv')?'Advance':((p.lines||[]).map(function(l){var b=S.bills.find(function(z){return z.id===l.billId;});return b?b.billNo:null;}).filter(Boolean).join(', ')||'—');var pn=p.serial||p.vno||'';return esc(sps)+(pn?'<div class="mini">Pmt: '+esc(pn)+'</div>':'');}
+function payRelTag(p){var r=payRelease(p);return r?'<div class="mini" style="color:var(--mut)">rel: '+esc(r.note||dfmt(r.date))+' \u00b7 '+fmt(r.amount)+'</div>':'';}
+function paySrcShareTables(ps){var src={},sh={},tot=0;ps.forEach(function(p){var eff=payEff(p);tot+=eff;var sc=paySource2(p)||'Untagged';var hd=payHead(p)||'';if(!src[sc])src[sc]={amt:0,heads:{}};src[sc].amt+=eff;if(hd)src[sc].heads[hd]=(src[sc].heads[hd]||0)+eff;payShareParts(p).forEach(function(s){sh[s.name]=(sh[s.name]||0)+s.amt;});});var srcRows=Object.keys(src).sort().map(function(k){var r='<tr><td><b>'+esc(k)+'</b></td><td class="num"><b>'+fmt(src[k].amt)+'</b></td></tr>';Object.keys(src[k].heads).sort().forEach(function(h){r+='<tr><td style="padding-left:22px;color:var(--mut)" class="mini">\u21b3 '+esc(h)+'</td><td class="num" style="color:var(--mut)">'+fmt(src[k].heads[h])+'</td></tr>';});return r;}).join('')||'<tr><td colspan="2" class="empty">No expenditure</td></tr>';var shRows=Object.keys(sh).sort().map(function(k){return '<tr><td>'+esc(k)+'</td><td class="num">'+fmt(sh[k])+'</td></tr>';}).join('')||'<tr><td colspan="2" class="empty">No expenditure</td></tr>';return '<div style="display:flex;flex-direction:column;gap:16px">'+'<div style="border:1px solid var(--bd);border-radius:8px;overflow:hidden"><div style="background:#1a56a8;color:#fff;font-weight:700;padding:6px 10px">\ud83d\udcca Expenditure by Fund Source / Head</div><table style="margin:0"><tr><th>Source / Head</th><th class="num">Effective Exp.</th></tr>'+srcRows+'<tr class="tot"><td><b>TOTAL</b></td><td class="num"><b>'+fmt(tot)+'</b></td></tr></table></div>'+'<div style="border:1px solid var(--bd);border-radius:8px;overflow:hidden"><div style="background:#146c3a;color:#fff;font-weight:700;padding:6px 10px">\ud83e\udde9 Expenditure by Share</div><table style="margin:0"><tr><th>Share</th><th class="num">Effective Exp.</th></tr>'+shRows+'<tr class="tot"><td><b>TOTAL</b></td><td class="num"><b>'+fmt(tot)+'</b></td></tr></table></div>'+'</div>';}
+var EXPSS=new Set();function togSS(k){if(EXPSS.has(k))EXPSS.delete(k);else EXPSS.add(k);render();}
+function payRelease(p){return p&&p.releaseId?S.releases.find(function(r){return r.id===p.releaseId;}):null;}
+function paySource2(p){var r=payRelease(p);return (r&&r.source)||p.source||"";}
+function payShareParts(p){var eff=payEff(p);var r=payRelease(p);if(r&&r.shares&&r.shares.length){var tot=r.shares.reduce(function(a,s){return a+n(s.amt);},0);if(tot>0)return r.shares.map(function(s){return {name:s.name,amt:eff*n(s.amt)/tot};});}var nm=(r&&r.shares&&r.shares[0]&&r.shares[0].name)||p.share||(r&&r.source)||"Untagged";return [{name:nm,amt:eff}];}
 function pgDash(){
   normDashboards();
   const D=CD();
-  if(!D.slicers||!D.slicers.length)D.slicers=['component','contract','contractor'];if(D.id==='d1')D.slicers=['component','contract','contractor'];if(D.id==='d2')D.kpis=['spsSubmitted','adhocWh','cscWh','whBeforePass','cleared','billPassed','currentLiab'];if(D.id==='d3')D.name='Receipt and Transfer';if(D.id==='d4')D.kpis=['spsSubmitted','adhocWh','cscWh','whBeforePass','cleared','billPassed','currentLiab'];if(D.id==='d5')D.kpis=['advPaid','advRec','mobPay'];if(D.id==='d6')D.kpis=['currentLiab','mobPay','dedPayable','liabOutstanding','netLiab'];
+  if(!D.slicers||!D.slicers.length)D.slicers=['component','contract','contractor'];if(D.id==='d1')D.slicers=['component','contract','contractor'];if(D.id==='d2')D.kpis=['spsSubmitted','adhocWh','cscWh','whBeforePass','cleared','billPassed','currentLiab'];if(D.id==='d3')D.name='Receipt and Transfer';if(D.id==='d4')D.kpis=['effBills','effAdv','effective','spsSubmitted','cleared','currentLiab'];if(D.id==='d5')D.kpis=['advPaid','advRec','mobPay'];if(D.id==='d6')D.kpis=['currentLiab','mobPay','dedPayable','liabOutstanding','netLiab'];
   let rel=S.releases.filter(r=>inF(r)&&!r.draft);
   const tr=S.transfers.filter(t=>inF(t)&&!t.draft);
   let bl=S.bills.filter(b=>inF(b)&&!b.draft), py=S.payments.filter(p=>inF(p)&&!p.draft);
@@ -1433,36 +1455,37 @@ function pgDash(){
   const SLDEF={
     component:{label:'Component',opts:()=>compsAll.map(c=>[c.id,c.name]),
       con:(x,v)=>x.c.compId===v,bill:(b,v)=>b.compId===v},
-    subcomponent:{label:'Sub-component',opts:()=>subsAll.filter(u=>!DF.component||u.compId===DF.component).map(c=>[c.id,c.name]),
+    subcomponent:{label:'Sub-component',opts:()=>subsAll.filter(u=>dfHas('component',u.compId)).map(c=>[c.id,c.name]),
       con:(x,v)=>x.c.subId===v,bill:(b,v)=>b.subId===v},
-    contract:{label:'Contract',opts:()=>consAll.filter(x=>(!DF.component||x.c.compId===DF.component)&&(!DF.subcomponent||x.c.subId===DF.subcomponent)).map(x=>[x.c.id,x.c.no]),
+    contract:{label:'Contract',opts:()=>consAll.filter(x=>dfHas('component',x.c.compId)&&dfHas('subcomponent',x.c.subId)&&dfHas('contractor',x.c.contractor)).map(x=>[x.c.id,x.c.no]),
       con:(x,v)=>x.c.id===v,bill:(b,v)=>b.contractId===v},
-    contractor:{label:'Contractor',opts:()=>[...new Set(consAll.filter(x=>(!DF.component||x.c.compId===DF.component)&&(!DF.subcomponent||x.c.subId===DF.subcomponent)&&(!DF.contract||x.c.id===DF.contract)).map(x=>x.c.contractor))].sort().map(p=>[p,p]),
+    contractor:{label:'Contractor',opts:()=>[...new Set(consAll.filter(x=>dfHas('component',x.c.compId)&&dfHas('subcomponent',x.c.subId)&&dfHas('contract',x.c.id)).map(x=>x.c.contractor))].sort().map(p=>[p,p]),
       con:(x,v)=>x.c.contractor===v,bill:null},
     source:{label:'Fund Source',opts:()=>unionSources().map(s=>[s,s]),
-      pay:(p,v)=>p.source===v,rel:(r,v)=>r.source===v},
+      pay:(p,v)=>paySource2(p)===v,rel:(r,v)=>r.source===v},
     share:{label:'Share',opts:()=>unionShares().map(s=>[s,s]),
-      pay:(p,v)=>p.share===v,rel:(r,v)=>(r.shares||[]).some(x=>x.name===v)},
+      pay:(p,v)=>payShareParts(p).some(s=>s.name===v),rel:(r,v)=>(r.shares||[]).some(x=>x.name===v)},
     bank:{label:'Bank A/c',opts:()=>S.banks.map(b=>[b.id,b.name]),
       pay:(p,v)=>p.bankId===v,rel:(r,v)=>r.bankId===v}
   };
+  const slMS=function(k){var sel=DF[k]||[];var opts=SLDEF[k].opts();var open=FDD===('sl_'+k);var btn='<button class="msdd-btn '+(sel.length?'on':'')+'" onclick="togFDD(\''+'sl_'+k+'\')">'+(sel.length?(sel.length+' selected'):'All')+' \u25be</button>';var panel='';if(open){panel='<div class="msdd-panel"><div class="msdd-opt" style="font-weight:700;color:var(--acc)" onclick="clearSlicerKey(\''+k+'\')">\u2715 All / Clear</div>'+opts.map(function(o){return '<label class="msdd-opt"><input type="checkbox" '+((sel.indexOf(o[0])>=0)?'checked':'')+' value="'+esc(String(o[0]))+'" onchange="togSlicer(\''+k+'\',this.value)"> '+esc(o[1])+'</label>';}).join('')+(opts.length?'':'<div class="msdd-opt" style="color:var(--mut)">\u2014 no options \u2014</div>')+'<div class="msdd-opt" style="text-align:center;color:var(--mut)" onclick="togFDD(\''+'sl_'+k+'\')">Close \u25b4</div></div>';}return '<div class="msdd">'+btn+panel+'</div>';};
   const active=D.slicers.filter(k=>SLDEF[k]);
-  const slicing=active.some(k=>DF[k]);
+  const slicing=active.some(k=>dfOn(k));
   const conLevel=['component','subcomponent','contract','package','contractor'];
   const okC=id=>{const x=cOf(id);
-    for(const k of conLevel){if(active.includes(k)&&DF[k]){if(!x||!SLDEF[k].con(x,DF[k]))return false;}}
+    for(const k of conLevel){if(active.includes(k)&&dfOn(k)){if(!x||!DF[k].some(v=>SLDEF[k].con(x,v)))return false;}}
     return true;};
   if(slicing){
-    bl=bl.filter(b=>active.every(k=>{const D=SLDEF[k];if(!DF[k])return true;
-      if(D.bill)return D.bill(b,DF[k]);
-      if(D.con){const x=cOf(b.contractId);return x&&D.con(x,DF[k]);}
+    bl=bl.filter(b=>active.every(k=>{const D=SLDEF[k];if(!dfOn(k))return true;
+      if(D.bill)return DF[k].some(v=>D.bill(b,v));
+      if(D.con){const x=cOf(b.contractId);return x&&DF[k].some(v=>D.con(x,v));}
       return true;}));
-    py=py.filter(p=>active.every(k=>{const D=SLDEF[k];if(!DF[k])return true;
-      if(D.pay)return D.pay(p,DF[k]);
-      if(D.con){const x=cOf(p.contractId);return x&&D.con(x,DF[k]);}
+    py=py.filter(p=>active.every(k=>{const D=SLDEF[k];if(!dfOn(k))return true;
+      if(D.pay)return DF[k].some(v=>D.pay(p,v));
+      if(D.con){const x=cOf(p.contractId);return x&&DF[k].some(v=>D.con(x,v));}
       return true;}));
-    rel=rel.filter(r=>active.every(k=>{const D=SLDEF[k];if(!DF[k])return true;
-      return D.rel?D.rel(r,DF[k]):true;}));
+    rel=rel.filter(r=>active.every(k=>{const D=SLDEF[k];if(!dfOn(k))return true;
+      return D.rel?DF[k].some(v=>D.rel(r,v)):true;}));
   }
   const totRec=rel.reduce((a,r)=>a+n(r.amount),0);
   const totTr=tr.reduce((a,t)=>a+n(t.amount),0);
@@ -1512,8 +1535,7 @@ function pgDash(){
       <div><label>Schemes (dashboard)</label>${msDD('scheme',S.ui.schemeIds.length?'Schemes · '+S.ui.schemeIds.length:'All Schemes',S.schemes.map(s=>[s.id,s.name]),S.ui.schemeIds,'togScheme',"togScheme('all')")}</div>
       ${active.map(k=>`<div style="${SLEDIT?'cursor:move;border:1px dashed var(--bd);border-radius:6px;padding:4px':''}" ${SLEDIT?`draggable="true" ondragstart="slDragStart(event,'${k}')" ondragover="slDragOver(event,'${k}')" ondragleave="slDragLeave(event)" ondrop="slDrop(event,'${k}')"`:''}>
         <label>${SLDEF[k].label} ${SLEDIT?`<a style="cursor:pointer;color:#b91c1c" onclick="delSlicer('${k}','${SLDEF[k].label.replace(/'/g,'')}')" title="Remove this slicer">✕</a>`:''}</label>
-        <select onchange="setSlicer('${k}',this.value)"><option value="">All</option>
-        ${SLDEF[k].opts().map(([v,l])=>`<option value="${esc(v)}" ${DF[k]===v?'selected':''}>${esc(l)}</option>`).join('')}</select></div>`).join('')}
+        ${slMS(k)}</div>`).join('')}
       ${SLEDIT?`<div><label>➕ Add Slicer</label><select onchange="addSlicer(this.value)">
         <option value="">— choose field —</option>
         ${Object.keys(SLDEF).filter(k=>!D.slicers.includes(k)).map(k=>`<option value="${k}">${SLDEF[k].label}</option>`).join('')}
@@ -1547,6 +1569,8 @@ function pgDash(){
       billPassed:{l:'Bill Passed (paid against SPS)',c:'g',v:billPassed},
       whBillPassed:{l:'Withheld From Bill Passed (Retention + Other)',c:'r',v:ret+othD},
       effective:{l:'Effective / Real Expenditure (incl. advances)',c:'g',v:effective},
+      effBills:{l:'Effective Exp. (Bills/SPS)',c:'g',v:py.filter(p=>(p.kind||'sps')!=='adv').reduce((a,p)=>a+payEff(p),0)},
+      effAdv:{l:'Effective Exp. (Advances)',c:'o',v:py.filter(p=>p.kind==='adv').reduce((a,p)=>a+payEff(p),0)},
       totalExp:{l:'Total Expenditure (incl. advances + other)',c:'',v:totalExp},
       balanceFund:{l:'Balance Fund',c:'c',v:balFund},
       netLiab:{l:'Net Liability (incl. released WH)',c:'o',v:totLiab},
@@ -1606,6 +1630,16 @@ function pgDash(){
       ${rows.map(t=>{const r=S.releases.find(x=>x.id===t.releaseId);return `<tr><td>${dfmt(t.date)}</td><td>${esc(schemeName(t.schemeId))}</td><td>${esc(bankName(t.fromBank)||t.from||'—')}</td><td>${esc(bankName(t.toBank)||t.to||'—')}</td><td>${r?esc(r.source):'—'}</td><td class="num">${fmt(t.amount)}</td><td>${esc(t.note||'')}</td></tr>`;}).join('')||`<tr><td colspan="7" class="empty">No transfers in this selection</td></tr>`}
       ${rows.length?`<tr class="tot-bal"><td colspan="5"><b>TOTAL TRANSFERRED</b></td><td class="num"><b>${fmt(tot)}</b></td><td></td></tr>`:''}
       </table></div></div>`;
+  })()}
+  ${(function(){
+    if(D.id!=='d1'&&D.id!=='d4')return'';
+    var srcMap={},shMap={},tot=0;
+    py.forEach(function(p){var eff=payEff(p);tot+=eff;var sc=paySource2(p)||'Untagged';(srcMap[sc]=srcMap[sc]||{amt:0,ps:[]});srcMap[sc].amt+=eff;srcMap[sc].ps.push({p:p,amt:eff});payShareParts(p).forEach(function(s){(shMap[s.name]=shMap[s.name]||{amt:0,ps:[]});shMap[s.name].amt+=s.amt;shMap[s.name].ps.push({p:p,amt:s.amt});});});
+    var detRows=function(ps){return ps.slice().sort(function(a,b){return a.p.date<b.p.date?-1:1;}).map(function(it){var p=it.p;var c=conById(p.contractId);return `<tr><td>${dfmt(p.date)}</td><td>${c?esc(c.no):'\u2014'}</td><td>${p.kind==='adv'?'Advance Payment':'Bill Payment'}</td><td>${paySpsPmt(p)}</td><td class="num">${fmt(it.amt)}</td></tr>`;}).join('')||`<tr><td colspan="5" class="empty">No payments</td></tr>`;};
+    var block=function(title,map,prefix){var keys=Object.keys(map).sort();var rows=keys.map(function(k,i){var ek=prefix+i;var open=EXPSS.has(ek);var h=`<tr style="cursor:pointer" onclick="togSS('${ek}')"><td><b>${open?'\u25be':'\u25b8'} ${esc(k)}</b></td><td class="num">${fmt(map[k].amt)}</td></tr>`;if(open)h+=`<tr><td colspan="2" style="padding:0;background:#f8fafc"><table style="width:100%;margin:0"><tr class="mini"><th>Date</th><th>Contract</th><th>Type</th><th>SPS / Payment No.</th><th class="num">Effective</th></tr>${detRows(map[k].ps)}</table></td></tr>`;return h;}).join('')||`<tr><td colspan="2" class="empty">No expenditure</td></tr>`;return `<div class="tbl-wrap"><table><tr><th>${title}</th><th class="num">Effective Exp.</th></tr>${rows}<tr class="tot-bal"><td><b>TOTAL</b></td><td class="num"><b>${fmt(tot)}</b></td></tr></table></div>`;};
+    return `<div class="card"><h3>💸 Effective Expenditure — Source-wise &amp; Share-wise</h3>
+      <div class="note" style="margin-bottom:8px">Expenditure is tagged to the fund source &amp; share of the release it was paid from (e.g. AIIB / Central Share, State Share / SASCI, Budget Central). Split releases are apportioned proportionally. Click any source or share to see each payment behind it.</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;align-items:start"><div><h3 style="margin-top:2px">By Fund Source</h3>${block("Fund Source",srcMap,"src:")}</div><div><h3 style="margin-top:2px">By Share</h3>${block("Share",shMap,"shr:")}</div></div></div>`;
   })()}
   ${(function(){
     if(D.id!=='d1')return'';
@@ -1710,11 +1744,11 @@ function pgDash(){
     return `<div class="card"><h3>💸 Effective Expenditure & Outstanding — Contract-wise</h3>
       <div class="note" style="margin-bottom:6px">SPS submitted, cleared for payment, effective expenditure split into Bill/SPS and Advance (with total), and outstanding liability split into pending Bill/SPS and pending Mob. Advance (with total). Click a contract to see each payment. Drilled by the slicers above.</div>
       <div class="tbl-wrap"><table>
-      <tr><th>Contract</th><th class="num">SPS Submitted</th><th class="num">Cleared for Payment</th><th class="num">Effective Exp. (Bill/SPS)</th><th class="num">Effective Exp. (Adv.)</th><th class="num">Effective Exp.</th><th class="num">Pending (Bill/SPS)</th><th class="num">Pending (Mob. Adv.)</th><th class="num">Total O/s Liability</th></tr>
-      ${pr.map(r=>{const open=EXP2.has(r.x.c.id);let h=`<tr style="cursor:pointer" onclick="togC2(\'${r.x.c.id}\')"><td><b>${open?'▾':'▸'} ${esc(r.x.c.no)}</b>${r.x.c.pkg?' <span class="mini">('+esc(r.x.c.pkg)+')</span>':''}<div class="mini">${esc(r.x.c.contractor)}</div></td><td class="num">${fmt(r.sub)}</td><td class="num">${fmt(r.clr)}</td><td class="num">${fmt(r.effSps)}</td><td class="num">${fmt(r.effMob)}</td><td class="num"><b>${fmt(r.tot)}</b></td><td class="num">${fmt(r.pendb)}</td><td class="num">${fmt(r.penda)}</td><td class="num"><b>${fmt(r.os)}</b></td></tr>`;
-        if(open){h+=`<tr><td colspan="9" style="padding:0;background:#f8fafc"><table style="width:100%;margin:0"><tr class="mini"><th>Date</th><th>Vch No</th><th>Type</th><th class="num">Gross</th><th class="num">Deductions</th><th class="num">Net Paid</th><th class="num">Effective</th></tr>${r.ps.slice().sort((a,b)=>a.date<b.date?1:-1).map(p=>`<tr><td>${dfmt(p.date)}</td><td>${esc(p.vno||'—')}</td><td>${p.kind==='adv'?'<span class="tag o">Advance Payment</span>':'<span class="tag g">Bill Payment</span>'}</td><td class="num">${fmt(payGross(p))}</td><td class="num">${fmt(payAllDeds(p))}</td><td class="num">${fmt(payNet(p))}</td><td class="num"><b>${fmt(payEff(p))}</b></td></tr>`).join('')||`<tr><td colspan="7" class="empty">No payments</td></tr>`}</table></td></tr>`;}
+      <tr><th>Contract</th><th class="num">SPS Submitted</th><th class="num">Cleared for Payment</th><th class="num">Effective Exp. (Bill/SPS)</th><th class="num">Effective Exp. (Adv.)</th><th class="num" style="background:#0b3d91;color:#fff">Total Effective Expenditure</th><th class="num">Pending (Bill/SPS)</th><th class="num">Pending (Mob. Adv.)</th><th class="num">Total O/s Liability</th></tr>
+      ${pr.map(r=>{const open=EXP2.has(r.x.c.id);let h=`<tr style="cursor:pointer" onclick="togC2(\'${r.x.c.id}\')"><td><b>${open?'▾':'▸'} ${esc(r.x.c.no)}</b>${r.x.c.pkg?' <span class="mini">('+esc(r.x.c.pkg)+')</span>':''}<div class="mini">${esc(r.x.c.contractor)}</div></td><td class="num">${fmt(r.sub)}</td><td class="num">${fmt(r.clr)}</td><td class="num">${fmt(r.effSps)}</td><td class="num">${fmt(r.effMob)}</td><td class="num" style="background:#eaf2ff"><b>${fmt(r.tot)}</b></td><td class="num">${fmt(r.pendb)}</td><td class="num">${fmt(r.penda)}</td><td class="num"><b>${fmt(r.os)}</b></td></tr>`;
+        if(open){h+=`<tr><td colspan="9" style="padding:0;background:#f8fafc"><table style="width:100%;margin:0"><tr class="mini"><th>Date</th><th>Type</th><th>SPS / Payment No.</th><th class="num">Gross</th><th class="num">Deductions</th><th class="num">Net Paid</th><th class="num">Effective</th></tr>${r.ps.slice().sort((a,b)=>a.date<b.date?1:-1).map(p=>`<tr><td>${dfmt(p.date)}</td><td>${p.kind==='adv'?'<span class="tag o">Advance Payment</span>':'<span class="tag g">Bill Payment</span>'}</td><td>${paySpsPmt(p)}</td><td class="num">${fmt(payGross(p))}</td><td class="num">${fmt(payAllDeds(p))}</td><td class="num">${fmt(payNet(p))}</td><td class="num"><b>${fmt(payEff(p))}</b></td></tr>`).join('')||`<tr><td colspan="7" class="empty">No payments</td></tr>`}</table></td></tr>`;}
         return h;}).join('')||`<tr><td colspan="9" class="empty">No expenditure in this selection</td></tr>`}
-      ${pr.length?`<tr class="tot-bal"><td><b>TOTAL</b></td><td class="num">${fmt(T.sub)}</td><td class="num">${fmt(T.clr)}</td><td class="num">${fmt(T.effSps)}</td><td class="num">${fmt(T.effMob)}</td><td class="num"><b>${fmt(T.tot)}</b></td><td class="num">${fmt(T.pendb)}</td><td class="num">${fmt(T.penda)}</td><td class="num"><b>${fmt(T.os)}</b></td></tr>`:''}
+      ${pr.length?`<tr class="tot-bal"><td><b>TOTAL</b></td><td class="num">${fmt(T.sub)}</td><td class="num">${fmt(T.clr)}</td><td class="num">${fmt(T.effSps)}</td><td class="num">${fmt(T.effMob)}</td><td class="num" style="background:#dbe9ff"><b>${fmt(T.tot)}</b></td><td class="num">${fmt(T.pendb)}</td><td class="num">${fmt(T.penda)}</td><td class="num"><b>${fmt(T.os)}</b></td></tr>`:''}
       </table></div></div>`;
   })()}
   ${(function(){
@@ -1824,7 +1858,7 @@ function pgDash(){
       ${mrows.map(r=>`<tr><td><b>${esc(r.x.c.no)}</b><div class="mini">${esc(r.x.c.contractor)}</div></td><td class="num">${fmt(r.paid)}</td><td class="num">${fmt(r.rec)}</td><td class="num"><b style="color:${r.out>0.005?'#92400e':'#16a34a'}">${fmt(r.out)}</b></td><td class="num">${fmt(r.mc)}</td></tr>`).join('')}
       <tr class="tot-bal"><td><b>TOTAL</b></td><td class="num"><b>${fmt(T.paid)}</b></td><td class="num">${fmt(T.rec)}</td><td class="num"><b>${fmt(T.out)}</b></td><td class="num">${fmt(T.mc)}</td></tr>
       </table></div></div>`;})()}
-  ${(D.id==='d1'||D.id==='d2'||D.id==='d3'||D.id==='d5'||D.id==='d6')?'':`<div class="card"><h3>🧾 Data Table — all payments</h3><div class="tbl-wrap"><table>
+  ${(D.id==='d1'||D.id==='d2'||D.id==='d3'||D.id==='d4'||D.id==='d5'||D.id==='d6')?'':`<div class="card"><h3>🧾 Data Table — all payments</h3><div class="tbl-wrap"><table>
     <tr><th>Date</th><th>Vch No.</th><th>Contract</th><th>Serial</th><th>SPS</th><th class="num">Gross</th><th class="num">Deductions</th><th class="num">Net</th><th>Chq</th></tr>
     ${recentPays.map(p=>{const x=cOf(p.contractId);
       return `<tr><td>${dfmt(p.date)}</td><td>${esc(p.vno||'—')}</td>
@@ -2267,7 +2301,8 @@ function pgBankStmt(){
   </div>`;
 }
 /* ================= CONTRACTOR STATEMENT ================= */
-let CSF={schemes:[],comps:[],subs:[],cons:[],contractor:''}; // Contractor Statement filter (multi-select)
+let CSF={schemes:[],comps:[],subs:[],cons:[],contractor:'',contractors:[]};
+function csfTogContractor(v){var i=CSF.contractors.indexOf(v);if(i>=0)CSF.contractors.splice(i,1);else CSF.contractors.push(v);CSF.comps=[];CSF.subs=[];CSF.cons=[];render();} // Contractor Statement filter (multi-select)
 function csfContractors(){const set=[];S.schemes.forEach(s=>(s.contracts||[]).forEach(c=>{if(c.contractor&&!set.includes(c.contractor))set.push(c.contractor);}));return set.sort();}
 function csfTogScheme(v){CSF.comps=[];CSF.subs=[];CSF.cons=[];togArr(CSF.schemes,v);}
 function csfTogComp(v){CSF.subs=[];CSF.cons=[];togArr(CSF.comps,v);}
@@ -2275,10 +2310,10 @@ function csfTogSub(v){CSF.cons=[];togArr(CSF.subs,v);}
 function csfTogCon(v){togArr(CSF.cons,v);}
 function pgContractorStmt(){
   const names=csfContractors();
-  const nm=(CSF.contractor&&names.includes(CSF.contractor))?CSF.contractor:(names[0]||'');
+  const selNames=(CSF.contractors&&CSF.contractors.length)?CSF.contractors.filter(x=>names.includes(x)):names;const nm=selNames.length===1?selNames[0]:'';
   const conPrefix=(a,b)=>{const pa=String(a||'').match(/^([^0-9]*)(\d*)/),pb=String(b||'').match(/^([^0-9]*)(\d*)/);const xa=(pa[1]||'').toUpperCase(),xb=(pb[1]||'').toUpperCase();if(xa!==xb)return xa<xb?-1:1;return ((pa[2]?+pa[2]:0)-(pb[2]?+pb[2]:0))||(String(a)<String(b)?-1:1);};
-  const schemeOpts=S.schemes.filter(s=>(s.contracts||[]).some(c=>c.contractor===nm)).map(s=>[s.id,s.name]);
-  let pool=[];S.schemes.forEach(s=>{if(CSF.schemes.length&&!CSF.schemes.includes(s.id))return;(s.contracts||[]).forEach(c=>{if(c.contractor===nm)pool.push({s:s,c:c});});});
+  const schemeOpts=S.schemes.filter(s=>(s.contracts||[]).some(c=>selNames.includes(c.contractor))).map(s=>[s.id,s.name]);
+  let pool=[];S.schemes.forEach(s=>{if(CSF.schemes.length&&!CSF.schemes.includes(s.id))return;(s.contracts||[]).forEach(c=>{if(selNames.includes(c.contractor))pool.push({s:s,c:c});});});
   const compOpts=[];{const seen={};pool.forEach(x=>{if(x.c.compId&&!seen[x.c.compId]){seen[x.c.compId]=1;compOpts.push([x.c.compId,compName(x.s,x.c.compId)+' · '+x.s.name]);}});}
   let pool2=pool.filter(x=>!CSF.comps.length||CSF.comps.includes(x.c.compId));
   const subOpts=[];{const seen={};pool2.forEach(x=>{if(x.c.subId&&!seen[x.c.subId]){seen[x.c.subId]=1;subOpts.push([x.c.subId,subName(x.s,x.c.compId,x.c.subId)]);}});}
@@ -2293,23 +2328,24 @@ function pgContractorStmt(){
   ev.sort((a,b)=>a.date<b.date?-1:1);
   let bal=0,sn=0;const rows=ev.map(e=>{bal+=e.cr-e.dr;sn++;return `<tr><td class="num">${sn}</td><td>${dfmt(e.date)}</td><td>${e.desc}</td><td class="num">${e.cr?fmt(e.cr):''}</td><td class="num">${e.dr?fmt(e.dr):''}</td><td class="num"><b>${fmt(bal)}</b></td></tr>`;}).join('');
   const totCr=ev.reduce((a,e)=>a+e.cr,0),totDr=ev.reduce((a,e)=>a+e.dr,0);
+  const mobPend=pool4.reduce((a,x)=>a+mobOut(x.c),0);
   return `<h2 class="pg">Contractor Statement (running account)</h2>
   <div class="sub">${esc(periodLabel())} — payable raised vs paid; the closing balance is what is still owed to the contractor.</div>
   <div class="card filtbar"><h3>🔎 Filter — Contractor Statement</h3>
     <div class="msdd-bar">
-      <select onchange="CSF.contractor=this.value;CSF.schemes=[];CSF.comps=[];CSF.subs=[];CSF.cons=[];render()" style="padding:4px 10px;border:1px solid var(--bd);border-radius:14px;font-size:12px;font-weight:600">${names.map(x=>`<option ${x===nm?'selected':''}>${esc(x)}</option>`).join('')||'<option value="">— no contractors —</option>'}</select>
+      ${names.length?msDD('csf_ctr','Contractor (All / multi-select)',names.map(x=>[x,x]),CSF.contractors,'csfTogContractor','CSF.contractors=[];CSF.comps=[];CSF.subs=[];CSF.cons=[];render()'):'<span class="mini">— no contractors —</span>'}
       ${schemeOpts.length>1?msDD('csf_sch','Scheme',schemeOpts,CSF.schemes,'csfTogScheme','CSF.schemes=[];CSF.comps=[];CSF.subs=[];CSF.cons=[];render()'):''}
       ${compOpts.length?msDD('csf_comp','Component',compOpts,CSF.comps,'csfTogComp','CSF.comps=[];CSF.subs=[];CSF.cons=[];render()'):''}
       ${subOpts.length?msDD('csf_sub','Sub-component',subOpts,CSF.subs,'csfTogSub','CSF.subs=[];CSF.cons=[];render()'):''}
       ${conOpts.length?msDD('csf_con','Contract',conOpts,CSF.cons,'csfTogCon','CSF.cons=[];render()'):''}
-      <button class="btn2 btn-sm" onclick="CSF={schemes:[],comps:[],subs:[],cons:[],contractor:CSF.contractor};render()">✕ Clear Filters</button>
+      <button class="btn2 btn-sm" onclick="CSF={schemes:[],comps:[],subs:[],cons:[],contractor:'',contractors:CSF.contractors};render()">✕ Clear Filters</button>
     </div>
-  <div class="card"><h3>📑 Statement — ${esc(nm||'—')} <span class="mini" style="font-weight:400;text-transform:none">· ${cids.length} contract${cids.length!==1?'s':''}${(CSF.schemes.length||CSF.comps.length||CSF.subs.length||CSF.cons.length)?' (filtered)':''}</span></h3><div class="tbl-wrap"><table>
+  <div class="card"><h3>📑 Statement — ${selNames.length===names.length?'All Contractors':(selNames.length===1?esc(selNames[0]):selNames.length+' Contractors')} <span class="mini" style="font-weight:400;text-transform:none">· ${cids.length} contract${cids.length!==1?'s':''}${(CSF.schemes.length||CSF.comps.length||CSF.subs.length||CSF.cons.length)?' (filtered)':''}</span></h3><div class="tbl-wrap"><table>
     <tr><th class="num">Sl.</th><th>Date</th><th>Particulars</th><th class="num">Payable (Cr)</th><th class="num">Paid (Dr)</th><th class="num">Balance Owed</th></tr>
     ${rows||'<tr><td colspan="6" class="empty">No transactions</td></tr>'}
     ${ev.length?`<tr class="tot-bal"><td colspan="3"><b>TOTAL</b></td><td class="num">${fmt(totCr)}</td><td class="num">${fmt(totDr)}</td><td class="num">${fmt(totCr-totDr)}</td></tr>`:''}
   </table></div>
-  <div class="note" style="margin-top:6px">Closing balance owed: <b>${fmt(totCr-totDr)}</b>. Advances and retention are tracked separately (Contractor Ledger &amp; Retention Ledger).</div></div>`;
+  <div class="card" style="margin-top:8px;max-width:540px"><h3>Total Outstanding to Contractor</h3><table><tr><th>Component</th><th class="num">Amount</th></tr><tr><td>Closing Balance Owed — bills (payable − paid)</td><td class="num"><b>${fmt(totCr-totDr)}</b></td></tr><tr><td style="background:#fff7ed">Mobilisation Advance Payable (committed, not yet paid)</td><td class="num" style="background:#fff7ed;color:#92400e">${fmt(mobPend)}</td></tr><tr class="tot" style="background:#eaf2ff"><td><b>TOTAL OUTSTANDING</b></td><td class="num"><b>${fmt(totCr-totDr+mobPend)}</b></td></tr></table><div class="note" style="margin-top:4px">Bill balance and mobilisation advance payable are shown distinctly. Retention is tracked separately in the Retention Ledger.</div></div></div>`;
 }
 /* ================= FUND BALANCE SHEET ================= */
 function pgBalSheet(){
@@ -3307,13 +3343,26 @@ function delWhRel(id){
   if(S.ui.locked){alert("🔒 Entries are locked.\nType UNLOCK in the unlock dialog to enable deletion of withheld releases.");return;}if(!confirm('Delete this release entry?'))return;S.whRel=S.whRel.filter(w=>w.id!==id);save();render();}
 //__JS_BILLS__
 /* ================= CONTRACTOR LEDGER ================= */
-let CLF=''; // contractor name filter ('' = all)
+let CLF={comps:[],subs:[],contractors:[],cons:[]};
+function clfClear(){CLF={comps:[],subs:[],contractors:[],cons:[]};render();}
+function clfTogCon(v){var i=CLF.cons.indexOf(v);if(i>=0)CLF.cons.splice(i,1);else CLF.cons.push(v);render();}
+function clfTogComp(v){var i=CLF.comps.indexOf(v);if(i>=0)CLF.comps.splice(i,1);else CLF.comps.push(v);CLF.subs=[];render();}
+function clfTogSub(v){var i=CLF.subs.indexOf(v);if(i>=0)CLF.subs.splice(i,1);else CLF.subs.push(v);render();}
+function clfTogContractor(v){var i=CLF.contractors.indexOf(v);if(i>=0)CLF.contractors.splice(i,1);else CLF.contractors.push(v);render();}
 function pgContractors(){
   // gather contracts of selected schemes
   const cons=[];
   S.schemes.filter(s=>inScheme(s.id)).forEach(s=>(s.contracts||[]).forEach(c=>cons.push({s:s,c:c})));
-  const names=[...new Set(cons.map(x=>x.c.contractor))].sort();
-  const shown=CLF?names.filter(nm=>nm===CLF):names;
+  const compOpts=[];{const seen={};cons.forEach(x=>{if(x.c.compId&&!seen[x.c.compId]){seen[x.c.compId]=1;compOpts.push([x.c.compId,compName(x.s,x.c.compId)]);}});}
+  const consA=cons.filter(x=>!CLF.comps.length||CLF.comps.includes(x.c.compId));
+  const subOpts=[];{const seen={};consA.forEach(x=>{if(x.c.subId&&!seen[x.c.subId]){seen[x.c.subId]=1;subOpts.push([x.c.subId,subName(x.s,x.c.compId,x.c.subId)]);}});}
+  const consB=consA.filter(x=>!CLF.subs.length||CLF.subs.includes(x.c.subId));
+  const contractorOpts=[...new Set(consB.map(x=>x.c.contractor))].sort().map(nm=>[nm,nm]);
+  const consC=consB.filter(x=>!CLF.contractors.length||CLF.contractors.includes(x.c.contractor));
+  const contractOpts=consC.map(x=>[x.c.id,x.c.no+' — '+x.c.contractor]);
+  const consF=consC.filter(x=>!CLF.cons.length||CLF.cons.includes(x.c.id));
+  const names=[...new Set(consF.map(x=>x.c.contractor))].sort();
+  const shown=names;
   const conStats=(x)=>{
     const bills=S.bills.filter(b=>!b.draft&&b.contractId===x.c.id&&inPeriod(b.date));
     const allBills=S.bills.filter(b=>!b.draft&&b.contractId===x.c.id);
@@ -3332,7 +3381,7 @@ function pgContractors(){
   let SLN=0;
   const conKey=no=>{const m=String(no||'').match(/^([^0-9]*)(\d*)/);return [((m&&m[1])||'').trim().toUpperCase(),(m&&m[2])?parseInt(m[2]):0,String(no||'')];};
   shown.forEach(nm=>{
-    const mine=cons.filter(x=>x.c.contractor===nm).sort((a,b)=>{const ka=conKey(a.c.no),kb=conKey(b.c.no);return ka[0]<kb[0]?-1:ka[0]>kb[0]?1:(ka[1]-kb[1])||(ka[2]<kb[2]?-1:ka[2]>kb[2]?1:0);});
+    const mine=consF.filter(x=>x.c.contractor===nm).sort((a,b)=>{const ka=conKey(a.c.no),kb=conKey(b.c.no);return ka[0]<kb[0]?-1:ka[0]>kb[0]?1:(ka[1]-kb[1])||(ka[2]<kb[2]?-1:ka[2]>kb[2]?1:0);});
     let T={gross:0,liab:0,paid:0,ded:0,bal:0,whOut:0,advP:0,advR:0,advO:0,mobC:0,mobO:0};
     const rws=mine.map(x=>{
       const st=conStats(x);const sn=++SLN;
@@ -3346,19 +3395,16 @@ function pgContractors(){
         <td class="num"><b>${fmt(st.paid)}</b></td><td class="num">${fmt(st.ded)}</td>
         <td class="num">${fmt(st.whOut)}</td>
         <td class="num">${fmt(st.advO)}<div class="mini">paid ${fmt(st.advP)} · rec. ${fmt(st.advR)}</div></td>
-        <td class="num"><b style="color:${st.bal>0.005?'#d97706':'#16a34a'}">${fmt(st.bal)}</b></td><td>${det}</td></tr>`;
+        <td class="num"><b style="color:${st.bal>0.005?'#d97706':'#16a34a'}">${fmt(st.bal)}</b></td><td class="num" style="background:#fff7ed">${fmt(st.mobO)}${st.mobC>0.005?'<div class="mini">committed '+fmt(st.mobC)+'</div>':''}</td><td class="num" style="background:#eaf2ff"><b>${fmt(st.bal+st.mobO)}</b></td><td>${det}</td></tr>`;
     }).join('');
     body+=`<tr style="background:#f1f5f9"><td></td><td><b>👷 ${esc(nm)}</b> <span class="mini">(${mine.length} contract${mine.length>1?'s':''} — combined)</span></td>
       <td class="num"><b>${fmt(T.gross)}</b></td><td class="num"><b>${fmt(T.liab)}</b></td>
       <td class="num"><b>${fmt(T.paid)}</b></td><td class="num"><b>${fmt(T.ded)}</b></td>
-      <td class="num"><b>${fmt(T.whOut)}</b></td><td class="num"><b>${fmt(T.advO)}</b></td><td class="num"><b>${fmt(T.bal)}</b></td><td></td></tr>`+rws;
+      <td class="num"><b>${fmt(T.whOut)}</b></td><td class="num"><b>${fmt(T.advO)}</b></td><td class="num"><b>${fmt(T.bal)}</b></td><td class="num" style="background:#fff7ed"><b>${fmt(T.mobO)}</b></td><td class="num" style="background:#eaf2ff"><b>${fmt(T.bal+T.mobO)}</b></td><td></td></tr>`+rws;
   });
   return `<h2 class="pg">Contractor Ledger — payments per contractor &amp; per contract</h2>
   <div class="sub">${esc(periodLabel())} — combined totals per contractor, with each contract shown separately below it. Balance O/s is overall (all time).</div>
-  <div class="card"><h3>Filter by Contractor</h3><div class="chips">
-    <span class="chip ${CLF===''?'on':''}" onclick="CLF='';render()">All Contractors</span>
-    ${names.map(nm=>`<span class="chip ${CLF===nm?'on':''}" onclick="CLF='${esc(nm).replace(/'/g,"\\'")}';render()">${esc(nm)}</span>`).join('')}
-  </div></div>
+  <div class="card filtbar"><h3>🔎 Filter Contractor Ledger<span style="float:right"><button class="btn2 btn-sm" onclick="clfClear()">✕ Clear</button></span></h3><div class="msdd-bar">${compOpts.length?msDD('clf_comp','Component',compOpts,CLF.comps,'clfTogComp','CLF.comps=[];CLF.subs=[];render()'):''}${subOpts.length?msDD('clf_sub','Sub-component',subOpts,CLF.subs,'clfTogSub','CLF.subs=[];render()'):''}${contractorOpts.length?msDD('clf_ctr','Contractor (All / multi-select)',contractorOpts,CLF.contractors,'clfTogContractor','CLF.contractors=[];render()'):''}${contractOpts.length?msDD('clf_con','Contract',contractOpts,CLF.cons,'clfTogCon','CLF.cons=[];render()'):''}</div></div>
   <div class="card" style="margin-bottom:16px">
     <h3>Contractor Summary — All Contracts (filtered period)</h3>
     <table style="max-width:640px">
@@ -3369,13 +3415,15 @@ function pgContractors(){
       <tr><td style="padding-left:18px" class="mini">Statutory Deductions (TDS, GST, Cess)</td><td class="num" style="color:#991b1b">− ${fmt(G.ded)}</td></tr>
       <tr><td>Withheld Outstanding</td><td class="num" style="color:#92400e">${fmt(G.whOut)}</td></tr>
       <tr><td>Advance Outstanding (net unreccovered)</td><td class="num" style="color:#92400e">${fmt(G.advO)}</td></tr>
-      <tr class="tot-pay"><td><b>Balance Payable to Contractors</b></td><td class="num"><b>${fmt(G.bal)}</b></td></tr>
+      <tr class="tot-pay"><td><b>Balance Payable to Contractors (bills)</b></td><td class="num"><b>${fmt(G.bal)}</b></td></tr>
+      <tr><td>Mobilisation Advance Payable (committed, not yet paid)</td><td class="num" style="color:#92400e">${fmt(G.mobO)}</td></tr>
+      <tr class="tot"><td><b>TOTAL OUTSTANDING (bills + mob. advance)</b></td><td class="num"><b>${fmt(G.bal+G.mobO)}</b></td></tr>
     </table>
   </div>
   <div class="card"><h3>Ledger</h3><div class="tbl-wrap"><table>
-    <tr><th class="num">Sl.</th><th>Contractor / Contract</th><th class="num">Gross Bills</th><th class="num">Net Liability</th><th class="num">Paid</th><th class="num">Deductions</th><th class="num">Withheld O/s</th><th class="num">Advance O/s</th><th class="num">Balance O/s</th><th>Payments</th></tr>
-    ${body||'<tr><td colspan="10" class="empty">No contractors in this selection</td></tr>'}
-    ${body?`<tr class="tot"><td></td><td>GRAND TOTAL</td><td class="num">${fmt(G.gross)}</td><td class="num">${fmt(G.liab)}</td><td class="num">${fmt(G.paid)}</td><td class="num">${fmt(G.ded)}</td><td class="num">${fmt(G.whOut)}</td><td class="num">${fmt(G.advO)}</td><td class="num">${fmt(G.bal)}</td><td></td></tr>`:''}
+    <tr><th class="num">Sl.</th><th>Contractor / Contract</th><th class="num">Gross Bills</th><th class="num">Net Liability</th><th class="num">Paid</th><th class="num">Deductions</th><th class="num">Withheld O/s</th><th class="num">Advance O/s</th><th class="num">Balance O/s (Bill)</th><th class="num" style="background:#fff7ed">Mob. Adv. Payable</th><th class="num" style="background:#0b3d91;color:#fff">Total O/s</th><th>Payments</th></tr>
+    ${body||'<tr><td colspan="12" class="empty">No contractors in this selection</td></tr>'}
+    ${body?`<tr class="tot"><td></td><td>GRAND TOTAL</td><td class="num">${fmt(G.gross)}</td><td class="num">${fmt(G.liab)}</td><td class="num">${fmt(G.paid)}</td><td class="num">${fmt(G.ded)}</td><td class="num">${fmt(G.whOut)}</td><td class="num">${fmt(G.advO)}</td><td class="num">${fmt(G.bal)}</td><td class="num" style="background:#fff7ed"><b>${fmt(G.mobO)}</b></td><td class="num" style="background:#eaf2ff"><b>${fmt(G.bal+G.mobO)}</b></td><td></td></tr>`:''}
   </table></div></div>`;
 }
 
@@ -3416,6 +3464,8 @@ function payFilterCard(){
     });
   });
   contractors.sort((a,b)=>a[0].localeCompare(b[0]));
+  const consF=cons.filter(o=>{const c=conById(o[0]);if(!c)return false;if(PYF.comp.length&&!PYF.comp.includes(c.compId))return false;if(PYF.sub.length&&!PYF.sub.includes(c.subId))return false;if(PYF.contractor.length&&!PYF.contractor.includes(c.contractor))return false;return true;});
+  const contractorsF=contractors.filter(o=>cons.some(cc=>{const c=conById(cc[0]);return c&&c.contractor===o[0]&&(!PYF.comp.length||PYF.comp.includes(c.compId))&&(!PYF.sub.length||PYF.sub.includes(c.subId));}));
   const relOpts=S.releases.filter(r=>inPeriod(r.date)).sort((a,b)=>a.date<b.date?1:-1)
     .map(r=>[r.id,(r.note?r.note+' · ':'')+dfmt(r.date)+' · '+r.source+' ('+fmt(r.amount)+')']);
   const srcOpts=unionSources().map(x=>[x,x]);
@@ -3425,14 +3475,14 @@ function payFilterCard(){
   return `<div class="card filtbar"><h3>🔎 Filter Payments <span class="mini">— multi-select; all active selections narrow the register</span>
     <span style="float:right"><button class="btn2 btn-sm" onclick="pyfClear()">✕ Clear All Filters</button></span></h3>
     <div class="msdd-bar">
-      <input type="date" value="${esc(PYF.from)}" onchange="pyfSet('from',this.value)" title="From date" style="padding:3px 8px;border:1px solid var(--bd);border-radius:14px;font-size:12px">
-      <input type="date" value="${esc(PYF.to)}" onchange="pyfSet('to',this.value)" title="To date" style="padding:3px 8px;border:1px solid var(--bd);border-radius:14px;font-size:12px">
-      <input type="month" value="${esc(PYF.month)}" onchange="pyfMonth(this.value)" title="Whole month" style="padding:3px 8px;border:1px solid var(--bd);border-radius:14px;font-size:12px">
-      <input value="${esc(PYF.sps)}" placeholder="🔍 SPS No." onchange="pyfSet('sps',this.value)" style="padding:4px 11px;border:1px solid var(--bd);border-radius:14px;font-size:12px;min-width:120px">
+      <input type="date" value="${esc(PYF.from)}" onchange="pyfSet('from',this.value)" title="From date" style="width:120px;padding:2px 7px;border:1px solid var(--bd);border-radius:12px;font-size:11.5px">
+      <input type="date" value="${esc(PYF.to)}" onchange="pyfSet('to',this.value)" title="To date" style="width:120px;padding:2px 7px;border:1px solid var(--bd);border-radius:12px;font-size:11.5px">
+      <input type="month" value="${esc(PYF.month)}" onchange="pyfMonth(this.value)" title="Whole month" style="width:120px;padding:2px 7px;border:1px solid var(--bd);border-radius:12px;font-size:11.5px">
+      <input value="${esc(PYF.sps)}" placeholder="🔍 SPS No." onchange="pyfSet('sps',this.value)" style="width:118px;padding:3px 9px;border:1px solid var(--bd);border-radius:12px;font-size:11.5px">
       ${comps.length?msDD('pyf_comp','Component',comps,PYF.comp,'pyfTogComp','PYF.comp=[];PYF.sub=[];PYF.con=[];render()'):''}
       ${subs.length?msDD('pyf_sub','Sub-component',subs,PYF.sub,'pyfTogSub','PYF.sub=[];PYF.con=[];render()'):''}
-      ${cons.length?msDD('pyf_con','Contract',cons,PYF.con,'pyfTogCon','PYF.con=[];render()'):''}
-      ${contractors.length?msDD('pyf_ctr','Contractor',contractors,PYF.contractor,'pyfTogContractor','PYF.contractor=[];render()'):''}
+      ${consF.length?msDD('pyf_con','Contract',consF,PYF.con,'pyfTogCon','PYF.con=[];render()'):''}
+      ${contractorsF.length?msDD('pyf_ctr','Contractor',contractorsF,PYF.contractor,'pyfTogContractor','PYF.contractor=[];render()'):''}
       ${srcOpts.length?msDD('pyf_src','Fund Source',srcOpts,PYF.src,'pyfTogSrc','PYF.src=[];render()'):''}
       ${shareOpts.length?msDD('pyf_share','Share',shareOpts,PYF.share,'pyfTogShare','PYF.share=[];render()'):''}
       ${relOpts.length?msDD('pyf_rel','Release',relOpts,PYF.rel,'pyfTogRel','PYF.rel=[];render()'):''}
@@ -3488,7 +3538,7 @@ function pgPayments(){
     return `<tr${p.draft?' class="paused"':''}><td>${dfmt(p.date)}${p.draft?'<span class="pausebadge">⏸ PAUSED</span>':''}${p.vno?'<div class="mini">'+esc(p.vno)+(multi?' +'+(ps.length-1)+' more':'')+'</div>':''}${(p.serial&&!multi)?'<div class="mini"><b>'+esc(p.serial)+'</b></div>':''}</td><td>${esc(schemeName(p.schemeId))}</td>
     <td>${c?esc(c.no)+(c.pkg?' <span class="mini">('+esc(c.pkg)+')</span>':'')+'<div class="mini">'+esc(c.contractor)+'</div>':'—'}</td>
     <td>${spsCov}${gAdvRec>0?'<br><span class="tag g">Adv. recovered: '+fmt(gAdvRec)+'</span>':''}</td>
-    <td><span class="tag">${esc(p.source||'—')}</span> <span class="tag g">${esc(p.share||'—')}</span></td>
+    <td><span class="tag">${esc(paySource2(p)||p.source||'—')}</span>${payRelTag(p)}</td><td><span class="tag g">${esc(payShareName(p)||p.share||'—')}</span></td>
     <td class="num">${fmt(gGross)}</td><td class="num"><b>${fmt(gEff)}</b></td><td class="num">${fmt(gDed)}</td>
     <td class="num"><b>${fmt(gNet)}</b><div class="mini">Chq: ${esc(p.chqNo||'—')}</div>${p.bankId?'<div class="mini">🏦 '+esc(bankName(p.bankId))+'</div>':''}</td>
     <td><details><summary class="mini">details${multi?' ('+ps.length+' vouchers)':''}</summary>
@@ -3507,7 +3557,7 @@ function pgPayments(){
     return `<tr${p.draft?' class="paused"':''}><td>${dfmt(p.date)}${p.draft?'<span class="pausebadge">⏸ PAUSED</span>':''}${p.vno?'<div class="mini">'+esc(p.vno)+'</div>':''}${p.serial?'<div class="mini"><b>'+esc(p.serial)+'</b></div>':''}</td>
       <td>${esc(schemeName(p.schemeId))}</td>
       <td>${c?esc(c.no)+(c.pkg?' <span class="mini">('+esc(c.pkg)+')</span>':'')+'<div class="mini">'+esc(c.contractor)+'</div>':'—'}</td>
-      <td><span class="tag">${esc(p.source||'—')}</span> <span class="tag g">${esc(p.share||'—')}</span></td>
+      <td><span class="tag">${esc(paySource2(p)||p.source||'—')}</span>${payRelTag(p)}</td><td><span class="tag g">${esc(payShareName(p)||p.share||'—')}</span></td>
       <td class="num">${fmt(g)}</td><td class="num">${fmt(d)}</td>
       <td class="num"><b>${fmt(net)}</b><div class="mini">Chq: ${esc(p.chqNo||'—')}</div>${p.bankId?'<div class="mini">🏦 '+esc(bankName(p.bankId))+'</div>':''}</td>
       <td>${_pp} <button class="btn2 btn-sm" onclick="printVoucher('${p.id}')" title="Print voucher">🖨</button> <button class="btn2 btn-sm" onclick="editPay('${p.id}')" title="Edit advance">✎</button> <button class="btn-del" onclick="delPay('${p.id}')" title="Delete advance">✕</button></td></tr>`;}).join('');
@@ -3627,7 +3677,8 @@ function pgPayments(){
   </div>
   <div class="card" style="margin-bottom:16px">
     <h3>Payment Summary (filtered)</h3>
-    <table style="max-width:560px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;align-items:start">
+    <div><table style="max-width:560px">
       <tr><th>Head</th><th class="num">Amount</th></tr>
       <tr><td>Bill Passed (books)${nPausedP?'<span class="mini" style="color:#92400e"> · '+nPausedP+' paused excl.</span>':''}</td><td class="num">${fmt(tGross)}</td></tr>
       <tr><td style="padding-left:18px" class="mini" style="color:#991b1b">Less: Statutory Deductions (TDS, GST, Cess, Retention)</td><td class="num" style="color:#991b1b">− ${fmt(tDed)}</td></tr>
@@ -3638,19 +3689,21 @@ function pgPayments(){
       <tr><td style="padding-left:18px" class="mini">Net Advance Paid (cheque)</td><td class="num" style="color:#146c3a">${fmt(aNet)}</td></tr>
       <tr class="tot-pay"><td><b>B. Effective Expenditure — from Advances</b></td><td class="num"><b>${fmt(aEff)}</b></td></tr>
       <tr class="tot"><td><b>TOTAL EFFECTIVE EXPENDITURE (A + B)</b></td><td class="num"><b>${fmt(tEff+aEff)}</b></td></tr>
-    </table>
+    </table></div>
+    ${paySrcShareTables(livePays)}
+    </div>
   </div>
   <div class="card"><h3>Payment Register</h3><div class="flex" style="margin-bottom:8px;gap:6px;align-items:center"><span class="mini">${nPausedP} paused</span><button class="btn-pause btn-sm" onclick="pauseAll('pay')">⏸ Pause All (shown)</button><button class="btn-resume btn-sm" onclick="resumeAll('pay')">▶ Resume All</button></div><div class="tbl-wrap"><table>
-    <tr><th>Date</th><th>Scheme</th><th>Contract</th><th>SPS Covered</th><th>Source · Share</th><th class="num">Bill Passed</th><th class="num">Effective Exp.</th><th class="num">Deductions</th><th class="num">Net Paid</th><th>Details</th><th></th></tr>
-    ${rows||'<tr><td colspan="11" class="empty">No payments in this selection</td></tr>'}
-    ${rows?`<tr class="tot"><td colspan="5">TOTAL — BILL PAYMENTS</td><td class="num">${fmt(tGross)}</td><td class="num">${fmt(tEff)}</td><td class="num">${fmt(tDed)}</td><td class="num">${fmt(tNet)}</td><td colspan="2"></td></tr>`:''}
+    <tr><th>Date</th><th>Scheme</th><th>Contract</th><th>SPS Covered</th><th>Source</th><th>Share</th><th class="num">Bill Passed</th><th class="num">Effective Exp.</th><th class="num">Deductions</th><th class="num">Net Paid</th><th>Details</th><th></th></tr>
+    ${rows||'<tr><td colspan="12" class="empty">No payments in this selection</td></tr>'}
+    ${rows?`<tr class="tot"><td colspan="6">TOTAL — BILL PAYMENTS</td><td class="num">${fmt(tGross)}</td><td class="num">${fmt(tEff)}</td><td class="num">${fmt(tDed)}</td><td class="num">${fmt(tNet)}</td><td colspan="2"></td></tr>`:''}
   </table></div></div>
   <div class="card"><h3>💼 Mobilisation / Other Advances Register${nPausedA?' <span class="mini">('+nPausedA+' paused)</span>':''}</h3>
     <div class="note" style="margin-bottom:8px">Advances paid to contractors (mobilisation / secured / other) — shown separately from bill payments. These are recovered later against running bills.</div>
     <div class="tbl-wrap"><table>
-    <tr><th>Date</th><th>Scheme</th><th>Contract</th><th>Source · Share</th><th class="num">Advance Paid</th><th class="num">Deductions</th><th class="num">Net Paid</th><th></th></tr>
-    ${advRows||'<tr><td colspan="8" class="empty">No mobilisation / other advances in this selection</td></tr>'}
-    ${advRows?`<tr class="tot"><td colspan="4"><b>TOTAL ADVANCES</b></td><td class="num"><b>${fmt(aGross)}</b></td><td class="num">${fmt(aDed)}</td><td class="num"><b>${fmt(aNet)}</b></td><td></td></tr>`:''}
+    <tr><th>Date</th><th>Scheme</th><th>Contract</th><th>Source</th><th>Share</th><th class="num">Advance Paid</th><th class="num">Deductions</th><th class="num">Net Paid</th><th></th></tr>
+    ${advRows||'<tr><td colspan="9" class="empty">No mobilisation / other advances in this selection</td></tr>'}
+    ${advRows?`<tr class="tot"><td colspan="5"><b>TOTAL ADVANCES</b></td><td class="num"><b>${fmt(aGross)}</b></td><td class="num">${fmt(aDed)}</td><td class="num"><b>${fmt(aNet)}</b></td><td></td></tr>`:''}
     </table></div></div>`;
 }
 function after_payments(){
@@ -3862,7 +3915,7 @@ function delPay(id){
   if(S.ui.locked){alert("🔒 Entries are locked.\nType UNLOCK in the unlock dialog to enable deletion of payments.");return;}if(!confirm('Delete this payment? Bill balances will be restored.'))return;S.payments=S.payments.filter(p=>p.id!==id);save();render();}
 
 /* ================= CASH BOOK ================= */
-let CBR='all'; // quick range: all/day/week/month/quarter/fy
+let CBVIEW='two';let CBR='all'; // quick range: all/day/week/month/quarter/fy
 function cbInRange(d){
   if(CBR==='all')return true;
   const now=new Date();const dt=new Date(d);
@@ -3875,63 +3928,83 @@ function cbInRange(d){
 }
 function cashRows(){
   const rows=[];
-  S.releases.filter(r=>inF(r)&&!r.draft).forEach(r=>rows.push({date:r.date,sch:r.schemeId,acct:bankName(r.bankId)||'Receiving A/c',part:'Fund received — '+r.source+(r.head?' ('+r.head+')':'')+(r.note?' · '+r.note:''),rcpt:n(r.amount),pay:0,src:'auto'}));
-  S.transfers.filter(t=>inF(t)&&!t.draft).forEach(t=>{
-    rows.push({date:t.date,sch:t.schemeId,acct:t.from||'SASCI A/c',part:'Transfer to '+(t.to||'Project A/c')+(t.note?' · '+t.note:''),rcpt:0,pay:n(t.amount),src:'auto'});
-    rows.push({date:t.date,sch:t.schemeId,acct:t.to||'Project A/c',part:'Transfer from '+(t.from||'SASCI A/c'),rcpt:n(t.amount),pay:0,src:'auto'});
+  const conName=cid=>{for(const s of S.schemes){const c=(s.contracts||[]).find(x=>x.id===cid);if(c)return c.no+' — '+c.contractor;}return '';};
+  S.releases.filter(r=>!r.draft&&inScheme(r.schemeId)).forEach(r=>rows.push({date:r.date,vno:r.vno,sch:r.schemeId,bankId:r.bankId,bank:!!r.bankId,acct:bankName(r.bankId)||'Bank',part:'Fund received — '+r.source+(r.head?' ('+r.head+')':'')+(r.note?' · '+r.note:''),rcpt:n(r.amount),pay:0,cls:'Grant / Loan / Fund received',src:'auto'}));
+  S.transfers.filter(t=>!t.draft&&inScheme(t.schemeId)).forEach(t=>{
+    rows.push({date:t.date,vno:t.vno,sch:t.schemeId,bankId:t.fromBank,bank:true,acct:bankName(t.fromBank)||t.from||'Bank',part:'Transfer to '+(bankName(t.toBank)||t.to||'A/c'),rcpt:0,pay:n(t.amount),cls:'Inter-account transfer (contra)',contra:true,src:'auto'});
+    rows.push({date:t.date,vno:t.vno,sch:t.schemeId,bankId:t.toBank,bank:true,acct:bankName(t.toBank)||t.to||'Bank',part:'Transfer from '+(bankName(t.fromBank)||t.from||'A/c'),rcpt:n(t.amount),pay:0,cls:'Inter-account transfer (contra)',contra:true,src:'auto'});
   });
-  S.payments.filter(p=>inF(p)&&!p.draft).forEach(p=>{
-    const s=S.schemes.find(x=>x.id===p.schemeId)||{contracts:[]};
-    const c=(s.contracts||[]).find(x=>x.id===p.contractId);
-    const net=payNet(p);const pacct=bankName(p.bankId)||'Project A/c';
-    if(net>0)rows.push({date:p.date,sch:p.schemeId,acct:pacct,part:'Paid to '+(c?c.contractor+' ('+c.no+')':'contractor')+(p.chqNo?' · Chq '+p.chqNo:''),rcpt:0,pay:net,src:'auto'});
-    DEDS.forEach(([k,l])=>{if(k==='ret'||k==='oth')return;const v=payDedTotal(p,k);
-      if(v>0)rows.push({date:p.date,sch:p.schemeId,acct:pacct,part:l+(c?' — '+c.no:'')+((p.dedChq&&p.dedChq[k])?' · Chq '+p.dedChq[k]:''),rcpt:0,pay:v,src:'auto'});});
+  S.payments.filter(p=>!p.draft&&inScheme(p.schemeId)).forEach(p=>{
+    const acct=bankName(p.bankId)||'Bank';const nm=conName(p.contractId);
+    const ded=DEDS.map(([k,l])=>[l,payDedTotal(p,k)]).filter(x=>x[1]>0.005);
+    rows.push({date:p.date,vno:p.vno,sch:p.schemeId,bankId:p.bankId,bank:!!p.bankId,acct:acct,part:(p.kind==='adv'?'Mob. advance to ':'Paid to ')+nm+(p.serial?' · '+p.serial:'')+(p.chqNo?' · Chq '+p.chqNo:''),rcpt:0,pay:payNet(p),cls:p.kind==='adv'?'Mobilisation advance':'Works expenditure',rec:{gross:payGross(p),net:payNet(p),ded:ded,advRec:n(p.advRec)},src:'auto'});
   });
-  S.cash.filter(inF).forEach(e=>rows.push({date:e.date,sch:e.schemeId,acct:e.acct||'Cash/Bank',part:e.part+(e.ref?' · '+e.ref:''),rcpt:e.type==='receipt'?n(e.amount):0,pay:e.type==='payment'?n(e.amount):0,src:'man',id:e.id}));
-  S.others.filter(e=>inF(e)&&!e.draft).forEach(e=>rows.push({date:e.date,sch:e.schemeId,acct:bankName(e.bankId)||'Cash',part:e.cat+(e.party?' — '+e.party:'')+(e.ref?' · '+e.ref:''),rcpt:e.kind==='receipt'?n(e.amount):0,pay:e.kind==='payment'?n(e.amount):0,src:'auto'}));
-  S.remit.filter(inF).forEach(m=>rows.push({date:m.date,sch:m.schemeId,acct:bankName(m.bankId)||'Bank',part:'Remitted to Govt. — '+dedLabel(m.dedType)+(m.chqNo?' · Chq '+m.chqNo:''),rcpt:0,pay:n(m.amount),src:'auto'}));
-  return rows.filter(r=>cbInRange(r.date)).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
+  S.remit.filter(m=>!m.draft&&inScheme(m.schemeId)).forEach(m=>rows.push({date:m.date,vno:m.vno,sch:m.schemeId,bankId:m.bankId,bank:!!m.bankId,acct:bankName(m.bankId)||'Bank',part:'Remitted to Govt. — '+dedLabel(m.dedType)+(m.chqNo?' · Chq '+m.chqNo:''),rcpt:0,pay:n(m.amount),cls:'Remittance to Government',src:'auto'}));
+  S.others.filter(e=>!e.draft&&inScheme(e.schemeId)).forEach(e=>rows.push({date:e.date,vno:e.vno,sch:e.schemeId,bankId:e.bankId,bank:!!e.bankId,acct:bankName(e.bankId)||'Cash in hand',part:(e.cat||'Other')+(e.party?' — '+e.party:'')+(e.ref?' · '+e.ref:''),rcpt:e.kind==='receipt'?n(e.amount):0,pay:e.kind==='payment'?n(e.amount):0,cls:e.cat||'Other',src:'auto'}));
+  S.cash.filter(e=>inScheme(e.schemeId)).forEach(e=>rows.push({date:e.date,vno:e.vno,sch:e.schemeId,bankId:e.bankId,bank:!!e.bankId,acct:e.acct||(e.bankId?bankName(e.bankId):'Cash in hand'),part:(e.part||'')+(e.ref?' · '+e.ref:''),rcpt:e.type==='receipt'?n(e.amount):0,pay:e.type==='payment'?n(e.amount):0,cls:'Manual entry',src:'man',id:e.id}));
+  return rows.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:((a.vno||'')<(b.vno||'')?-1:1));
 }
 function pgCash(){
   const ss=selSchemes();
-  const rows=cashRows();
-  let bal=0,mR=0,mP=0,html='',lastM='';
-  const mName=d=>new Date(d).toLocaleString('en-IN',{month:'long',year:'numeric'});
-  rows.forEach((r,i)=>{
-    const m=r.date.slice(0,7);
-    if(lastM&&m!==lastM){
-      html+=`<tr class="close-row"><td colspan="3">Monthly Closing — ${mName(lastM+'-01')}</td><td class="num">${fmt(mR)}</td><td class="num">${fmt(mP)}</td><td class="num">${fmt(bal)}</td><td></td></tr>`;
-      mR=0;mP=0;
-    }
-    lastM=m;bal+=r.rcpt-r.pay;mR+=r.rcpt;mP+=r.pay;
-    html+=`<tr><td>${dfmt(r.date)}</td><td>${esc(schemeName(r.sch))}<div class="mini">${esc(r.acct)}</div></td><td>${esc(r.part)}</td>
-      <td class="num">${r.rcpt?fmt(r.rcpt):''}</td><td class="num">${r.pay?fmt(r.pay):''}</td>
-      <td class="num"><b style="color:${bal<0?'#dc2626':'inherit'}">${fmt(bal)}</b></td>
-      <td>${r.src==='man'?`<button class="btn2 btn-sm" onclick="editCash('${r.id}')">✎</button> <button class="btn-del" onclick="delCash('${r.id}')">✕</button>`:'<span class="mini">auto</span>'}</td></tr>`;
-  });
-  if(rows.length){
-    html+=`<tr class="close-row"><td colspan="3">Monthly Closing — ${mName(lastM+'-01')}</td><td class="num">${fmt(mR)}</td><td class="num">${fmt(mP)}</td><td class="num">${fmt(bal)}</td><td></td></tr>`;
-    const tR=rows.reduce((a,r)=>a+r.rcpt,0),tP=rows.reduce((a,r)=>a+r.pay,0);
-    html+=`<tr class="tot-bal"><td colspan="3"><b>GRAND TOTAL (period)</b></td><td class="num">${fmt(tR)}</td><td class="num">${fmt(tP)}</td><td class="num">${fmt(tR-tP)}</td><td></td></tr>`;
-  }
-  const tR=rows.reduce((a,r)=>a+r.rcpt,0),tP=rows.reduce((a,r)=>a+r.pay,0);
-  return `<h2 class="pg">Cash Book — Daily, with Monthly Closings${entryLockChip('cashbook')}</h2>
-  <div class="sub">${esc(periodLabel())} — auto entries from receipts, transfers &amp; payments + your manual entries. Follows FY / quarter / scheme filters above.</div>
-  <div class="card"><h3>Quick Period</h3><div class="chips">
-    ${[['all','All'],['day','Today'],['week','This Week'],['month','This Month'],['quarter','This Quarter'],['fy','This FY']].map(([k,l])=>`<span class="chip ${CBR===k?'on':''}" onclick="CBR='${k}';render()">${l}</span>`).join('')}
-  </div></div>
-  <div class="card" style="margin-bottom:16px">
-    <h3>Cash Book Summary (period)</h3>
-    <table style="max-width:420px">
-      <tr><th>Head</th><th class="num">Amount</th></tr>
-      <tr><td>Total Receipts</td><td class="num" style="color:#146c3a">${fmt(tR)}</td></tr>
-      <tr><td>Total Payments</td><td class="num" style="color:#991b1b">− ${fmt(tP)}</td></tr>
-      <tr class="tot-bal"><td><b>Closing Balance</b></td><td class="num"><b>${fmt(tR-tP)}</b></td></tr>
-    </table>
-  </div>
-  ${(function(){const ed=ED.cb?S.cash.find(x=>x.id===ED.cb):null;
-  return `<div class="card entry-only"><h3>${ed?'✎ Edit Cash Book Entry <span class="tag o">EDITING</span>':'➕ Manual Cash Book Entry'}</h3>
+  const all=cashRows();
+  let rc=0,rb=0;
+  all.forEach(r=>{r._oc=rc;r._ob=rb;if(r.bank)rb+=r.rcpt-r.pay;else rc+=r.rcpt-r.pay;r._cc=rc;r._cb=rb;});
+  const disp=all.filter(r=>inPeriod(r.date)&&cbInRange(r.date));
+  const fc=v=>Math.abs(v)>0.005?fmt(v):'';
+  const recHtml=r=>{if(!r.rec)return '';const d=r.rec;return `<details style="margin-top:2px"><summary class="mini" style="cursor:pointer;color:var(--acc)">▸ record: gross ${fmt(d.gross)} → cheque ${fmt(d.net)}</summary><table style="margin:3px 0;width:auto;font-size:11px"><tr><td>Gross bill amount</td><td class="num">${fmt(d.gross)}</td></tr>${d.ded.map(x=>`<tr><td style="padding-left:10px;color:#991b1b">Less: ${esc(x[0])}</td><td class="num" style="color:#991b1b">− ${fmt(x[1])}</td></tr>`).join('')}${d.advRec>0.005?`<tr><td style="padding-left:10px;color:#991b1b">Less: Mob. advance recovered</td><td class="num" style="color:#991b1b">− ${fmt(d.advRec)}</td></tr>`:''}<tr class="tot"><td><b>Net cheque issued to contractor</b></td><td class="num"><b>${fmt(d.net)}</b></td></tr></table></details>`;};
+  const mName=m=>new Date(m+'-01').toLocaleString('en-IN',{month:'long',year:'numeric'});
+  const openCash=disp.length?disp[0]._oc:rc, openBank=disp.length?disp[0]._ob:rb;
+  const closeCash=disp.length?disp[disp.length-1]._cc:rc, closeBank=disp.length?disp[disp.length-1]._cb:rb;
+  const totR=disp.reduce((a,r)=>a+r.rcpt,0), totP=disp.reduce((a,r)=>a+r.pay,0);
+  const months=[...new Set(disp.map(r=>r.date.slice(0,7)))].sort();
+  const side=(rws,bal)=>rws.map(r=>`<tr><td>${dfmt(r.date)}</td><td>${esc(r.vno||'—')}</td><td>${esc(r.part)}${r.contra?' <span class="tag b" title="per-contra / contra entry">C</span>':''}<div class="mini">${esc(schemeName(r.sch))}${r.acct?' · '+esc(r.acct):''}</div>${recHtml(r)}</td><td class="num">${fc(bal==='r'?(r.bank?0:r.rcpt):(r.bank?0:r.pay))}</td><td class="num">${fc(bal==='r'?(r.bank?r.rcpt:0):(r.bank?r.pay:0))}</td></tr>`).join('');
+  const twoSided=months.map(m=>{
+    const mr=disp.filter(r=>r.date.slice(0,7)===m);
+    const oc=mr[0]._oc,ob=mr[0]._ob,cc=mr[mr.length-1]._cc,cb=mr[mr.length-1]._cb;
+    const rcs=mr.filter(r=>r.rcpt>0),pys=mr.filter(r=>r.pay>0);
+    const drCash=oc+rcs.reduce((a,r)=>a+(r.bank?0:r.rcpt),0), drBank=ob+rcs.reduce((a,r)=>a+(r.bank?r.rcpt:0),0);
+    const crCash=pys.reduce((a,r)=>a+(r.bank?0:r.pay),0)+cc, crBank=pys.reduce((a,r)=>a+(r.bank?r.pay:0),0)+cb;
+    return `<div class="card"><h3>📓 Cash Book — ${mName(m)}</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start">
+        <div><div style="background:#dcfce7;color:#14532d;font-weight:700;padding:5px 10px;border-radius:6px 6px 0 0">RECEIPTS — Dr.</div><div class="tbl-wrap"><table style="margin:0">
+          <tr><th>Date</th><th>V.No.</th><th>Particulars</th><th class="num">Cash</th><th class="num">Bank</th></tr>
+          <tr style="background:#f1f5f9"><td></td><td></td><td><b>To Balance b/d (opening)</b></td><td class="num"><b>${fc(oc)}</b></td><td class="num"><b>${fc(ob)}</b></td></tr>
+          ${side(rcs,'r')||''}
+          <tr class="tot-bal"><td colspan="3"><b>TOTAL</b></td><td class="num"><b>${fmt(drCash)}</b></td><td class="num"><b>${fmt(drBank)}</b></td></tr>
+        </table></div></div>
+        <div><div style="background:#fee2e2;color:#7f1d1d;font-weight:700;padding:5px 10px;border-radius:6px 6px 0 0">PAYMENTS — Cr.</div><div class="tbl-wrap"><table style="margin:0">
+          <tr><th>Date</th><th>V.No.</th><th>Particulars</th><th class="num">Cash</th><th class="num">Bank</th></tr>
+          ${side(pys,'p')||''}
+          <tr style="background:#f1f5f9"><td></td><td></td><td><b>By Balance c/d (closing)</b></td><td class="num"><b>${fc(cc)}</b></td><td class="num"><b>${fc(cb)}</b></td></tr>
+          <tr class="tot-bal"><td colspan="3"><b>TOTAL</b></td><td class="num"><b>${fmt(crCash)}</b></td><td class="num"><b>${fmt(crBank)}</b></td></tr>
+        </table></div></div>
+      </div></div>`;
+  }).join('')||'<div class="card empty">No transactions in this selection.</div>';
+  const colRows=disp.map(r=>`<tr><td>${dfmt(r.date)}</td><td>${esc(r.vno||'—')}</td><td>${esc(r.part)}${r.contra?' <span class="tag b">C</span>':''}<div class="mini">${esc(schemeName(r.sch))}${r.acct?' · '+esc(r.acct):''}</div>${recHtml(r)}</td><td>${r.bank?'Bank':'Cash'}</td><td class="num">${fc(r.rcpt)}</td><td class="num">${fc(r.pay)}</td><td class="num"><b>${fmt(r._cc+r._cb)}</b></td></tr>`).join('');
+  const colCard=`<div class="card"><h3>Cash Book — Columnar Register (running balance)</h3><div class="tbl-wrap"><table>
+    <tr><th>Date</th><th>V.No.</th><th>Particulars</th><th>Cash/Bank</th><th class="num">Receipt (Dr)</th><th class="num">Payment (Cr)</th><th class="num">Running Balance</th></tr>
+    <tr style="background:#f1f5f9"><td colspan="4"><b>Opening Balance b/d</b></td><td class="num"></td><td class="num"></td><td class="num"><b>${fmt(openCash+openBank)}</b></td></tr>
+    ${colRows||'<tr><td colspan="7" class="empty">No entries</td></tr>'}
+    <tr class="tot-bal"><td colspan="4"><b>Closing Balance c/d</b></td><td class="num">${fmt(totR)}</td><td class="num">${fmt(totP)}</td><td class="num"><b>${fmt(closeCash+closeBank)}</b></td></tr>
+  </table></div></div>`;
+  const endDate=disp.length?disp[disp.length-1].date:'';
+  const bankClose={};all.forEach(r=>{if(!r.bank)return;if(endDate&&r.date>endDate)return;bankClose[r.bankId||'?']=(bankClose[r.bankId||'?']||0)+r.rcpt-r.pay;});
+  const reconRows=S.banks.map(b=>`<tr><td>${esc(b.name)}</td><td class="num">${fmt(bankClose[b.id]||0)}</td></tr>`).join('');
+  const recon=`<div class="card" style="max-width:480px"><h3>Closing Balance Reconciliation (period end)</h3><table>
+    <tr><th>Where held</th><th class="num">Amount</th></tr>
+    <tr><td>Cash in hand (chest)</td><td class="num">${fmt(closeCash)}</td></tr>
+    ${reconRows}
+    <tr class="tot-bal"><td><b>TOTAL CLOSING BALANCE</b></td><td class="num"><b>${fmt(closeCash+closeBank)}</b></td></tr>
+  </table><div class="note" style="margin-top:4px">Opening + Receipts − Payments = Closing. <b>Receipts = real money received; Payments = real money paid</b> (net cheque to contractor / remittance to Government). Each contractor payment carries a record (gross bill, deductions &amp; net cheque) — click ▸ record. Withheld deductions stay in the bank until remitted. This balance must agree with the bank pass-book / treasury.</div></div>`;
+  const summary=`<div class="card" style="max-width:480px"><h3>Cash Book Summary (period)</h3><table>
+    <tr><th>Head</th><th class="num">Cash</th><th class="num">Bank</th><th class="num">Total</th></tr>
+    <tr><td>Opening Balance</td><td class="num">${fmt(openCash)}</td><td class="num">${fmt(openBank)}</td><td class="num"><b>${fmt(openCash+openBank)}</b></td></tr>
+    <tr><td>Add: Receipts</td><td class="num" style="color:#146c3a">${fmt(disp.filter(r=>!r.bank).reduce((a,r)=>a+r.rcpt,0))}</td><td class="num" style="color:#146c3a">${fmt(disp.filter(r=>r.bank).reduce((a,r)=>a+r.rcpt,0))}</td><td class="num" style="color:#146c3a">${fmt(totR)}</td></tr>
+    <tr><td>Less: Payments</td><td class="num" style="color:#991b1b">${fmt(disp.filter(r=>!r.bank).reduce((a,r)=>a+r.pay,0))}</td><td class="num" style="color:#991b1b">${fmt(disp.filter(r=>r.bank).reduce((a,r)=>a+r.pay,0))}</td><td class="num" style="color:#991b1b">${fmt(totP)}</td></tr>
+    <tr class="tot-bal"><td><b>Closing Balance</b></td><td class="num"><b>${fmt(closeCash)}</b></td><td class="num"><b>${fmt(closeBank)}</b></td><td class="num"><b>${fmt(closeCash+closeBank)}</b></td></tr>
+  </table></div>`;
+  const form=(function(){const ed=ED.cb?S.cash.find(x=>x.id===ED.cb):null;
+  return `<div class="card entry-only"><h3>${ed?'✎ Edit Cash Book Entry <span class="tag o">EDITING</span>':'➕ Manual Cash / Bank Entry'}</h3>
     <div class="frm">
       <div><label>Date *</label><input type="date" id="cb_date" value="${ed?ed.date:today()}"></div>
       <div><label>Scheme</label><select id="cb_sch">${ss.map(s=>`<option value="${s.id}" ${ed&&ed.schemeId===s.id?'selected':''}>${esc(s.name)}</option>`).join('')}</select></div>
@@ -3941,12 +4014,18 @@ function pgCash(){
       <div><label>Amount (₹) *</label><input type="number" step="0.01" id="cb_amt" value="${ed?ed.amount:''}"></div>
       <div><label>Chq / Ref No.</label><input id="cb_ref" value="${ed?esc(ed.ref||''):''}"></div>
       <div>${ed?'<button class="btn btn-ok" onclick="addCash()">💾 Update</button> <button class="btn2" onclick="cancelEdit()">Cancel</button>':'<button class="btn" onclick="addCash()">💾 Add Entry</button>'}</div>
-    </div>
-  </div>`;})()}
-  <div class="card"><h3>Cash Book</h3><div class="tbl-wrap"><table>
-    <tr><th>Date</th><th>Scheme · Account</th><th>Particulars</th><th class="num">Receipt</th><th class="num">Payment</th><th class="num">Running Balance</th><th></th></tr>
-    ${html||'<tr><td colspan="7" class="empty">No entries in this selection</td></tr>'}
-  </table></div></div>`;
+    </div></div>`;})();
+  return `<h2 class="pg">Cash Book — CPWA Form 1 (Receipts &amp; Payments)${entryLockChip('cashbook')}</h2>
+  <div class="sub">${esc(periodLabel())} — voucher-wise, double-entry, with opening &amp; closing balances and monthly closing. Auto entries from receipts, transfers, payments &amp; remittances + manual entries.</div>
+  <div class="card"><div class="flex" style="gap:10px;align-items:center"><b class="mini">VIEW:</b>
+    <span class="chip ${CBVIEW==='two'?'on':''}" onclick="CBVIEW='two';render()">Two-sided (AG format)</span>
+    <span class="chip ${CBVIEW==='col'?'on':''}" onclick="CBVIEW='col';render()">Columnar (running balance)</span>
+    <span style="margin-left:14px"></span><b class="mini">QUICK:</b>
+    ${[['all','All'],['month','This Month'],['quarter','This Quarter'],['fy','This FY']].map(([k,l])=>`<span class="chip ${CBR===k?'on':''}" onclick="CBR='${k}';render()">${l}</span>`).join('')}
+  </div></div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:14px;align-items:start">${summary}${recon}</div>
+  ${form}
+  ${CBVIEW==='two'?twoSided:colCard}`;
 }
 function addCash(){
   const d=val('cb_date'),p=val('cb_part'),a=nval('cb_amt');
@@ -4228,25 +4307,50 @@ function pgRnp(){
 }
 
 /* ================= DAY BOOK (all vouchers, Tally-style) ================= */
+var DBF={types:[],q:"",cons:[],srcs:[]};
+function dbfClear(){DBF={types:[],q:"",cons:[],srcs:[]};render();}
+function dbfQ(v){DBF.q=v;render();}
+function dbfTogType(v){var i=DBF.types.indexOf(v);if(i>=0)DBF.types.splice(i,1);else DBF.types.push(v);render();}
+function dbfTogCon(v){var i=DBF.cons.indexOf(v);if(i>=0)DBF.cons.splice(i,1);else DBF.cons.push(v);render();}
+function dbfTogSrc(v){var i=DBF.srcs.indexOf(v);if(i>=0)DBF.srcs.splice(i,1);else DBF.srcs.push(v);render();}
 function pgDaybook(){
   const rows=[];
   const conName=cid=>{for(const s of S.schemes){const c=(s.contracts||[]).find(x=>x.id===cid);if(c)return c.no+' — '+c.contractor;}return '';};
-  S.releases.filter(r=>inF(r)&&!r.draft).forEach(r=>rows.push({d:r.date,v:r.vno,t:'Receipt',cls:'g',sch:r.schemeId,part:'Fund received — '+r.source+(r.head?' ('+r.head+')':'')+(r.note?' · '+r.note:''),amt:n(r.amount),pg:'fund'}));
-  S.transfers.filter(t=>inF(t)&&!t.draft).forEach(t=>rows.push({d:t.date,v:t.vno,t:'Contra',cls:'b',sch:t.schemeId,part:(bankName(t.fromBank)||t.from||'?')+' → '+(bankName(t.toBank)||t.to||'?'),amt:n(t.amount),pg:'transfers'}));
-  S.bills.filter(b=>inF(b)&&!b.draft).forEach(b=>rows.push({d:b.date,v:b.vno,t:'SPS/Bill',cls:'o',sch:b.schemeId,part:b.billNo+' — '+conName(b.contractId),amt:billGross(b),idt:b.date||'',pg:'bills'}));
+  S.releases.filter(r=>inF(r)&&!r.draft).forEach(r=>rows.push({d:r.date,v:r.vno,t:'Receipt',cls:'g',sch:r.schemeId,part:'Fund received — '+r.source+(r.head?' ('+r.head+')':'')+(r.note?' · '+r.note:''),amt:n(r.amount),pg:'fund',src:r.source}));
+  S.transfers.filter(t=>inF(t)&&!t.draft).forEach(t=>rows.push({d:t.date,v:t.vno,t:'Transfer',cls:'b',sch:t.schemeId,part:(bankName(t.fromBank)||t.from||'?')+' → '+(bankName(t.toBank)||t.to||'?'),amt:n(t.amount),pg:'transfers'}));
+  S.bills.filter(b=>inF(b)&&!b.draft).forEach(b=>rows.push({d:b.date,v:b.vno,t:'SPS/Bill',cls:'o',sch:b.schemeId,part:b.billNo+' — '+conName(b.contractId),amt:billGross(b),idt:b.date||'',pg:'bills',cid:b.contractId}));
   S.whRel.filter(w=>inPeriod(w.date)&&inScheme(w.schemeId)).forEach(w=>{const b=S.bills.find(x=>x.id===w.billId)||{};
-    rows.push({d:w.date,v:w.vno,t:'WH Release',cls:'o',sch:w.schemeId,part:(b.billNo||'?')+' — '+w.type+((w.tax||'pending')==='pending'?' (taxes at payment)':' (taxes done)'),amt:n(w.amount),pg:'withheld'});});
-  S.payments.filter(p=>inF(p)&&!p.draft).forEach(p=>rows.push({d:p.date,v:p.vno,t:p.kind==='adv'?'Advance':'Payment',cls:'r',sch:p.schemeId,part:conName(p.contractId)+(p.serial?' · '+p.serial:'')+(p.chqNo?' · Chq '+p.chqNo:''),amt:payGross(p),idt:p.invd||'',pg:'payments'}));
+    rows.push({d:w.date,v:w.vno,t:'WH Release',cls:'o',sch:w.schemeId,part:(b.billNo||'?')+' — '+w.type+((w.tax||'pending')==='pending'?' (taxes at payment)':' (taxes done)'),amt:n(w.amount),pg:'withheld',cid:b.contractId});});
+  S.payments.filter(p=>inF(p)&&!p.draft).forEach(p=>rows.push({d:p.date,v:p.vno,t:p.kind==='adv'?'Advance':'Payment',cls:'r',sch:p.schemeId,part:conName(p.contractId)+(p.serial?' · '+p.serial:'')+(p.chqNo?' · Chq '+p.chqNo:''),amt:payGross(p),idt:p.invd||'',pg:'payments',cid:p.contractId,src:paySource2(p)}));
   S.others.filter(e=>inF(e)&&!e.draft).forEach(e=>rows.push({d:e.date,v:e.vno,t:e.kind==='receipt'?'Receipt':'Payment',cls:e.kind==='receipt'?'g':'r',sch:e.schemeId,part:e.cat+(e.party?' — '+e.party:''),amt:n(e.amount),pg:'others'}));
   S.remit.filter(inF).forEach(m=>rows.push({d:m.date,v:m.vno,t:'Remittance',cls:'r',sch:m.schemeId,part:dedLabel(m.dedType)+(m.chqNo?' · '+m.chqNo:''),amt:n(m.amount),pg:'remit'}));
   S.cash.filter(inF).forEach(e=>rows.push({d:e.date,v:e.vno,t:e.type==='receipt'?'Receipt':'Payment',cls:e.type==='receipt'?'g':'r',sch:e.schemeId,part:e.part,amt:n(e.amount),pg:'cashbook'}));
   rows.sort((a,b)=>a.d<b.d?1:a.d>b.d?-1:(a.v||'')<(b.v||'')?1:-1);
-  const cnt={};rows.forEach(r=>cnt[r.t]=(cnt[r.t]||0)+1);
-  return `<h2 class="pg">Day Book — every voucher, newest first</h2>
-  <div class="sub">${esc(periodLabel())} · ${rows.length} vouchers (${Object.keys(cnt).map(k=>cnt[k]+' '+k).join(', ')||'none'})</div>
+  const types=[...new Set(rows.map(r=>r.t))];
+  const fr=rows.filter(r=>{
+    if(DBF.types.length&&DBF.types.indexOf(r.t)<0)return false;
+    if(DBF.cons.length&&(!r.cid||DBF.cons.indexOf(r.cid)<0))return false;
+    if(DBF.srcs.length&&(!r.src||DBF.srcs.indexOf(r.src)<0))return false;
+    if(DBF.q){const q=DBF.q.toLowerCase();if((String(r.part)+' '+String(r.v||'')+' '+r.t).toLowerCase().indexOf(q)<0)return false;}
+    return true;
+  });
+  const cnt={};fr.forEach(r=>cnt[r.t]=(cnt[r.t]||0)+1);
+  const consOpts=[];S.schemes.forEach(s=>(s.contracts||[]).forEach(c=>consOpts.push([c.id,c.no+' — '+c.contractor])));
+  const srcOpts=unionSources().map(x=>[x,x]);
+  const active=DBF.types.length||DBF.cons.length||DBF.srcs.length||DBF.q;
+  return `<h2 class="pg">Day Book — every receipt, payment & transfer</h2>
+  <div class="sub">${esc(periodLabel())} · ${fr.length} of ${rows.length} vouchers${active?' (filtered)':''} — ${Object.keys(cnt).map(k=>cnt[k]+' '+k).join(', ')||'none'}</div>
+  <div class="card filtbar"><h3>🔎 Filter Day Book ${active?'<span class="mini" style="color:var(--acc)">— active</span>':''}<span style="float:right"><button class="btn2 btn-sm" onclick="dbfClear()">✕ Clear All</button></span></h3>
+    <div class="msdd-bar">
+      <input value="${esc(DBF.q)}" placeholder="🔍 search particulars / vch" onchange="dbfQ(this.value)" style="width:200px;padding:3px 9px;border:1px solid var(--bd);border-radius:12px;font-size:11.5px">
+      ${consOpts.length?msDD('dbf_con','Contract',consOpts,DBF.cons,'dbfTogCon','DBF.cons=[];render()'):''}
+      ${srcOpts.length?msDD('dbf_src','Fund Source',srcOpts,DBF.srcs,'dbfTogSrc','DBF.srcs=[];render()'):''}
+    </div>
+    <div class="chips" style="margin-top:6px"><b class="mini" style="margin-right:4px">Types:</b>${types.map(tp=>`<span class="chip ${DBF.types.indexOf(tp)>=0?'on':''}" onclick="dbfTogType('${esc(tp).replace(/'/g,'')}')">${esc(tp)}</span>`).join('')}</div>
+  </div>
   <div class="card"><div class="tbl-wrap"><table>
     <tr><th>Date</th><th>Inv/Bill Date</th><th>Vch No.</th><th>Type</th><th>Scheme</th><th>Particulars</th><th class="num">Amount</th><th></th></tr>
-    ${rows.map(r=>`<tr><td>${dfmt(r.d)}</td><td>${r.idt?dfmt(r.idt):'—'}</td><td><b>${esc(r.v||'—')}</b></td>
+    ${fr.map(r=>`<tr><td>${dfmt(r.d)}</td><td>${r.idt?dfmt(r.idt):'—'}</td><td><b>${esc(r.v||'—')}</b></td>
       <td><span class="tag ${r.cls}">${r.t}</span></td><td>${esc(schemeName(r.sch))}</td>
       <td>${esc(r.part)}</td><td class="num"><b>${fmt(r.amt)}</b></td>
       <td><button class="btn2 btn-sm" onclick="go('${r.pg}')">open</button></td></tr>`).join('')||'<tr><td colspan="8" class="empty">No vouchers in this selection</td></tr>'}
@@ -4387,7 +4491,7 @@ function csvSection(which){
   }
   if(which==='cashbook'){
     const rows=[['Date','Scheme','Account','Particulars','Receipt','Payment']];
-    cashRows().forEach(r=>rows.push([r.date,schemeName(r.sch),r.acct,r.part,r.rcpt||'',r.pay||'']));
+    cashRows().filter(r=>inPeriod(r.date)).forEach(r=>rows.push([r.date,r.vno||'',schemeName(r.sch),r.acct,r.part,r.rcpt||'',r.pay||'']));
     return ['Cash_Book',rows];
   }
   if(which==='others'){
@@ -4718,4 +4822,4 @@ if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded'
   authDomain: '...',
   projectId: '...',
   ...
-}"></textarea><label>Shared team email</label><input id="clEmail" type="email" placeholder="team@yourdivision.in" autocomplete="off"><label>Shared password</label><input id="clPass" type="text" placeholder="choose a strong password" autocomplete="off"><label>Books name (room) — keep same for everyone</label><input id="clRoom" type="text" value="main"><div class="cl-row"><button class="cl-ok" onclick="clConnectBtn()">Connect / Save</button><button class="cl-cancel" onclick="clClose()">Close</button><button class="cl-warn" onclick="clDisconnect()">Disconnect</button></div><p class="sub" style="margin-top:10px">Tip: set up from the device that already has your real data — it seeds the cloud the first time.</p></div></div></body></html>
+}"></textarea><label>Shared team email</label><input id="clEmail" type="email" placeholder="team@yourdivision.in" autocomplete="off"><label>Shared password</label><input id="clPass" type="text" placeholder="choose a strong password" autocomplete="off"><label>Books name (room) — keep same for everyone</label><input id="clRoom" type="text" value="main"><div class="cl-row"><button class="cl-ok" onclick="clConnectBtn()">Connect / Save</button><button class="cl-cancel" onclick="clClose()">Close</button><button class="cl-warn" onclick="clDisconnect()">Disconnect</button></div><p class="sub" style="margin-top:10px">Tip: set up from the device that already has your real data — it seeds the cloud the first time.</p></div></div></body></html>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
