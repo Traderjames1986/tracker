@@ -94,6 +94,13 @@ button{cursor:pointer;border:none;border-radius:4px;padding:7px 14px;font-size:1
 .btn-del{background:#fee2e2;color:#991b1b;padding:4px 9px;font-size:12px;border:1px solid #fca5a5}
 .btn-del:hover{background:#fca5a5}
 .btn-sm{padding:5px 10px;font-size:12px}
+.btn-pause,.btn-resume{padding:4px 8px;font-size:12px;border:1px solid var(--bd);background:#fff;color:var(--tx2);cursor:pointer;border-radius:6px}
+.btn-pause:hover{background:#fef3c7}
+.btn-resume{background:#dcfce7;color:#166534;border-color:#86efac}
+.btn-resume:hover{background:#bbf7d0}
+.pausebadge{display:inline-block;background:#fef3c7;color:#92400e;font-size:10px;font-weight:700;padding:1px 6px;border-radius:9px;margin-left:5px;vertical-align:middle;letter-spacing:.3px}
+tr.paused{opacity:.6}
+tr.paused>td{background:#f9fafb}
 
 /* ===== ENTRY LOCK — hide sensitive action buttons ===== */
 /* Default lock (both): hide Edit + Delete + Pause/Resume */
@@ -230,6 +237,15 @@ body.locked #undodelete-btn{display:none !important}
 .tbl-ctrl .btn2{font-size:11px;padding:2px 8px}
 .tbl-ctrl .btn2.on{background:var(--acc);color:#fff;border-color:var(--acc)!important}
 @media print{.tbl-ctrl{display:none!important}}
+/* ===== PER-ROW MULTI-SELECT — tick rows on the left; only ticked rows (and their total) stay ===== */
+.dsel-col{width:28px;text-align:center!important;background:#f8fafc;padding:2px 4px!important}
+table:not(.selon) .dsel-col{display:none!important}
+.xp-b.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+.dsel-cb{cursor:pointer;width:15px;height:15px;vertical-align:middle}
+.dsel-all{cursor:pointer;user-select:none;font-size:12px;line-height:1}
+tr.dsel-hide{display:none!important}
+tr.dsel-total td{background:#fff7d6;font-weight:700;border-top:2px solid #f59e0b}
+@media print{.dsel-col{display:none!important}}
 
 /* ===== EXTRA-COMPACT — fit more on one screen ===== */
 .cards{grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:7px;margin-bottom:8px}
@@ -389,16 +405,15 @@ tr.close-row:hover td{background:#c7d2fe !important}</style>
     <div class="nav-i" data-pg="transfers" onclick="go('transfers')">🔁 <span class="txt">Transfers</span></div>
     <div class="nav-i" data-pg="others" onclick="go('others')">🧮 <span class="txt">Other Receipts / Exp.</span></div>
     <div class="nav-h">2 · BILLS &amp; WORKS</div>
-    <div class="nav-i" data-pg="bills" onclick="go('bills')">🧾 <span class="txt">Bill Booking (SPS)</span></div>
-    <div class="nav-i" data-pg="spsmgmt" onclick="go('spsmgmt')">📋 <span class="txt">SPS / Bill Management</span></div>
-    <div class="nav-i" data-pg="withheld" onclick="go('withheld')">⏸️ <span class="txt">Withheld Tracker</span></div>
+    <div class="nav-i" data-pg="billhub" onclick="go('billhub')">🧾 <span class="txt">Bills / SPS</span></div>
     <div class="nav-i" data-pg="mobadv" onclick="go('mobadv')">💼 <span class="txt">Mobilisation Advances</span></div>
     <div class="nav-h">3 · PAYMENTS (FUND OUT)</div>
-    <div class="nav-i" data-pg="payments" onclick="go('payments')">💸 <span class="txt">Payments</span></div>
-    <div class="nav-i" data-pg="mop" onclick="go('mop')">📝 <span class="txt">Memo of Payment (MOP)</span></div>
-    <div class="nav-i" data-pg="remit" onclick="go('remit')">🏛️ <span class="txt">Deductions &amp; Remittances</span></div>
-    <div class="nav-i" data-pg="retention" onclick="go('retention')">🔒 <span class="txt">Retention Ledger</span></div>
+    <div class="nav-i" data-pg="payhub" onclick="go('payhub')">💸 <span class="txt">Payments / MOP / Note</span></div>
     <div class="nav-i" data-pg="release" onclick="go('release')">🧭 <span class="txt">Release wise Expenditure</span></div>
+    <div class="nav-i" data-pg="remit" onclick="go('remit')">🏛️ <span class="txt">Deductions &amp; Remittances</span></div>
+    <div class="nav-h">WITHHELDS &amp; RETENTION</div>
+    <div class="nav-i" data-pg="withheld" onclick="go('withheld')">⏸️ <span class="txt">Withheld Tracker</span></div>
+    <div class="nav-i" data-pg="retention" onclick="go('retention')">🔒 <span class="txt">Retention Ledger</span></div>
     <div class="nav-h">4 · PARTIES &amp; SECURITIES</div>
     <div class="nav-i" data-pg="contractors" onclick="go('contractors')">👷 <span class="txt">Contractor Ledger</span></div>
     <div class="nav-i" data-pg="constmt" onclick="go('constmt')">📑 <span class="txt">Contractor Statement</span></div>
@@ -450,7 +465,7 @@ tr.close-row:hover td{background:#c7d2fe !important}</style>
   </div></div></div>
       <div class="tb-g"><label>Actions</label><div class="flex" style="flex-wrap:nowrap">
         <span id="bgAlert" style="margin-right:4px"></span>
-        <button class="btn2 btn-sm" id="lockbtn" onclick="toggleEntryLock()" style="transition:background .2s,color .2s" title="Click to unlock entries (requires confirmation). Prevents accidental edits/deletions.">🔒 Locked — Edit + Delete hidden</button>
+        <button class="btn2 btn-sm" id="lockbtn" onclick="toggleEntryLock()" style="transition:background .2s,color .2s" title="Click to unlock entries. Prevents accidental edits/deletions.">🔒 Locked — Edit + Delete hidden</button>
         <button class="btn2 btn-sm" id="lockcfgbtn" onclick="lockSettings()" title="Configure lock behaviour — what buttons are hidden and when auto-relock triggers" style="border:1px solid var(--bd)">⚙ Lock Settings</button>
         <button class="btn2 btn-sm" onclick="exportPage('pdf')" title="Export every table on this page as a clean PDF">🖨 Page PDF</button>
         <button class="btn2 btn-sm" onclick="exportPage('png')" title="Export every table on this page as an image">🖼️ Page PNG</button>
@@ -569,6 +584,9 @@ function logAudit(action,detail){
   if(typeof cloudPush==='function')cloudPush();
 }
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+// Natural sort of contracts by contract number (e.g. MUR-CW-01, MUR-CW-02, … then MUR-CS-01) so lists group in a tidy sequence, not scattered.
+function cmpConNo(a,b){return String((a&&a.no)||'').localeCompare(String((b&&b.no)||''),undefined,{numeric:true,sensitivity:'base'});}
+function orderedContracts(s){return ((s&&s.contracts)||[]).slice().sort(function(a,b){var ca=(a.compId||''),cb=(b.compId||'');if(ca!==cb)return ca<cb?-1:1;var ua=(a.subId||''),ub=(b.subId||'');if(ua!==ub)return ua<ub?-1:1;return cmpConNo(a,b);});}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function n(v){const x=parseFloat(v);return isNaN(x)?0:x;}
 function fmt(v){return '₹'+Math.round(n(v)).toLocaleString('en-IN',{minimumFractionDigits:0,maximumFractionDigits:0});}
@@ -637,13 +655,16 @@ function setActiveScheme(v){S.ui.scheme=v;save();render();}
 function inScheme(sid){return S.ui.schemeIds.length===0||S.ui.schemeIds.includes(sid);}
 function inF(r){return inPeriod(r.date)&&inScheme(r.schemeId);}
 function isPaused(r){return !!(r&&r.draft);}
+function pauseBtn(type,id,drafted,noun){noun=noun||'entry';return `<button class="${drafted?'btn-resume':'btn-pause'}" onclick="togglePause('${type}','${id}')" title="${drafted?('Resume '+noun+' — include again in totals'):('Pause '+noun+' — exclude from totals & balances (not deleted)')}">${drafted?'▶':'⏸'}</button>`;}
+function pauseBadge(drafted){return drafted?'<span class="pausebadge">⏸ PAUSED</span>':'';}
 function togglePause(type,id){
-  if(S.ui.locked){alert("🔒 Entries are locked.\nType UNLOCK in the unlock dialog to enable pausing/resuming entries.");return;}
-  const map={bill:S.bills,pay:S.payments,oth:S.others,rel:S.releases,tr:S.transfers};
+  if(S.ui.locked){alert("🔒 Entries are locked.\nClick the 🔒 Locked button (top of page) to enable pausing/resuming entries.");return;}
+  const map={bill:S.bills,pay:S.payments,oth:S.others,rel:S.releases,tr:S.transfers,whRel:S.whRel,remit:S.remit,cash:S.cash,bg:S.bgs};
   const arr=map[type];if(!arr)return;
   const e=arr.find(x=>x.id===id);if(!e)return;
   e.draft=!e.draft;
-  logAudit(e.draft?'Paused entry':'Resumed entry',(type==='bill'?'Bill ':type==='pay'?'Payment ':'Entry ')+(e.vno||e.billNo||e.id));
+  const _tl={bill:'Bill ',pay:'Payment ',rel:'Fund receipt ',tr:'Transfer ',whRel:'Withheld release ',remit:'Remittance ',cash:'Cash entry ',bg:'Bank guarantee ',oth:'Entry '};
+  logAudit(e.draft?'Paused entry':'Resumed entry',(_tl[type]||'Entry ')+(e.vno||e.billNo||e.bgNo||e.id));
   save();render();
 }
 function bulkPause(type,val){
@@ -655,14 +676,14 @@ function bulkPause(type,val){
   logAudit(val?'Paused all':'Resumed all',type);save();render();
 }
 function pauseAll(type){
-  if(S.ui.locked){alert("🔒 Entries are locked.\nType UNLOCK in the unlock dialog to enable bulk pausing entries.");return;}
+  if(S.ui.locked){alert("🔒 Entries are locked.\nClick the 🔒 Locked button (top of page) to enable bulk pausing entries.");return;}
   if(!confirm('Pause ALL entries shown here?\n\nThey will be excluded from the Contractor & Retention ledgers until you Resume them. Nothing is deleted.'))return;
   bulkPause(type,true);
 }
 function resumeAll(type){
-  if(S.ui.locked){alert("🔒 Entries are locked.\nType UNLOCK in the unlock dialog to enable bulk resuming entries.");return;}bulkPause(type,false);}
+  if(S.ui.locked){alert("🔒 Entries are locked.\nClick the 🔒 Locked button (top of page) to enable bulk resuming entries.");return;}bulkPause(type,false);}
 function resumeAllGlobal(){
-  if(S.ui.locked){alert("🔒 Entries are locked.\nType UNLOCK in the unlock dialog to enable bulk resuming all entries.");return;}
+  if(S.ui.locked){alert("🔒 Entries are locked.\nClick the 🔒 Locked button (top of page) to enable bulk resuming all entries.");return;}
   S.bills.forEach(b=>b.draft=false);
   S.payments.forEach(p=>p.draft=false);
   S.releases.forEach(r=>r.draft=false);
@@ -705,17 +726,7 @@ function _ulTick(){
 
 function toggleEntryLock(){
   if(S.ui.locked){
-    // Require typed PIN/word to unlock — prevents accidental click
-    const word=prompt(
-      '🔓 UNLOCK ENTRIES\n\n' +
-      'This will allow editing, deleting and pausing of all records.\n' +
-      'Auto-relock in 5 minutes.\n\n' +
-      'Type  UNLOCK  to confirm:'
-    );
-    if(!word||word.trim().toUpperCase()!=='UNLOCK'){
-      if(word!==null)alert('Cancelled — entries remain locked.');
-      return;
-    }
+    // One click to unlock (auto-relocks after 5 minutes)
     S.ui.locked=false;
     _ulExpiry=Date.now()+UL_TIMEOUT*1000;
     if(_ulTimer)clearInterval(_ulTimer);
@@ -728,7 +739,7 @@ function toggleEntryLock(){
 }
 function entryLockChip(which){
   const lock=S.ui.locked
-    ?`<span style="float:right;display:inline-flex;align-items:center;gap:6px;background:#dcfce7;color:#166534;border:1px solid #86efac;border-radius:4px;padding:3px 10px;font-size:11.5px;font-weight:700;cursor:pointer" onclick="toggleEntryLock()" title="Entries are locked — click to unlock (requires confirmation)">🔒 Locked — click to unlock</span>`
+    ?`<span style="float:right;display:inline-flex;align-items:center;gap:6px;background:#dcfce7;color:#166534;border:1px solid #86efac;border-radius:4px;padding:3px 10px;font-size:11.5px;font-weight:700;cursor:pointer" onclick="toggleEntryLock()" title="Entries are locked — click to unlock">🔒 Locked — click to unlock</span>`
     :`<span style="float:right;display:inline-flex;align-items:center;gap:6px;background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5;border-radius:4px;padding:3px 10px;font-size:11.5px;font-weight:700;cursor:pointer;animation:bgpulse 1.5s infinite" onclick="lockNow()" title="Entries are UNLOCKED — click to lock immediately">🔓 UNLOCKED — click to relock</span>`;
   const exp=which?`<button class="btn2 btn-sm" style="float:right;margin-right:6px" onclick="pdfSection('${which}')" title="Print / Save this register as PDF">🖨 PDF</button><button class="btn2 btn-sm" style="float:right;margin-right:6px" onclick="dlCSV('${which}')" title="Download this register as Excel/CSV">⬇ Excel</button>`:'';
   return lock+exp;
@@ -750,7 +761,7 @@ function lockSettings(){
   o.onclick=function(e){if(e.target===o)o.remove();};
   o.innerHTML='<div style="background:#fff;border-radius:10px;padding:18px 20px;max-width:430px;width:92%;box-shadow:0 12px 44px rgba(0,0,0,.32)">'+
     '<h3 style="margin:0 0 6px">🔒 Lock Settings</h3>'+
-    '<div style="font-size:12px;color:#5b6678;margin-bottom:12px;line-height:1.5">The lock protects all records from accidental editing, deletion or pausing. Unlocking requires typing <b>UNLOCK</b> and auto-relocks after 5 minutes.</div>'+
+    '<div style="font-size:12px;color:#5b6678;margin-bottom:12px;line-height:1.5">The lock protects all records from accidental editing, deletion or pausing. Click the <b>🔒 Locked</b> button to unlock — it auto-relocks after 5 minutes.</div>'+
     '<div style="font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#374151;margin:8px 0 6px">When LOCKED, hide:</div>'+
     '<label style="display:flex;align-items:flex-start;gap:8px;margin:7px 0;text-transform:none;font-size:13px;font-weight:500;cursor:pointer"><input type="radio" name="lkm" value="both" '+(lm==='both'?'checked':'')+' style="margin-top:2px"><div>Edit, Delete &amp; Pause/Resume buttons<div style="font-size:11px;color:#6b7280;margin-top:1px">Most protected — recommended for shared/office computers</div></div></label>'+
     '<label style="display:flex;align-items:flex-start;gap:8px;margin:7px 0;text-transform:none;font-size:13px;font-weight:500;cursor:pointer"><input type="radio" name="lkm" value="del" '+(lm==='del'?'checked':'')+' style="margin-top:2px"><div>Delete &amp; Pause buttons only<div style="font-size:11px;color:#6b7280;margin-top:1px">Editing of entries still allowed without unlocking</div></div></label>'+
@@ -815,13 +826,17 @@ function renderTopbar(){
 /* ================= DERIVED CALCS ================= */
 function billGross(b){return n(b.workDone)+n(b.cgst)+n(b.sgst)+n(b.igst)+n(b.cess);}
 function billWh(b){return n(b.adhoc)+n(b.cscWh);}
-function billWhRel(b){return S.whRel.filter(w=>w.billId===b.id).reduce((a,w)=>a+n(w.amount),0);}
+function billWhRel(b){return S.whRel.filter(w=>w.billId===b.id&&!w.draft).reduce((a,w)=>a+n(w.amount),0);}
 function billNetLiab(b){return billGross(b)-billWh(b);}
 function billPaid(b){return S.payments.filter(p=>!p.draft).reduce((a,p)=>a+(p.lines||[]).filter(l=>l.billId===b.id).reduce((x,l)=>x+n(l.amt),0),0);}
 function billPayable(b){return billNetLiab(b)+billWhRel(b)-billPaid(b);}
 function payLineDeds(l){return DEDS.reduce((a,[k])=>a+n(l.deds&&l.deds[k]),0);}
 function payGross(p){return (p.lines||[]).reduce((a,l)=>a+n(l.amt),0);}
 function payBillPassed(p){return (p.lines||[]).reduce((a,l)=>a+(l.billId?n(l.amt):0),0);} // gross passed against SPS/bills only — excludes mobilisation/other advance lines (advances have no bill passed)
+// Cleared (net liability) of the SPS/bills this payment settles = Gross − Adhoc/CSC withheld + released withhelds. Same "Cleared for Payment" figure used in the SPS ledger.
+function payClearedForPay(p){if((p.kind||'sps')==='adv')return 0;var seen={},tot=0;(p.lines||[]).forEach(function(l){if(!l.billId||seen[l.billId])return;seen[l.billId]=1;var b=S.bills.find(function(x){return x.id===l.billId;});if(b)tot+=billNetLiab(b)+billWhRel(b);});return tot;}
+// Withheld due to shortage of fund = cleared liability of the covered bills that this payment did not pass (bill passed).
+function payShortfallFund(p){return Math.max(0,payClearedForPay(p)-payBillPassed(p));}
 function payDedTotal(p,k){return (p.lines||[]).reduce((a,l)=>a+n(l.deds&&l.deds[k]),0);}
 function payAllDeds(p){return DEDS.reduce((a,[k])=>a+payDedTotal(p,k),0);}
 function payNet(p){return payGross(p)-payAllDeds(p)-n(p.advRec);}
@@ -833,6 +848,12 @@ function contractAdv(cid){
   return {paid:paid,rec:rec,out:paid-rec};
 }
 function mobOut(c){return Math.max(0,n(c.mobAdv)-contractAdv(c.id).paid);}
+/* ===== Standard deduction rates + missed-deduction (shortfall) tracking ===== */
+function RATES(){var r=(S.settings&&S.settings.rates)||{};return {it:n(r.it)||2,gstTds:n(r.gstTds)||2,cess:n(r.cess)||1,retention:n(r.retention)||6};}
+function payExpDed(p){var R=RATES(),e={it:0,gst:0,cess:0,ret:0};(p.lines||[]).forEach(function(l){var base=n(l.amt)/1.19;e.it+=R.it/100*base;e.gst+=R.gstTds/100*base;e.cess+=R.cess/100*base;if(l.billId)e.ret+=R.retention/100*n(l.amt);});return e;}
+function payActDed(p){return {it:payDedTotal(p,'itTds'),gst:payDedTotal(p,'cgstTds')+payDedTotal(p,'sgstTds')+payDedTotal(p,'igstTds'),cess:payDedTotal(p,'cess'),ret:payDedTotal(p,'ret')};}
+// cumulative expected − actual per contract (recovering later, i.e. deducting extra, reduces it); excludes exclId (the payment being edited)
+function conShortfall(cid,exclId){var e={it:0,gst:0,cess:0,ret:0},a={it:0,gst:0,cess:0,ret:0};S.payments.filter(function(p){return !p.draft&&p.contractId===cid&&p.id!==exclId;}).forEach(function(p){var pe=payExpDed(p),pa=payActDed(p);['it','gst','cess','ret'].forEach(function(k){e[k]+=pe[k];a[k]+=pa[k];});});return {it:Math.max(0,e.it-a.it),gst:Math.max(0,e.gst-a.gst),cess:Math.max(0,e.cess-a.cess),ret:Math.max(0,e.ret-a.ret)};}
 function relPaid(r){return S.payments.filter(p=>!p.draft&&p.releaseId===r.id).reduce((a,p)=>a+payEff(p),0);} // effective expenditure (real money out of bank), not gross bill passed
 function relTransferred(r){return S.transfers.filter(t=>!t.draft&&t.releaseId===r.id).reduce((a,t)=>a+n(t.amount),0);}
 function relBalance(r){return n(r.amount)-relPaid(r);}
@@ -886,7 +907,7 @@ function bankFlows(id,filtered){
 }
 function dedLabel(k){const d=DEDS.find(x=>x[0]===k);return d?d[1]:k;}
 function dedCollected(k){return S.payments.filter(p=>inF(p)&&!p.draft).reduce((a,p)=>a+payDedTotal(p,k),0);}
-function dedRemitted(k){return S.remit.filter(inF).filter(m=>m.dedType===k).reduce((a,m)=>a+n(m.amount),0);}
+function dedRemitted(k){return S.remit.filter(m=>inF(m)&&!m.draft&&m.dedType===k).reduce((a,m)=>a+n(m.amount),0);}
 function quickAddBank(selId){
   const nm=prompt('New bank account name (e.g. SASCI A/c — SBI 1234):');if(!nm)return;
   let t=prompt('Account type — P = Project, R = Receiving, O = Other:','P')||'O';
@@ -909,7 +930,29 @@ function subName(s,cid,sid){const c=(s.components||[]).find(x=>x.id===cid);const
 /* ================= NAV / RENDER ================= */
 let SCEDIT=false; // Projects/Schemes customise (edit) mode — view-only by default
 function toggleScEdit(){SCEDIT=!SCEDIT;if(!SCEDIT)ED={};render();}
-function go(p){if(p!==S.ui.page)ED={};if(p!=='schemes')SCEDIT=false;S.ui.page=p;save();render();}
+let BILLTAB='book';
+function billTab(t){BILLTAB=t;go('billhub');}
+function pgBillHub(){
+  const tabs=`<div class="card" style="padding:8px 12px;margin-bottom:10px"><div class="flex" style="gap:8px;align-items:center"><b class="mini">BILLS / SPS:</b>
+    <span class="chip ${BILLTAB==='book'?'on':''}" onclick="billTab('book')">🧾 Bill Booking (SPS)</span>
+    <span class="chip ${BILLTAB==='manage'?'on':''}" onclick="billTab('manage')">📋 SPS / Bill Management</span></div></div>`;
+  return tabs+(BILLTAB==='manage'?pgSpsMgmt():pgBills());
+}
+let PAYTAB='pay';
+function payTab(t){PAYTAB=t;go('payhub');}
+function pgPayHub(){
+  const tabs=`<div class="card" style="padding:8px 12px;margin-bottom:10px"><div class="flex" style="gap:8px;align-items:center"><b class="mini">PAYMENTS:</b>
+    <span class="chip ${PAYTAB==='pay'?'on':''}" onclick="payTab('pay')">💸 Payments</span>
+    <span class="chip ${PAYTAB==='expend'?'on':''}" onclick="payTab('expend')">📊 Expenditure &amp; Registers</span>
+    <span class="chip ${PAYTAB==='mop'?'on':''}" onclick="payTab('mop')">📝 Memorandum of Payment</span>
+    <span class="chip ${PAYTAB==='note'?'on':''}" onclick="payTab('note')">🧾 Payment Note-sheet</span></div></div>`;
+  let body;
+  if(PAYTAB==='mop'){MOPMODE='mop';body=pgMOP();}
+  else if(PAYTAB==='note'){MOPMODE='note';body=pgMOP();}
+  else body=pgPayments();
+  return tabs+body;
+}
+function go(p){if(p==='bills'){BILLTAB='book';p='billhub';}else if(p==='spsmgmt'){BILLTAB='manage';p='billhub';}else if(p==='payments'){PAYTAB='pay';p='payhub';}else if(p==='mop'){PAYTAB='mop';p='payhub';}if(p!==S.ui.page)ED={};if(p!=='schemes')SCEDIT=false;S.ui.page=p;save();render();}
 function render(){
   renderTopbar();
   const hasSchemes=S.schemes.length>0;
@@ -919,11 +962,14 @@ function render(){
     el.classList.toggle('lock',!hasSchemes&&!['schemes','backup'].includes(pg));
   });
   if(!hasSchemes&&!['schemes','backup'].includes(S.ui.page))S.ui.page='schemes';
+  if(S.ui.page==='bills'){BILLTAB='book';S.ui.page='billhub';}else if(S.ui.page==='spsmgmt'){BILLTAB='manage';S.ui.page='billhub';}
+  else if(S.ui.page==='payments'){PAYTAB='pay';S.ui.page='payhub';}else if(S.ui.page==='mop'){PAYTAB='mop';S.ui.page='payhub';}
   const c=document.getElementById('content');
-  const pages={dashboard:pgDash,ask:pgAsk,daybook:pgDaybook,schemes:pgSchemes,fund:pgFund,transfers:pgTransfers,bills:pgBills,mobadv:pgMobAdv,spsmgmt:pgSpsMgmt,withheld:pgWithheld,contractors:pgContractors,retention:pgRetention,bg:pgBG,constmt:pgContractorStmt,balsheet:pgBalSheet,ageing:pgAgeing,cheques:pgCheques,brs:pgBRS,bankstmt:pgBankStmt,audit:pgAudit,import:pgImport,payments:pgPayments,release:pgReleaseSpend,mop:pgMOP,others:pgOthers,remit:pgRemit,rnp:pgRnp,cashbook:pgCash,export:pgExport,backup:pgBackup,reports:pgReports,health:pgHealth};
+  const pages={dashboard:pgDash,ask:pgAsk,daybook:pgDaybook,schemes:pgSchemes,fund:pgFund,transfers:pgTransfers,billhub:pgBillHub,bills:pgBills,mobadv:pgMobAdv,spsmgmt:pgSpsMgmt,withheld:pgWithheld,payhub:pgPayHub,contractors:pgContractors,retention:pgRetention,bg:pgBG,constmt:pgContractorStmt,balsheet:pgBalSheet,ageing:pgAgeing,cheques:pgCheques,brs:pgBRS,bankstmt:pgBankStmt,audit:pgAudit,import:pgImport,payments:pgPayments,release:pgReleaseSpend,mop:pgMOP,others:pgOthers,remit:pgRemit,rnp:pgRnp,cashbook:pgCash,export:pgExport,backup:pgBackup,reports:pgReports,health:pgHealth};
   c.innerHTML=(pages[S.ui.page]||pgDash)();
   if(window['after_'+S.ui.page])window['after_'+S.ui.page]();
   applyWorkMode();
+  enhanceRowSelect();
   enhanceTableFilters();
   enhanceExports();
   wrapTableHeads();
@@ -951,8 +997,17 @@ function wrapTableHeads(){
 }
 function syncTopbarH(){
   const tb=document.querySelector('.topbar');
-  if(tb)document.documentElement.style.setProperty('--tbh',(tb.offsetHeight+4)+'px');
-  if(!window.__tbhResize){window.__tbhResize=1;window.addEventListener('resize',()=>{const t=document.querySelector('.topbar');if(t)document.documentElement.style.setProperty('--tbh',(t.offsetHeight+4)+'px');});}
+  const set=el=>{if(el)document.documentElement.style.setProperty('--tbh',(el.offsetHeight+4)+'px');};
+  set(tb);
+  // Recompute after layout settles (wrapping, fonts, badge) so sticky filters always pin flush under the top bar.
+  requestAnimationFrame(()=>set(document.querySelector('.topbar')));
+  if(!window.__tbhResize){
+    window.__tbhResize=1;
+    window.addEventListener('resize',()=>set(document.querySelector('.topbar')));
+    window.addEventListener('load',()=>set(document.querySelector('.topbar')));
+    // Keep the sticky offset exact whenever the top bar changes height (rows wrapping, alert badge showing/hiding).
+    if(window.ResizeObserver&&tb){try{new ResizeObserver(()=>set(document.querySelector('.topbar'))).observe(tb);}catch(e){}}
+  }
 }
 /* ===== Compact multi-select dropdown (space-saving filter widget) ===== */
 let FDD=''; // currently open filter dropdown key
@@ -1018,15 +1073,25 @@ function enhanceTableControls(){
   let idx=0;
   root.querySelectorAll('.tbl-wrap').forEach(wrap=>{
     const t=wrap.querySelector(':scope > table');if(!t)return;
-    if(t.querySelector('input,select,textarea'))return; // skip live entry/form tables
+    if([...t.querySelectorAll('input,select,textarea')].some(el=>!el.closest('.dsel-col')))return; // skip live entry/form tables (ignore row-select checkboxes)
     if(![...t.rows].some(r=>CLS.some(c=>r.classList.contains(c))))return; // only tables with a total/sub-total
     const key=S.ui.page+'#'+(idx++);
     const pref=S.ui.tblPrefs[key]||{top:false,pin:false};
     wrap.classList.toggle('pinned',!!pref.pin);
     if(pref.top)mirrorOneTable(t);
-    const bar=document.createElement('div');bar.className='tbl-ctrl';
-    bar.innerHTML=`<button class="btn2 ${pref.top?'on':''}" onclick="togTblPref('${key}','top')" title="Show this table's totals &amp; sub-totals at the top as well">⬆ Totals on top</button><button class="btn2 ${pref.pin?'on':''}" onclick="togTblPref('${key}','pin')" title="Keep this table's header &amp; totals visible while scrolling inside it">📌 Pin</button>`;
-    wrap.parentNode.insertBefore(bar,wrap);
+    const btns=`<button class="btn2 ${pref.top?'on':''}" onclick="togTblPref('${key}','top')" title="Show this table's totals &amp; sub-totals at the top as well">⬆ Totals on top</button><button class="btn2 ${pref.pin?'on':''}" onclick="togTblPref('${key}','pin')" title="Keep this table's header &amp; totals visible while scrolling inside it">📌 Pin</button>`;
+    const card=wrap.closest('.card');
+    const xpbar=card?card.querySelector('.xp-bar'):null;
+    const nCtrlWraps=card?[...card.querySelectorAll('.tbl-wrap')].filter(w=>{const tt=w.querySelector(':scope > table');return tt&&[...tt.rows].some(r=>CLS.some(c=>r.classList.contains(c)))&&![...tt.querySelectorAll('input,select,textarea')].some(el=>!el.closest('.dsel-col'));}).length:0;
+    if(xpbar&&nCtrlWraps===1){
+      // Combine onto the heading row, to the LEFT of the PDF/PNG/CSV group, with a gap + divider.
+      const g=document.createElement('span');g.className='tbl-ctrl inl';
+      g.style.cssText='display:inline-flex;gap:4px;margin:0 12px 0 0;padding-right:12px;border-right:1px solid var(--bd)';
+      g.innerHTML=btns;xpbar.insertBefore(g,xpbar.firstChild);
+    }else{
+      const bar=document.createElement('div');bar.className='tbl-ctrl';
+      bar.innerHTML=btns;wrap.parentNode.insertBefore(bar,wrap);
+    }
   });
 }
 function togTblPref(key,which){S.ui.tblPrefs=S.ui.tblPrefs||{};const p=S.ui.tblPrefs[key]=S.ui.tblPrefs[key]||{top:false,pin:false};p[which]=!p[which];save();render();}
@@ -1219,6 +1284,84 @@ function enhanceTableFilters(){
     if(!window.__tfClose){window.__tfClose=1;document.addEventListener("click",function(e){var p=document.getElementById("tf-pop");if(p&&!p.contains(e.target))tfClose();});}
   }catch(e){}
 }
+/* ===== PER-ROW MULTI-SELECT — adds a tick box to the left of every data row.
+   Tick one or more rows and only those (plus a recomputed SELECTED total) stay on screen.
+   Untick all to show everything again. Cooperates with the column (▾) filters. ===== */
+function dselFirstNum(t){var m=String(t==null?'':t).replace(/,/g,'').match(/-?\d+(?:\.\d+)?/);return m?parseFloat(m[0]):null;}
+function dselDataRows(tb){
+  var head=tb.tHead?tb.tHead.rows[0]:tb.querySelector('tr');
+  return Array.prototype.slice.call(tb.rows).filter(function(r){
+    if(r===head)return false;
+    if(r.parentNode&&r.parentNode.tagName==='THEAD')return false;
+    var cl=(r.className||'').toLowerCase();
+    if(cl.indexOf('tot')>=0||cl.indexOf('hdr')>=0||cl.indexOf('dsel-total')>=0)return false;
+    if(r.querySelector('table'))return false;      // expandable detail row
+    if(r.querySelector('.empty'))return false;      // "no data" placeholder
+    return true;
+  });
+}
+function enhanceRowSelect(){
+  try{
+    document.querySelectorAll('#content table').forEach(function(tb){
+      if(tb.closest('td'))return;
+      if(tb.getAttribute('data-seldone'))return;
+      var head=tb.tHead?tb.tHead.rows[0]:tb.querySelector('tr');if(!head)return;
+      var data=dselDataRows(tb);
+      if(data.length<3)return;                       // only real, multi-row data tables
+      tb.setAttribute('data-seldone','1');
+      // leading header cell with a "select all" toggle (plain span, NOT an input, so header-wrapping still works)
+      var th=document.createElement('th');th.className='dsel-col';
+      var all=document.createElement('span');all.className='dsel-all';all.textContent='☑';all.title='Select / clear all rows';
+      all.onclick=function(e){e.stopPropagation();var anyOff=data.some(function(r){var c=r.querySelector('.dsel-cb');return c&&!c.checked;});data.forEach(function(r){var c=r.querySelector('.dsel-cb');if(c)c.checked=anyOff;});applyRowSelect(tb);};
+      th.appendChild(all);head.insertBefore(th,head.firstChild);
+      // leading cell for every other row
+      Array.prototype.slice.call(tb.rows).forEach(function(r){
+        if(r===head)return;
+        var isHead=r.parentNode&&r.parentNode.tagName==='THEAD';
+        if(data.indexOf(r)>=0){
+          var td=document.createElement('td');td.className='dsel-col';
+          var cb=document.createElement('input');cb.type='checkbox';cb.className='dsel-cb';
+          cb.onclick=function(e){e.stopPropagation();applyRowSelect(tb);};
+          td.onclick=function(e){if(e.target!==cb){cb.checked=!cb.checked;applyRowSelect(tb);}};
+          td.appendChild(cb);r.insertBefore(td,r.firstChild);
+        }else{
+          var c2=document.createElement(isHead?'th':'td');c2.className='dsel-col';r.insertBefore(c2,r.firstChild);
+        }
+      });
+    });
+  }catch(e){}
+}
+function dselSetOn(tb,on){tb.classList.toggle('selon',on);if(!on){Array.prototype.slice.call(tb.querySelectorAll('.dsel-cb')).forEach(function(c){c.checked=false;});applyRowSelect(tb);}}
+function applyRowSelect(tb){
+  var data=dselDataRows(tb);
+  var checked=data.filter(function(r){var c=r.querySelector('.dsel-cb');return c&&c.checked;});
+  var mode=checked.length>0;
+  tb.classList.toggle('selmode',mode);
+  data.forEach(function(r){var c=r.querySelector('.dsel-cb');r.classList.toggle('dsel-hide',mode&&!(c&&c.checked));});
+  dselRecalc(tb,mode?checked:null);
+  var all=tb.querySelector('.dsel-col .dsel-all');
+  if(all)all.textContent=(mode&&checked.length===data.length)?'☑':mode?'▣':'☐';
+}
+function dselRecalc(tb,rows){
+  var prev=tb.querySelector('tr.dsel-total');if(prev)prev.remove();
+  var totRows=Array.prototype.slice.call(tb.rows).filter(function(r){return (r.className||'').toLowerCase().indexOf('tot')>=0&&(r.className||'').toLowerCase().indexOf('dsel-total')<0;});
+  totRows.forEach(function(r){r.style.display=rows?'none':'';});
+  if(!rows)return;
+  var head=tb.tHead?tb.tHead.rows[0]:tb.querySelector('tr');var ncol=head.cells.length;
+  var tr=document.createElement('tr');tr.className='dsel-total';
+  for(var ci=0;ci<ncol;ci++){
+    var cell=document.createElement('td');var h=head.cells[ci];
+    if(ci===0){cell.className='dsel-col';cell.innerHTML='<b>▣</b>';}
+    else if(ci===1){cell.innerHTML='<b>SELECTED ('+rows.length+')</b>';}
+    else if(h&&h.classList.contains('num')){
+      var sum=0,any=false;
+      rows.forEach(function(r){var c=r.cells[ci];if(c){var v=dselFirstNum(c.textContent);if(v!=null){sum+=v;any=true;}}});
+      cell.className='num';cell.innerHTML=any?'<b>'+fmt(sum)+'</b>':'';
+    }
+    tr.appendChild(cell);
+  }
+  (tb.tBodies[0]||tb).appendChild(tr);
+}
 function setSlicer(k,v){DF[k]=v;var ch=["component","subcomponent","contract","contractor"];var i=ch.indexOf(k);if(i>=0)for(var j=i+1;j<ch.length;j++)DF[ch[j]]="";render();}
 function dfOn(k){return DF[k]&&DF[k].length;}
 function dfHas(k,val){return !(DF[k]&&DF[k].length)||DF[k].indexOf(val)>=0;}
@@ -1249,10 +1392,10 @@ function pgMobAdv(){
 var XPCSS="*{font-family:Arial,Helvetica,sans-serif;box-sizing:border-box}body{padding:16px;color:#111}h1{font-size:16px;margin:0 0 2px}h2{font-size:13px;margin:14px 0 4px;color:#1a56a8}.xp-meta{font-size:10px;color:#666;margin-bottom:8px}table{border-collapse:collapse;font-size:11px;width:100%;margin-bottom:8px;background:#fff;color:#111}th,td{border:1px solid #cbd5e1;padding:3px 7px;text-align:left}th{background:#1a56a8;color:#fff}td.num,th.num{text-align:right}.tot,.tot-bal,.tot-pay{font-weight:bold;background:#eef2f7}.mini{font-size:9px;color:#555}.tag{padding:0 4px;border-radius:3px;font-size:9px;border:1px solid #ccc}.empty{color:#999}thead{display:table-header-group}@media print{table{page-break-inside:avoid}tr{page-break-inside:avoid}h1,h2,h3{page-break-after:avoid}}";
 function xpDate(){try{return new Date().toLocaleString("en-IN");}catch(e){return ""+new Date();}}
 function xpPeriod(){try{return typeof periodLabel==="function"?periodLabel():"";}catch(e){return "";}}
-function xpClean(tb){var c=tb.cloneNode(true);Array.prototype.slice.call(c.querySelectorAll(".tf-ic")).forEach(function(x){x.remove();});Array.prototype.slice.call(c.querySelectorAll("tr")).forEach(function(r){if(r.style&&r.style.display==="none")r.remove();});Array.prototype.slice.call(c.querySelectorAll("input")).forEach(function(inp){var s=document.createElement("span");s.textContent=inp.value||"";if(inp.parentNode)inp.parentNode.replaceChild(s,inp);});Array.prototype.slice.call(c.querySelectorAll("details")).forEach(function(d){var sm=d.querySelector("summary");if(sm)sm.remove();var p=d.parentNode;if(p){while(d.firstChild)p.insertBefore(d.firstChild,d);p.removeChild(d);}});return c.outerHTML;}
+function xpClean(tb){var c=tb.cloneNode(true);Array.prototype.slice.call(c.querySelectorAll(".tf-ic")).forEach(function(x){x.remove();});Array.prototype.slice.call(c.querySelectorAll("tr.dsel-hide")).forEach(function(r){r.remove();});Array.prototype.slice.call(c.querySelectorAll(".dsel-col")).forEach(function(x){x.remove();});Array.prototype.slice.call(c.querySelectorAll("tr")).forEach(function(r){if(r.style&&r.style.display==="none")r.remove();});Array.prototype.slice.call(c.querySelectorAll("input")).forEach(function(inp){var s=document.createElement("span");s.textContent=inp.value||"";if(inp.parentNode)inp.parentNode.replaceChild(s,inp);});Array.prototype.slice.call(c.querySelectorAll("details")).forEach(function(d){var sm=d.querySelector("summary");if(sm)sm.remove();var p=d.parentNode;if(p){while(d.firstChild)p.insertBefore(d.firstChild,d);p.removeChild(d);}});return c.outerHTML;}
 function xpDownload(blob,name){var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){a.remove();URL.revokeObjectURL(a.href);},120);}
 function xpPrintWin(items,heading){var w=window.open("","_blank");if(!w){alert("Pop-up blocked — please allow pop-ups to export PDF.");return;}var h='<html><head><title>'+(heading||"Report")+'</title><style>'+XPCSS+'</style></head><body>';h+='<h1>PWD Fund Tracker'+(heading?' — '+heading:'')+'</h1><div class="xp-meta">'+xpPeriod()+' · generated '+xpDate()+'</div>';items.forEach(function(it){h+='<h2>'+(it.t||"").replace(/_/g," ")+'</h2>'+it.h;});h+='<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},250);};</scr'+'ipt></body></html>';w.document.write(h);w.document.close();}
-function xpCSV(tb,title){var rows=[];Array.prototype.slice.call(tb.rows).forEach(function(r){if(r.style&&r.style.display==="none")return;var cells=Array.prototype.slice.call(r.cells).map(function(c){var inp=c.querySelector&&c.querySelector("input");if(inp)return inp.value||"";var cc=c.cloneNode(true);Array.prototype.slice.call(cc.querySelectorAll(".tf-ic")).forEach(function(x){x.remove();});return cc.textContent.trim();});rows.push(cells);});var csv="﻿"+rows.map(function(r){return r.map(function(v){v=(v==null?"":String(v));return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}).join(",");}).join("\r\n");xpDownload(new Blob([csv],{type:"text/csv"}),title+".csv");}
+function xpCSV(tb,title){var rows=[];Array.prototype.slice.call(tb.rows).forEach(function(r){if(r.style&&r.style.display==="none")return;if(r.classList&&r.classList.contains("dsel-hide"))return;var cells=Array.prototype.slice.call(r.cells).filter(function(c){return !(c.classList&&c.classList.contains("dsel-col"));}).map(function(c){var inp=c.querySelector&&c.querySelector("input");if(inp)return inp.value||"";var cc=c.cloneNode(true);Array.prototype.slice.call(cc.querySelectorAll(".tf-ic")).forEach(function(x){x.remove();});return cc.textContent.trim();});rows.push(cells);});var csv="﻿"+rows.map(function(r){return r.map(function(v){v=(v==null?"":String(v));return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}).join(",");}).join("\r\n");xpDownload(new Blob([csv],{type:"text/csv"}),title+".csv");}
 function xpToast(m){var d=document.createElement("div");d.textContent=m;d.style.cssText="position:fixed;left:50%;bottom:64px;transform:translateX(-50%);background:#0e1d30;color:#fff;padding:8px 16px;border-radius:8px;z-index:400;font-size:12px;box-shadow:0 4px 16px rgba(0,0,0,.3)";document.body.appendChild(d);setTimeout(function(){d.remove();},1900);}
 function xpCopy(tb){var html=xpClean(tb);try{var tmp=document.createElement("div");tmp.innerHTML=html;tmp.style.cssText="position:fixed;left:-99999px;top:0";document.body.appendChild(tmp);var rng=document.createRange();rng.selectNode(tmp);var sel=window.getSelection();sel.removeAllRanges();sel.addRange(rng);var ok=document.execCommand("copy");sel.removeAllRanges();tmp.remove();if(ok){xpToast("Table copied — paste into Word / Excel / email");return;}}catch(e){}alert("Copy not supported here — use CSV or PDF.");}
 function xpPNG(htmlStr,filename){try{var wrap=document.createElement("div");wrap.setAttribute("xmlns","http://www.w3.org/1999/xhtml");wrap.style.cssText="display:inline-block;background:#fff;padding:10px";wrap.innerHTML="<style>"+XPCSS+"</style>"+htmlStr;var meas=document.createElement("div");meas.style.cssText="position:fixed;left:-99999px;top:0";meas.appendChild(wrap);document.body.appendChild(meas);var rect=wrap.getBoundingClientRect();var w=Math.ceil(rect.width)+2,h=Math.ceil(rect.height)+2;var ser=new XMLSerializer().serializeToString(wrap);document.body.removeChild(meas);var data='<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'"><foreignObject x="0" y="0" width="'+w+'" height="'+h+'">'+ser+'</foreignObject></svg>';var img=new Image();img.onload=function(){var s=2;var cv=document.createElement("canvas");cv.width=w*s;cv.height=h*s;var ctx=cv.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,cv.width,cv.height);ctx.scale(s,s);ctx.drawImage(img,0,0);try{cv.toBlob(function(b){if(!b){alert("Image export failed — please use PDF.");return;}xpDownload(b,filename+".png");});}catch(e){alert("Image export blocked in this browser — please use PDF.");}};img.onerror=function(){alert("Image export not supported in this browser — please use PDF.");};img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(data);}catch(e){alert("Image export error — please use PDF.");}}
@@ -1264,13 +1407,13 @@ function clearReport(){REPORT=[];updateReportBar();}
 function exportPage(mode){var items=[];Array.prototype.slice.call(document.querySelectorAll("#content table")).forEach(function(tb){if(tb.closest("td"))return;var card=tb.closest(".card");var h3=card?card.querySelector("h3"):null;var ttl=h3?h3.textContent.replace(/[^a-zA-Z0-9]+/g,"_").replace(/^_+|_+$/g,"").slice(0,40):"table";items.push({t:ttl,h:xpClean(tb)});});if(!items.length){alert("No tables on this page to export.");return;}if(mode==="png")xpPNG(items.map(function(it){return "<h2>"+it.t.replace(/_/g," ")+"</h2>"+it.h;}).join(""),"Page_Report");else xpPrintWin(items,"Page Report");}
 function updateReportBar(){var r=document.getElementById("xp-rep");if(!r)return;if(!REPORT.length){r.innerHTML="";return;}r.innerHTML='<div class="xp-fb alt" onclick="exportReport(\'pdf\')">📄 Report PDF ('+REPORT.length+')</div><div class="xp-fb alt" onclick="exportReport(\'png\')">🖼️ Report PNG</div><div class="xp-fb alt" onclick="clearReport()">✕ Clear</div>';}
 function exportFab(){if(document.getElementById("xp-fab")){updateReportBar();return;}var fb=document.createElement("div");fb.id="xp-fab";fb.innerHTML='<div id="xp-rep"></div>';document.body.appendChild(fb);updateReportBar();}
-function exportEls(tbs,title,mode){if(!tbs||!tbs.length)return;if(tbs.length===1)return exportEl(tbs[0],title,mode);if(mode==="pdf"){xpPrintWin(tbs.map(function(x){return {t:title,h:xpClean(x)};}),title);return;}if(mode==="png"){xpPNG(tbs.map(function(x){return xpClean(x);}).join('<div style="height:10px"></div>'),title);return;}if(mode==="csv"){var rows=[];tbs.forEach(function(tb){Array.prototype.slice.call(tb.rows).forEach(function(r){if(r.style&&r.style.display==="none")return;rows.push(Array.prototype.slice.call(r.cells).map(function(c){var inp=c.querySelector&&c.querySelector("input");if(inp)return inp.value||"";var cc=c.cloneNode(true);Array.prototype.slice.call(cc.querySelectorAll(".tf-ic")).forEach(function(x){x.remove();});return cc.textContent.trim();}));});rows.push([]);});var csv="\ufeff"+rows.map(function(r){return r.map(function(v){v=(v==null?"":String(v));return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}).join(",");}).join("\r\n");xpDownload(new Blob([csv],{type:"text/csv"}),title+".csv");return;}if(mode==="copy"){var tmp=document.createElement("div");tmp.innerHTML=tbs.map(function(x){return xpClean(x);}).join("<br>");tmp.style.cssText="position:fixed;left:-99999px;top:0";document.body.appendChild(tmp);var rng=document.createRange();rng.selectNode(tmp);var sel=window.getSelection();sel.removeAllRanges();sel.addRange(rng);try{document.execCommand("copy");}catch(e){}sel.removeAllRanges();tmp.remove();xpToast("Copied to clipboard");return;}}
-function enhanceExports(){try{Array.prototype.slice.call(document.querySelectorAll("#content .card")).forEach(function(card){var tb=card.querySelector("table");if(!tb||tb.closest("td"))return;if(card.querySelector(".xp-bar"))return;var h=card.querySelector("h3");var title=(h?h.textContent:"table").replace(/[^a-zA-Z0-9]+/g,"_").replace(/^_+|_+$/g,"").slice(0,40)||"table";var bar=document.createElement("span");bar.className="xp-bar";bar.style.cssText="float:right;display:inline-flex;gap:4px;margin-left:8px";bar.innerHTML='<span class="xp-b" data-m="pdf" title="Save as PDF / Print">🖨 PDF</span><span class="xp-b" data-m="png" title="Save as image">🖼️ PNG</span><span class="xp-b" data-m="csv" title="Download CSV (Excel)">⬇ CSV</span><span class="xp-b" data-m="copy" title="Copy table — paste into Word/Excel/email">📋 Copy</span><span class="xp-b" data-m="rep" title="Add to combined multi-table report">➕ Report</span>';var tbs=Array.prototype.slice.call(card.querySelectorAll("table")).filter(function(x){return !x.closest("td");});Array.prototype.slice.call(bar.querySelectorAll(".xp-b")).forEach(function(b){b.onclick=function(ev){ev.stopPropagation();var m=b.getAttribute("data-m");if(m==="rep"){tbs.forEach(function(x){pickReport(x,title);});}else exportEls(tbs,title,m);};});if(h)h.appendChild(bar);else card.insertBefore(bar,card.firstChild);});exportFab();}catch(e){}}
+function exportEls(tbs,title,mode){if(!tbs||!tbs.length)return;if(tbs.length===1)return exportEl(tbs[0],title,mode);if(mode==="pdf"){xpPrintWin(tbs.map(function(x){return {t:title,h:xpClean(x)};}),title);return;}if(mode==="png"){xpPNG(tbs.map(function(x){return xpClean(x);}).join('<div style="height:10px"></div>'),title);return;}if(mode==="csv"){var rows=[];tbs.forEach(function(tb){Array.prototype.slice.call(tb.rows).forEach(function(r){if(r.style&&r.style.display==="none")return;if(r.classList&&r.classList.contains("dsel-hide"))return;rows.push(Array.prototype.slice.call(r.cells).filter(function(c){return !(c.classList&&c.classList.contains("dsel-col"));}).map(function(c){var inp=c.querySelector&&c.querySelector("input");if(inp)return inp.value||"";var cc=c.cloneNode(true);Array.prototype.slice.call(cc.querySelectorAll(".tf-ic")).forEach(function(x){x.remove();});return cc.textContent.trim();}));});rows.push([]);});var csv="\ufeff"+rows.map(function(r){return r.map(function(v){v=(v==null?"":String(v));return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}).join(",");}).join("\r\n");xpDownload(new Blob([csv],{type:"text/csv"}),title+".csv");return;}if(mode==="copy"){var tmp=document.createElement("div");tmp.innerHTML=tbs.map(function(x){return xpClean(x);}).join("<br>");tmp.style.cssText="position:fixed;left:-99999px;top:0";document.body.appendChild(tmp);var rng=document.createRange();rng.selectNode(tmp);var sel=window.getSelection();sel.removeAllRanges();sel.addRange(rng);try{document.execCommand("copy");}catch(e){}sel.removeAllRanges();tmp.remove();xpToast("Copied to clipboard");return;}}
+function enhanceExports(){try{Array.prototype.slice.call(document.querySelectorAll("#content .card")).forEach(function(card){var tb=card.querySelector("table");if(!tb||tb.closest("td"))return;if(card.querySelector(".xp-bar"))return;var h=card.querySelector("h3");var title=(h?h.textContent:"table").replace(/[^a-zA-Z0-9]+/g,"_").replace(/^_+|_+$/g,"").slice(0,40)||"table";var bar=document.createElement("span");bar.className="xp-bar";bar.style.cssText="float:right;display:inline-flex;gap:4px;margin-left:8px";bar.innerHTML='<span class="xp-b" data-m="pdf" title="Save as PDF / Print">🖨 PDF</span><span class="xp-b" data-m="png" title="Save as image">🖼️ PNG</span><span class="xp-b" data-m="csv" title="Download CSV (Excel)">⬇ CSV</span><span class="xp-b" data-m="copy" title="Copy table — paste into Word/Excel/email">📋 Copy</span><span class="xp-b" data-m="rep" title="Add to combined multi-table report">➕ Report</span>';var tbs=Array.prototype.slice.call(card.querySelectorAll("table")).filter(function(x){return !x.closest("td");});Array.prototype.slice.call(bar.querySelectorAll(".xp-b")).forEach(function(b){b.onclick=function(ev){ev.stopPropagation();var m=b.getAttribute("data-m");if(m==="rep"){tbs.forEach(function(x){pickReport(x,title);});}else exportEls(tbs,title,m);};});var selTbs=tbs.filter(function(x){return x.querySelector(".dsel-col");});if(selTbs.length){var sb=document.createElement("span");sb.className="xp-b";sb.style.cssText="margin-right:6px";sb.textContent="☑ Select rows";sb.title="Show tick boxes to pick specific rows — only ticked rows stay, with their own total";sb.onclick=function(ev){ev.stopPropagation();var on=!selTbs[0].classList.contains("selon");selTbs.forEach(function(t){dselSetOn(t,on);});sb.classList.toggle("on",on);sb.textContent=on?"☑ Selecting…":"☑ Select rows";};bar.insertBefore(sb,bar.firstChild);}if(h)h.appendChild(bar);else card.insertBefore(bar,card.firstChild);});exportFab();}catch(e){}}
 function normDashboards(){if(!S.dashboards)return;if(!S.dashboards.find(function(d){return d.id==='d5';}))S.dashboards.push({id:'d5',name:'Mob. Adv. Based',kpis:['advPaid','advRec','mobPay'],slicers:['component','contract','contractor'],expCols:null});if(!S.dashboards.find(function(d){return d.id==='d6';}))S.dashboards.push({id:'d6',name:'Liability Based',kpis:['currentLiab','mobPay','dedPayable','liabOutstanding','netLiab'],slicers:['component','contract','contractor'],expCols:null});var nm={d3:'Receipt and Transfer',d5:'Mob. Adv. Based',d6:'Liability Based'};S.dashboards.forEach(function(d){if(nm[d.id])d.name=nm[d.id];});var order=['d1','d3','d2','d5','d4','d6'];var known=order.map(function(id){return S.dashboards.find(function(d){return d.id===id;});}).filter(Boolean);var rest=S.dashboards.filter(function(d){return order.indexOf(d.id)<0;});S.dashboards=known.concat(rest);}
 var ASKQ="";
 function askRun(){var e=document.getElementById("askq");ASKQ=e?e.value:"";render();}
 function askSet(q){ASKQ=q;S.ui.page="ask";render();}
-function askCons(){var out=[];S.schemes.filter(function(s){return inScheme(s.id);}).forEach(function(s){(s.contracts||[]).forEach(function(c){out.push({s:s,c:c});});});return out;}
+function askCons(){var out=[];S.schemes.filter(function(s){return inScheme(s.id);}).forEach(function(s){orderedContracts(s).forEach(function(c){out.push({s:s,c:c});});});return out;}
 function askM(label,val,c){return `<div class="kpi ${c||""}"><div class="t">${label}</div><div class="v">${fmt(val)}</div></div>`;}
 function askContractCard(x){
   var c=x.c,s=x.s;
@@ -1287,8 +1430,8 @@ function askContractCard(x){
   return `<div class="card"><h3>📄 Contract ${esc(c.no)} — ${esc(c.contractor||"")}</h3>
     <div class="note">${esc(s.name)}${c.pkg?" · "+esc(c.pkg):""} · all periods</div>
     <div class="cards">${askM("SPS Submitted",sub,"")}${askM("Cleared for Payment",cleared,"o")}${askM("Eff. Exp. against Bill",effb,"g")}${askM("Advance Permissible",perm,"")}${askM("Advance Paid",av.paid,"o")}${askM("Advance Recovered",av.rec,"c")}${askM("Advance Pending to Pay",pend,"r")}${askM("Pending (Bill/SPS)",pendb,"r")}${askM("Total Liability",pendb+pend,"r")}${askM("Withheld (held — memo)",who,"")}</div>
-    <h3 style="margin-top:8px">Bills / SPS</h3><div class="tbl-wrap"><table><tr><th>Bill/SPS</th><th>Date</th><th class="num">Submitted</th><th class="num">Cleared</th><th class="num">Paid</th><th class="num">Left</th><th>Status</th></tr>${billsRows}</table></div>
-    <h3 style="margin-top:8px">Payments</h3><div class="tbl-wrap"><table><tr><th>Date</th><th>Vch</th><th>Type</th><th class="num">Gross</th><th class="num">Effective</th></tr>${payRows}</table></div></div>`;
+    <h3 style="margin-top:8px">Bills / SPS</h3><div class="tbl-wrap"><table><tr><th>Bill/SPS</th><th>Date</th><th class="num">Submitted</th><th class="num">Cleared</th><th class="num">Bill Passed</th><th class="num">Left</th><th>Status</th></tr>${billsRows}</table></div>
+    <h3 style="margin-top:8px">Payments</h3><div class="tbl-wrap"><table><tr><th>Date</th><th>Vch</th><th>Type</th><th class="num">Bill Passed</th><th class="num">Effective</th></tr>${payRows}</table></div></div>`;
 }
 function askContractorCard(nm){
   var xs=askCons().filter(function(x){return (x.c.contractor||"").toLowerCase()===nm.toLowerCase();});
@@ -1497,7 +1640,7 @@ function pgAsk(){
 }
 function payHead(p){var r=payRelease(p);return (r&&r.head)||'';}
 function payShareName(p){return payShareParts(p).map(function(s){return s.name;}).join(', ');}
-function paySpsPmt(p){var sps=(p.kind==='adv')?'Advance':((p.lines||[]).map(function(l){var b=S.bills.find(function(z){return z.id===l.billId;});return b?b.billNo:null;}).filter(Boolean).join(', ')||'—');var pn=p.serial||p.vno||'';return esc(sps)+(pn?'<div class="mini">Pmt: '+esc(pn)+'</div>':'');}
+function paySpsPmt(p){var sps=(p.kind==='adv')?'Advance':((p.lines||[]).map(function(l){var b=S.bills.find(function(z){return z.id===l.billId;});return b?b.billNo:null;}).filter(Boolean).join(', ')||'—');var pn=p.serial||p.vno||'';return esc(sps)+(pn?'<div class="mini">Payment: '+esc(pn)+'</div>':'');}
 function payRelTag(p){var r=payRelease(p);return r?'<div class="mini" style="color:var(--mut)">rel: '+esc(r.note||dfmt(r.date))+' \u00b7 '+fmt(r.amount)+'</div>':'';}
 function paySrcShareTables(ps){var src={},sh={},tot=0;ps.forEach(function(p){var eff=payEff(p);tot+=eff;var sc=paySource2(p)||'Untagged';var hd=payHead(p)||'';if(!src[sc])src[sc]={amt:0,heads:{}};src[sc].amt+=eff;if(hd)src[sc].heads[hd]=(src[sc].heads[hd]||0)+eff;payShareParts(p).forEach(function(s){sh[s.name]=(sh[s.name]||0)+s.amt;});});var srcRows=Object.keys(src).sort().map(function(k){var r='<tr><td><b>'+esc(k)+'</b></td><td class="num"><b>'+fmt(src[k].amt)+'</b></td></tr>';Object.keys(src[k].heads).sort().forEach(function(h){r+='<tr><td style="padding-left:22px;color:var(--mut)" class="mini">\u21b3 '+esc(h)+'</td><td class="num" style="color:var(--mut)">'+fmt(src[k].heads[h])+'</td></tr>';});return r;}).join('')||'<tr><td colspan="2" class="empty">No expenditure</td></tr>';var shRows=Object.keys(sh).sort().map(function(k){return '<tr><td>'+esc(k)+'</td><td class="num">'+fmt(sh[k])+'</td></tr>';}).join('')||'<tr><td colspan="2" class="empty">No expenditure</td></tr>';return '<div style="display:flex;flex-direction:column;gap:16px">'+'<div style="border:1px solid var(--bd);border-radius:8px;overflow:hidden"><div style="background:#1a56a8;color:#fff;font-weight:700;padding:6px 10px">\ud83d\udcca Expenditure by Fund Source / Head</div><table style="margin:0"><tr><th>Source / Head</th><th class="num">Effective Exp.</th></tr>'+srcRows+'<tr class="tot"><td><b>TOTAL</b></td><td class="num"><b>'+fmt(tot)+'</b></td></tr></table></div>'+'<div style="border:1px solid var(--bd);border-radius:8px;overflow:hidden"><div style="background:#146c3a;color:#fff;font-weight:700;padding:6px 10px">\ud83e\udde9 Expenditure by Share</div><table style="margin:0"><tr><th>Share</th><th class="num">Effective Exp.</th></tr>'+shRows+'<tr class="tot"><td><b>TOTAL</b></td><td class="num"><b>'+fmt(tot)+'</b></td></tr></table></div>'+'</div>';}
 var EXPSS=new Set();function togSS(k){if(EXPSS.has(k))EXPSS.delete(k);else EXPSS.add(k);render();}
@@ -1512,7 +1655,7 @@ function pgDash(){
   const tr=S.transfers.filter(t=>inF(t)&&!t.draft);
   let bl=S.bills.filter(b=>inF(b)&&!b.draft), py=S.payments.filter(p=>inF(p)&&!p.draft);
   // ---- customisable slicers (XLBooster-style drill-down) ----
-  const consAll=[];S.schemes.filter(s=>inScheme(s.id)).forEach(s=>(s.contracts||[]).forEach(c=>consAll.push({s:s,c:c})));
+  const consAll=[];S.schemes.filter(s=>inScheme(s.id)).forEach(s=>orderedContracts(s).forEach(c=>consAll.push({s:s,c:c})));
   const compsAll=[];S.schemes.filter(s=>inScheme(s.id)).forEach(s=>(s.components||[]).forEach(c=>compsAll.push({id:c.id,name:c.name})));
   const subsAll=[];S.schemes.filter(s=>inScheme(s.id)).forEach(s=>(s.components||[]).forEach(c=>(c.subs||[]).forEach(u=>subsAll.push({id:u.id,name:c.name+' / '+u.name,compId:c.id}))));
   const cOf=id=>consAll.find(x=>x.c.id===id);
@@ -1559,8 +1702,8 @@ function pgDash(){
   const totWhOut=bl.reduce((a,b)=>a+billWh(b)-billWhRel(b),0);
   const totDed=py.reduce((a,p)=>a+payAllDeds(p),0);
   const relBal=rel.reduce((a,r)=>a+relBalance(r),0);
-  const othRec=S.others.filter(inF).filter(e=>e.kind==='receipt').reduce((a,e)=>a+n(e.amount),0);
-  const othExp=S.others.filter(inF).filter(e=>e.kind==='payment').reduce((a,e)=>a+n(e.amount),0);
+  const othRec=S.others.filter(e=>inF(e)&&!e.draft&&e.kind==='receipt').reduce((a,e)=>a+n(e.amount),0);
+  const othExp=S.others.filter(e=>inF(e)&&!e.draft&&e.kind==='payment').reduce((a,e)=>a+n(e.amount),0);
   const adhoc=bl.reduce((a,b)=>a+n(b.adhoc),0);
   const cscW=bl.reduce((a,b)=>a+n(b.cscWh),0);
   const whRelTot=bl.reduce((a,b)=>a+billWhRel(b),0);
@@ -1915,7 +2058,7 @@ function pgDash(){
       <tr class="tot-pay"><td><b>TOTAL</b></td><td class="num"><b>${fmt(T.paid)}</b></td><td class="num">${fmt(T.rec)}</td><td class="num"><b>${fmt(T.out)}</b></td><td class="num">${fmt(T.mc)}</td></tr>
       </table></div></div>`;})()}
   ${(D.id==='d1'||D.id==='d2'||D.id==='d3'||D.id==='d4'||D.id==='d5'||D.id==='d6')?'':`<div class="card"><h3>🧾 Data Table — all payments</h3><div class="tbl-wrap"><table>
-    <tr><th>Date</th><th>Vch No.</th><th>Contract</th><th>Serial</th><th>SPS</th><th class="num">Gross</th><th class="num">Deductions</th><th class="num">Net</th><th>Chq</th></tr>
+    <tr><th>Date</th><th>Vch No.</th><th>Contract</th><th>Serial</th><th>SPS</th><th class="num">Bill Passed</th><th class="num">Deductions</th><th class="num">Net</th><th>Chq</th></tr>
     ${recentPays.map(p=>{const x=cOf(p.contractId);
       return `<tr><td>${dfmt(p.date)}</td><td>${esc(p.vno||'—')}</td>
       <td>${x?esc(x.c.no)+'<div class="mini">'+esc(x.c.contractor)+'</div>':'—'}</td>
@@ -2110,13 +2253,15 @@ function renShare(sid,i){const s=S.schemes.find(x=>x.id===sid);if(!s)return;if(s
 function delShare(sid,i){const s=S.schemes.find(x=>x.id===sid);if(!s)return;if(s.locked)return alert('🔒 This project is locked.');s.shares.splice(i,1);save();render();}
 
 /* ================= RETENTION LEDGER ================= */
-function retHeldContract(cid){return S.payments.filter(p=>inF(p)&&!p.draft&&(p.kind||'sps')!=='adv'&&p.contractId===cid).reduce((a,p)=>a+payDedTotal(p,'ret'),0);}
+function retHeldContract(cid){return S.payments.filter(p=>inF(p)&&!p.draft&&(p.kind||'sps')!=='adv'&&p.contractId===cid&&(!RLF.rels.length||RLF.rels.includes(p.releaseId))).reduce((a,p)=>a+payDedTotal(p,'ret'),0);}
 function retBankContract(cid){return S.payments.filter(p=>inF(p)&&!p.draft&&(p.kind||'sps')!=='adv'&&p.contractId===cid).reduce((a,p)=>a+payDedTotal(p,'retBank'),0);}
 function retDeductedContract(cid){return retHeldContract(cid);}
 function retRefundedName(nm){return S.others.filter(e=>!e.draft&&e.kind==='payment'&&e.cat===RETCAT&&(e.party||'')===nm&&inF(e)).reduce((a,e)=>a+n(e.amount),0);}
 /* Retention Ledger multi-select filters */
-let RLF={schemes:[],comps:[],subs:[],cons:[],contractors:[]};
-function rlfClear(){RLF={schemes:[],comps:[],subs:[],cons:[],contractors:[]};render();}
+let RLF={schemes:[],comps:[],subs:[],cons:[],contractors:[],rels:[]};
+function rlfClear(){RLF={schemes:[],comps:[],subs:[],cons:[],contractors:[],rels:[]};render();}
+function rlfTogRel(v){togArr(RLF.rels,v);render();}
+function rlfRelOpts(){return S.releases.filter(r=>!r.draft&&inF(r)&&inScheme(r.schemeId)).slice().sort((a,b)=>a.date<b.date?1:-1).map(r=>[r.id,(r.note||r.vno||dfmt(r.date))+' · '+fmt(r.amount)]);}
 function rlfSchemeList(){return RLF.schemes.length?S.schemes.filter(s=>RLF.schemes.includes(s.id)):selSchemes();}
 function rlfTogScheme(v){togArr(RLF.schemes,v);RLF.comps=[];RLF.subs=[];RLF.cons=[];render();}
 function rlfTogComp(v){togArr(RLF.comps,v);RLF.subs=[];RLF.cons=[];render();}
@@ -2155,7 +2300,7 @@ function pgRetention(){
   const Gb=Gd-Gr;
   // full traceability — every bill/SPS & payment from which retention was deducted
   const detail=[];
-  cons.forEach(x=>{S.payments.filter(p=>inF(p)&&!p.draft&&(p.kind||'sps')!=='adv'&&p.contractId===x.c.id).forEach(p=>{(p.lines||[]).forEach(l=>{const rr=n(l.deds&&l.deds.ret);if(rr>0.005){const b=S.bills.find(z=>z.id===l.billId)||{};detail.push({date:p.date,vno:p.vno,x:x,bill:b,ret:rr,chq:p.chqNo,serial:l.serial||p.serial});}});});});
+  cons.forEach(x=>{S.payments.filter(p=>inF(p)&&!p.draft&&(p.kind||'sps')!=='adv'&&p.contractId===x.c.id&&(!RLF.rels.length||RLF.rels.includes(p.releaseId))).forEach(p=>{(p.lines||[]).forEach(l=>{const rr=n(l.deds&&l.deds.ret);if(rr>0.005){const b=S.bills.find(z=>z.id===l.billId)||{};detail.push({date:p.date,vno:p.vno,x:x,bill:b,ret:rr,chq:p.chqNo,serial:l.serial||p.serial});}});});});
   detail.sort((a,b)=>a.date<b.date?1:-1);
   const dTot=detail.reduce((a,d)=>a+d.ret,0);
   const detRows=detail.map(d=>`<tr><td>${dfmt(d.date)}${d.vno?'<div class="mini">'+esc(d.vno)+'</div>':''}</td><td>${esc(d.x.c.no)}<div class="mini">${esc(d.x.c.contractor)}</div></td><td><b>${esc(d.bill.billNo||'—')}</b>${d.serial?'<div class="mini">'+esc(d.serial)+'</div>':''}${d.bill.date?'<div class="mini">'+dfmt(d.bill.date)+'</div>':''}</td><td>${esc(schemeName(d.x.s.id))}</td><td class="num"><b>${fmt(d.ret)}</b></td><td>${esc(d.chq||'—')}</td></tr>`).join('');
@@ -2173,7 +2318,9 @@ function pgRetention(){
       ${rlfSubOpts().length?msDD('rlf_sub','Sub-component',rlfSubOpts(),RLF.subs,'rlfTogSub','RLF.subs=[];RLF.cons=[];render()'):''}
       ${rlfConOpts().length?msDD('rlf_con','Contract',rlfConOpts(),RLF.cons,'rlfTogCon','RLF.cons=[];render()'):''}
       ${rlfContractorOpts().length?msDD('rlf_ctr','Contractor',rlfContractorOpts(),RLF.contractors,'rlfTogContractor','RLF.contractors=[];render()'):''}
+      ${rlfRelOpts().length?msDD('rlf_rel','Against Release',rlfRelOpts(),RLF.rels,'rlfTogRel','RLF.rels=[];render()'):''}
     </div>
+    ${RLF.rels.length?'<div class="note" style="margin-top:4px">Release filter applies to retention <b>deducted</b> (payments carry the release). Refunds are not release-linked, so the Refunded / Balance figures remain overall.</div>':''}
   </div>
   <div class="card" style="margin-bottom:16px">
     <h3>Retention Summary</h3>
@@ -2919,9 +3066,9 @@ function addRel(){
   save();render();
 }
 function editRel(id){
-  if(S.ui.locked){alert("🔒 Entries are locked.\nType UNLOCK in the unlock dialog to enable editing.");return;}ED={rel:id};render();frShow();}
+  if(S.ui.locked){alert("🔒 Entries are locked.\nClick the 🔒 Locked button (top of page) to enable editing.");return;}ED={rel:id};render();frShow();}
 function delRel(id){
-  if(S.ui.locked){alert("🔒 Entries are locked.\nType UNLOCK in the unlock dialog to enable deletion of fund receipts.");return;}
+  if(S.ui.locked){alert("🔒 Entries are locked.\nClick the 🔒 Locked button (top of page) to enable deletion of fund receipts.");return;}
   if(S.payments.some(p=>p.releaseId===id)||S.transfers.some(t=>t.releaseId===id))
     {if(!confirm('Payments/transfers are linked to this release. Delete anyway (links will be unlinked)?'))return;
      S.payments.forEach(p=>{if(p.releaseId===id)p.releaseId='';});S.transfers.forEach(t=>{if(t.releaseId===id)t.releaseId='';});}
@@ -3012,9 +3159,9 @@ function addTr(){
   save();render();
 }
 function editTr(id){
-  if(S.ui.locked){alert("🔒 Entries are locked.\nType UNLOCK in the unlock dialog to enable editing.");return;}ED={tr:id};render();}
+  if(S.ui.locked){alert("🔒 Entries are locked.\nClick the 🔒 Locked button (top of page) to enable editing.");return;}ED={tr:id};render();}
 function delTr(id){
-  if(S.ui.locked){alert("🔒 Entries are locked.\nType UNLOCK in the unlock dialog to enable deletion of transfers.");return;}if(!confirm('Delete transfer?'))return;S.transfers=S.transfers.filter(t=>t.id!==id);save();render();}
+  if(S.ui.locked){alert("🔒 Entries are locked.\nClick the 🔒 Locked button (top of page) to enable deletion of transfers.");return;}if(!confirm('Delete transfer?'))return;S.transfers=S.transfers.filter(t=>t.id!==id);save();render();}
 //__JS_FUND__
 /* ================= BILL BOOKING (SPS) ================= */
 let LB={sch:'',comp:'',sub:'',con:''}; // remembered selection for save & proceed
@@ -3054,7 +3201,7 @@ function conPicked(prefix){
   if(ni)ni.value=c?c.contractor:'';
   const el=document.getElementById(prefix+'_conName');
   if(el)el.textContent=c?('Under: '+compName(s,c.compId)+(c.subId?' / '+subName(s,c.compId,c.subId):'')):'';
-  if(prefix==='py')pyBills();
+  if(prefix==='py'){pyBills();pyReminders();}
 }
 function quickAddContract(prefix){
   const sid=val(prefix+'_sch');const s=S.schemes.find(x=>x.id===sid);
@@ -3106,7 +3253,7 @@ function pgBills(){
       </table>
       <b class="mini">PAYMENTS AGAINST THIS SPS:</b>
       <table>
-      <tr><th>Date · Serial</th><th class="num">Gross</th>${DEDS.map(([k,l])=>`<th class="num">${l.split(' (')[0]}</th>`).join('')}<th class="num">Net</th><th>Chq</th><th>From Release</th></tr>
+      <tr><th>Date · Serial</th><th class="num">Bill Passed</th>${DEDS.map(([k,l])=>`<th class="num">${l.split(' (')[0]}</th>`).join('')}<th class="num">Net</th><th>Chq</th><th>From Release</th></tr>
       ${pl.map(x=>{const gg=x.ls.reduce((a,l)=>a+n(l.amt),0),dd=x.ls.reduce((a,l)=>a+payLineDeds(l),0);
         const r=S.releases.find(z=>z.id===x.p.releaseId);
         return `<tr><td>${dfmt(x.p.date)}${x.p.serial?'<div class="mini">'+esc(x.p.serial)+'</div>':''}</td><td class="num">${fmt(gg)}</td>
@@ -3202,7 +3349,7 @@ function after_bills(){
   if(LB.sub)document.getElementById('bl_sub').value=LB.sub;cascadeCon('bl');
   if(LB.con){document.getElementById('bl_con').value=LB.con;conPicked('bl');}}
 function editBill(id){
-  if(S.ui.locked){alert("🔒 Entries are locked.\nType UNLOCK in the unlock dialog to enable editing.");return;}ED={bill:id};render();}
+  if(S.ui.locked){alert("🔒 Entries are locked.\nClick the 🔒 Locked button (top of page) to enable editing.");return;}ED={bill:id};render();}
 function blAuto(){
   const g=nval('bl_gauto');if(g<=0)return alert('Enter the gross amount first');
   const t=g/1.19;
@@ -3240,7 +3387,7 @@ function addBill(proceed){
   const m=document.getElementById('bl_saved');if(m)m.innerHTML='<span class="ok-t">✓ Bill '+esc(no)+' saved. Enter next.</span>';
 }
 function delBill(id){
-  if(S.ui.locked){alert("🔒 Entries are locked.\nType UNLOCK in the unlock dialog to enable deletion of SPS/bills.");return;}
+  if(S.ui.locked){alert("🔒 Entries are locked.\nClick the 🔒 Locked button (top of page) to enable deletion of SPS/bills.");return;}
   if(S.payments.some(p=>(p.lines||[]).some(l=>l.billId===id)))return alert('Payments exist against this bill. Delete those payments first.');
   if(!confirm('Delete this bill?'))return;
   S.bills=S.bills.filter(b=>b.id!==id);S.whRel=S.whRel.filter(w=>w.billId!==id);save();render();
@@ -3255,7 +3402,7 @@ function spsStatement(id){
   const g=billGross(b),L=billNetLiab(b),wr=billWhRel(b),pd=billPaid(b),bal=billPayable(b);
   const pl=S.payments.map(p=>({p:p,ls:(p.lines||[]).filter(l=>l.billId===id)})).filter(x=>x.ls.length);
   const wrl=S.whRel.filter(w=>w.billId===id);
-  let pay='<table><tr><th>Date</th><th>Serial</th><th class="n">Gross</th>'+DEDS.map(([k,l])=>'<th class="n">'+l.split(' (')[0]+'</th>').join('')+'<th class="n">Net</th><th>Cheque</th></tr>';
+  let pay='<table><tr><th>Date</th><th>Serial</th><th class="n">Bill Passed</th>'+DEDS.map(([k,l])=>'<th class="n">'+l.split(' (')[0]+'</th>').join('')+'<th class="n">Net</th><th>Cheque</th></tr>';
   pl.forEach(x=>{const gg=x.ls.reduce((a,l)=>a+n(l.amt),0),dd=x.ls.reduce((a,l)=>a+payLineDeds(l),0);
     pay+='<tr><td>'+dfmt(x.p.date)+'</td><td>'+esc(x.p.serial||'')+'</td><td class="n">'+fmt(gg)+'</td>'+DEDS.map(([k])=>'<td class="n">'+fmt(x.ls.reduce((a,l)=>a+n(l.deds&&l.deds[k]),0))+'</td>').join('')+'<td class="n">'+fmt(gg-dd)+'</td><td>'+esc(x.p.chqNo||'—')+'</td></tr>';});
   if(!pl.length)pay+='<tr><td colspan="'+(DEDS.length+5)+'">No payments yet</td></tr>';
@@ -3278,7 +3425,7 @@ function spsStatement(id){
     '<p class="muted">Generated '+new Date().toLocaleString('en-IN')+' — PWD Fund &amp; Works Tracker</p>';
   const w=window.open('','_blank');
   if(!w){alert('Pop-up blocked — please allow pop-ups to print the statement.');return;}
-  w.document.write('<html><head><title>SPS '+esc(b.billNo||'')+'</title><style>body{font-family:Arial,sans-serif;font-size:12px;color:#111;padding:22px}h2{margin:0 0 6px}h3{margin:14px 0 4px;font-size:13px}table{border-collapse:collapse;width:100%;margin:4px 0}th,td{border:1px solid #999;padding:4px 7px;text-align:left}.n{text-align:right}.muted{color:#666;font-size:10px;margin-top:14px}</style></head><body>'+html+'<scr'+'ipt>window.onload=function(){window.print();}<\/scr'+'ipt></body></html>');
+  w.document.write('<html><head><title>'+esc(b.billNo||'SPS Statement')+'</title><style>body{font-family:Arial,sans-serif;font-size:12px;color:#111;padding:22px}h2{margin:0 0 6px}h3{margin:14px 0 4px;font-size:13px}table{border-collapse:collapse;width:100%;margin:4px 0}th,td{border:1px solid #999;padding:4px 7px;text-align:left}.n{text-align:right}.muted{color:#666;font-size:10px;margin-top:14px}</style></head><body>'+html+'<scr'+'ipt>window.onload=function(){window.print();}<\/scr'+'ipt></body></html>');
   w.document.close();
 }
 function smfQuick(v){SMF.status=[];togArr(SMF.special,v);}
@@ -3322,7 +3469,7 @@ function smfCons(){const out=[];smfSchemeList().forEach(s=>(s.contracts||[]).for
 function smfContractors(){const set=[];smfSchemeList().forEach(s=>(s.contracts||[]).forEach(c=>{if(c.contractor&&!set.includes(c.contractor))set.push(c.contractor);}));return set.sort();}
 function smfClear(){SMF={scheme:'',comp:[],sub:[],con:[],contractor:[],q:'',status:[],special:[]};render();}
 function pgSpsMgmt(){
-  let list=(S.bills||[]).filter(b=>!b.draft); // show ALL registered SPS/bills (every scheme, every period) — use the filters below to narrow
+  let list=(S.bills||[]); // show ALL registered SPS/bills incl. paused (every scheme, every period) — use the filters below to narrow
   if(SMF.scheme)list=list.filter(b=>b.schemeId===SMF.scheme);
   if(SMF.comp.length)list=list.filter(b=>SMF.comp.includes(b.compId));
   if(SMF.sub.length)list=list.filter(b=>SMF.sub.includes(b.subId));
@@ -3337,8 +3484,8 @@ function pgSpsMgmt(){
     const c=contractOf(b);
     const g=billGross(b),ad=n(b.adhoc),cs=n(b.cscWh),cl=g-ad-cs;
     const wrl=S.whRel.filter(w=>w.billId===b.id);
-    const adRel=wrl.filter(w=>!/csc|temp/i.test(w.type||'')).reduce((a,w)=>a+n(w.amount),0);
-    const csRel=wrl.filter(w=>/csc|temp/i.test(w.type||'')).reduce((a,w)=>a+n(w.amount),0);
+    const adRel=wrl.filter(w=>!w.draft&&!/csc|temp/i.test(w.type||'')).reduce((a,w)=>a+n(w.amount),0);
+    const csRel=wrl.filter(w=>!w.draft&&/csc|temp/i.test(w.type||'')).reduce((a,w)=>a+n(w.amount),0);
     const adBal=ad-adRel,csBal=cs-csRel,wr=adRel+csRel;
     const sp=S.payments.filter(p=>!p.draft&&(p.kind||'sps')!=='adv').map(p=>({p:p,ls:(p.lines||[]).filter(l=>l.billId===b.id)})).filter(x=>x.ls.length);
     const bp=sp.reduce((a,x)=>a+x.ls.reduce((y,l)=>y+n(l.amt),0),0);
@@ -3346,7 +3493,7 @@ function pgSpsMgmt(){
     const ret=sp.reduce((a,x)=>a+x.ls.reduce((y,l)=>y+n(l.deds&&l.deds.ret),0),0);
     const sh=Math.max(0,cl+wr-bp); // withheld due to shortage of fund (cleared but unpaid)
     const eff=bp-cscAdj-ret;
-    T.g+=g;T.ad+=ad;T.adRel+=adRel;T.adBal+=adBal;T.cs+=cs;T.csRel+=csRel;T.csBal+=csBal;T.cl+=cl;T.wr+=wr;T.bp+=bp;T.sh+=sh;T.cscAdj+=cscAdj;T.ret+=ret;T.eff+=eff;
+    if(!b.draft){T.g+=g;T.ad+=ad;T.adRel+=adRel;T.adBal+=adBal;T.cs+=cs;T.csRel+=csRel;T.csBal+=csBal;T.cl+=cl;T.wr+=wr;T.bp+=bp;T.sh+=sh;T.cscAdj+=cscAdj;T.ret+=ret;T.eff+=eff;}
     const st=sh<=0.005&&cl>0?'<span class="tag g">Fully Paid</span>':bp>0?'<span class="tag o">Partly Paid</span>':'<span class="tag r">Unpaid</span>';
     const det=(sp.length||wrl.length)?`<details><summary class="mini">statement</summary>
       ${sp.length?`<b class="mini">BILL PASSED (payments):</b><table>
@@ -3359,12 +3506,12 @@ function pgSpsMgmt(){
       <tr><th>Date</th><th>From</th><th class="num">Amount</th><th>Tax Treatment</th></tr>
       ${wrl.map(w=>`<tr><td>${dfmt(w.date)}</td><td>${esc(w.type)}</td><td class="num">${fmt(w.amount)}</td><td>${(w.tax||'pending')==='pending'?'<span class="tag r">deduct taxes at payment</span>':'<span class="tag g">taxes done — pay full</span>'}</td></tr>`).join('')}</table>`:''}
       </details>`:'';
-    return `<tr><td><b>${esc(b.billNo)}</b> <button class="btn2 btn-sm" onclick="spsStatement('${b.id}')" title="Printable statement">📄</button><div class="mini">${dfmt(b.date)}${b.vno?' · '+esc(b.vno):''} · age ${billAge(b)}d</div>${det}</td>
+    return `<tr${b.draft?' class="paused"':''}><td>${pauseBtn('bill',b.id,b.draft,'SPS/bill')} <b>${esc(b.billNo)}</b>${pauseBadge(b.draft)} <button class="btn2 btn-sm" onclick="spsStatement('${b.id}')" title="Printable statement">📄</button><div class="mini">${dfmt(b.date)}${b.vno?' · '+esc(b.vno):''} · age ${billAge(b)}d</div>${det}</td>
     <td>${c?esc(c.no)+'<div class="mini">'+esc(c.contractor)+'</div>':'—'}</td>
     <td class="num"><b>${fmt(g)}</b></td>
     <td class="num"><b>${fmt(ad)}</b><div class="mini">Rel: ${fmt(adRel)}</div><div class="mini" style="color:${adBal>0.005?'#b45309':'#16a34a'}">Bal: ${fmt(adBal)}</div></td>
     <td class="num"><b>${fmt(cs)}</b><div class="mini">Rel: ${fmt(csRel)}</div><div class="mini" style="color:${csBal>0.005?'#b45309':'#16a34a'}">Bal: ${fmt(csBal)}</div></td>
-    <td class="num"><b>${fmt(cl)}</b></td>
+    <td class="num"><b>${fmt(cl)}</b><div class="mini">Passed: ${fmt(bp)}</div><div class="mini" style="color:${(cl+wr-bp)>0.005?'#b45309':'#16a34a'}">Bal: ${fmt(cl+wr-bp)}</div></td>
     <td class="num"><b style="color:${sh>0.005?'#dc2626':'#16a34a'}">${fmt(sh)}</b></td>
     <td class="num"><b>${fmt(bp)}</b></td>
     <td class="num">${sp.length?'<b>'+sp.length+'</b>':'<span class="mini">0</span>'}</td>
@@ -3373,7 +3520,7 @@ function pgSpsMgmt(){
     <td class="num"><b style="color:#16a34a">${fmt(eff)}</b></td>
     <td>${st}</td></tr>`;}).join('');
   // retention account
-  const retDep=S.remit.filter(inF).filter(m=>m.dedType==='ret').reduce((a,m)=>a+n(m.amount),0);
+  const retDep=S.remit.filter(m=>inF(m)&&!m.draft&&m.dedType==='ret').reduce((a,m)=>a+n(m.amount),0);
   const retHeld=T.ret-retDep;
   return `<h2 class="pg">SPS / Bill Management — full lifecycle of every SPS</h2>
   <div class="sub">${esc(periodLabel())} — Submitted → Adhoc &amp; CSC withheld → Cleared (liability) → Bill Passed → CSC / Retention adjusted → Effective Expenditure. Click "statement" under any SPS for its payments &amp; releases.</div>
@@ -3391,9 +3538,9 @@ function pgSpsMgmt(){
   </div>
   <div class="card"><h3>📋 All SPS / Bills — submitted, outstanding &amp; how many payments settled it</h3>
     <div class="tbl-wrap"><table>
-    <tr><th>SPS / Bill</th><th>Contract</th><th class="num">Gross</th><th class="num">Adhoc WH<div class="mini" style="font-weight:400">WH · Rel · Bal</div></th><th class="num">CSC WH<div class="mini" style="font-weight:400">WH · Rel · Bal</div></th><th class="num">Cleared (Liability)</th><th class="num">Outstanding</th><th class="num">Bill Passed</th><th class="num"># Pays</th><th class="num">CSC Adj<div class="mini" style="font-weight:400">Ded · Rel · Bal</div></th><th class="num">Retention<div class="mini" style="font-weight:400">Ded · Rel · Bal</div></th><th class="num">Effective Exp.</th><th>Status</th></tr>
+    <tr><th>SPS / Bill</th><th>Contract</th><th class="num">Gross</th><th class="num">Adhoc WH<div class="mini" style="font-weight:400">WH · Rel · Bal</div></th><th class="num">CSC WH<div class="mini" style="font-weight:400">WH · Rel · Bal</div></th><th class="num">Cleared (Liability)<div class="mini" style="font-weight:400">Cleared · Passed · Bal</div></th><th class="num">Outstanding</th><th class="num">Bill Passed</th><th class="num"># Pays</th><th class="num">CSC Adj<div class="mini" style="font-weight:400">Ded · Rel · Bal</div></th><th class="num">Retention<div class="mini" style="font-weight:400">Ded · Rel · Bal</div></th><th class="num">Effective Exp.</th><th>Status</th></tr>
     ${rows||'<tr><td colspan="13" class="empty">No SPS / bills booked yet</td></tr>'}
-    ${list.length?`<tr class="tot"><td colspan="2"><b>TOTAL — ${list.length} SPS/bill(s)</b></td><td class="num">${fmt(T.g)}</td><td class="num"><b>${fmt(T.ad)}</b><div class="mini">Rel: ${fmt(T.adRel)}</div><div class="mini">Bal: ${fmt(T.adBal)}</div></td><td class="num"><b>${fmt(T.cs)}</b><div class="mini">Rel: ${fmt(T.csRel)}</div><div class="mini">Bal: ${fmt(T.csBal)}</div></td><td class="num">${fmt(T.cl)}</td><td class="num">${fmt(T.sh)}</td><td class="num">${fmt(T.bp)}</td><td></td><td class="num"><b>${fmt(T.cscAdj)}</b><div class="mini">Rel: ${fmt(0)}</div><div class="mini">Bal: ${fmt(T.cscAdj)}</div></td><td class="num"><b>${fmt(T.ret)}</b><div class="mini">Rel: ${fmt(retDep)}</div><div class="mini">Bal: ${fmt(T.ret-retDep)}</div></td><td class="num">${fmt(T.eff)}</td><td></td></tr>`:''}
+    ${list.length?`<tr class="tot"><td colspan="2"><b>TOTAL — ${list.length} SPS/bill(s)</b></td><td class="num">${fmt(T.g)}</td><td class="num"><b>${fmt(T.ad)}</b><div class="mini">Rel: ${fmt(T.adRel)}</div><div class="mini">Bal: ${fmt(T.adBal)}</div></td><td class="num"><b>${fmt(T.cs)}</b><div class="mini">Rel: ${fmt(T.csRel)}</div><div class="mini">Bal: ${fmt(T.csBal)}</div></td><td class="num"><b>${fmt(T.cl)}</b><div class="mini">Passed: ${fmt(T.bp)}</div><div class="mini">Bal: ${fmt(T.cl+T.wr-T.bp)}</div></td><td class="num">${fmt(T.sh)}</td><td class="num">${fmt(T.bp)}</td><td></td><td class="num"><b>${fmt(T.cscAdj)}</b><div class="mini">Rel: ${fmt(0)}</div><div class="mini">Bal: ${fmt(T.cscAdj)}</div></td><td class="num"><b>${fmt(T.ret)}</b><div class="mini">Rel: ${fmt(retDep)}</div><div class="mini">Bal: ${fmt(T.ret-retDep)}</div></td><td class="num">${fmt(T.eff)}</td><td></td></tr>`:''}
     </table></div>
   </div>
   <div class="card"><h3>💼 Retention Money Account</h3><table>
@@ -3405,13 +3552,15 @@ function pgSpsMgmt(){
   <div class="card"><h3>↩ Releases from Withhelds / Adjustments (period)</h3><table>
     <tr><th>Date</th><th>SPS/Bill</th><th>Released From</th><th class="num">Amount</th><th>Tax Treatment</th></tr>
     ${S.whRel.filter(w=>inPeriod(w.date)&&inScheme(w.schemeId)).sort((a,b)=>a.date<b.date?1:-1).map(w=>{const b=S.bills.find(x=>x.id===w.billId)||{};
-      return `<tr><td>${dfmt(w.date)}</td><td><b>${esc(b.billNo||'—')}</b></td><td>${esc(w.type)}</td><td class="num">${fmt(w.amount)}</td>
-      <td>${(w.tax||'pending')==='pending'?'<span class="tag r">deduct taxes at payment</span>':'<span class="tag g">taxes done — pay full</span>'}</td></tr>`;}).join('')||'<tr><td colspan="5" class="empty">No releases in this selection — release withhelds from the Withheld Tracker page</td></tr>'}
+      return `<tr${w.draft?' class="paused"':''}><td>${dfmt(w.date)}</td><td><b>${esc(b.billNo||'—')}</b>${pauseBadge(w.draft)}</td><td>${esc(w.type)}</td><td class="num">${fmt(w.amount)}</td>
+      <td>${(w.tax||'pending')==='pending'?'<span class="tag r">deduct taxes at payment</span>':'<span class="tag g">taxes done — pay full</span>'} ${pauseBtn('whRel',w.id,w.draft,'release')}</td></tr>`;}).join('')||'<tr><td colspan="5" class="empty">No releases in this selection — release withhelds from the Withheld Tracker page</td></tr>'}
   </table></div>`;
 }
 
 /* ================= WITHHELD TRACKER ================= */
-let WHF={schemes:[],comps:[],subs:[],cons:[],contractors:[],q:''}; // Withheld Tracker filter (multi-select)
+let WHF={schemes:[],comps:[],subs:[],cons:[],contractors:[],relst:[],q:''}; // Withheld Tracker filter (multi-select)
+function whfTogRelSt(v){togArr(WHF.relst,v);render();}
+function whRelStatus(b){const held=billWh(b),rel=billWhRel(b),out=held-rel;return rel<=0?'Held':out>0.005?'Partly Released':'Fully Released';}
 function whfSchemeList(){return WHF.schemes.length?S.schemes.filter(s=>WHF.schemes.includes(s.id)):selSchemes();}
 function whfTogScheme(v){togArr(WHF.schemes,v);WHF.comps=[];WHF.subs=[];WHF.cons=[];render();}
 function whfTogComp(v){togArr(WHF.comps,v);WHF.subs=[];WHF.cons=[];render();}
@@ -3422,7 +3571,7 @@ function whfComps(){const out=[];whfSchemeList().forEach(s=>(s.components||[]).f
 function whfSubs(){const out=[];whfSchemeList().forEach(s=>(s.components||[]).forEach(c=>{if(!WHF.comps.length||WHF.comps.includes(c.id))(c.subs||[]).forEach(u=>out.push([u.id,u.name]));}));return out;}
 function whfCons(){const out=[];whfSchemeList().forEach(s=>(s.contracts||[]).forEach(c=>{if((!WHF.comps.length||WHF.comps.includes(c.compId))&&(!WHF.subs.length||WHF.subs.includes(c.subId))&&(!WHF.contractors.length||WHF.contractors.includes(c.contractor)))out.push([c.id,c.no+' — '+c.contractor]);}));return out;}
 function whfContractors(){const set=[];whfSchemeList().forEach(s=>(s.contracts||[]).forEach(c=>{if(c.contractor&&!set.includes(c.contractor))set.push(c.contractor);}));return set.sort();}
-function whfClear(){WHF={schemes:[],comps:[],subs:[],cons:[],contractors:[],q:''};render();}
+function whfClear(){WHF={schemes:[],comps:[],subs:[],cons:[],contractors:[],relst:[],q:''};render();}
 function pgWithheld(){
   let list=S.bills.filter(b=>inF(b)&&!b.draft).filter(b=>billWh(b)>0);
   if(WHF.schemes.length)list=list.filter(b=>WHF.schemes.includes(b.schemeId));
@@ -3430,6 +3579,7 @@ function pgWithheld(){
   if(WHF.subs.length)list=list.filter(b=>WHF.subs.includes(b.subId));
   if(WHF.cons.length)list=list.filter(b=>WHF.cons.includes(b.contractId));
   if(WHF.contractors.length)list=list.filter(b=>{const c=contractOf(b);return c&&WHF.contractors.includes(c.contractor);});
+  if(WHF.relst.length)list=list.filter(b=>WHF.relst.includes(whRelStatus(b)));
   if(WHF.q){const q=WHF.q.toLowerCase();list=list.filter(b=>(b.billNo||'').toLowerCase().includes(q));}
   list=list.sort(billSort);
   let tHeld=0,tRel=0;
@@ -3452,9 +3602,9 @@ function pgWithheld(){
       <button class="btn btn-sm" onclick="relWh('${b.id}')">Release</button></div>`:'<span class="ok-t">✓ cleared</span>'}</td></tr>`;}).join('');
   const hist=S.whRel.filter(w=>{const b=S.bills.find(x=>x.id===w.billId);return b&&inF(b)||inPeriod(w.date)&&b&&inScheme(b.schemeId);}).sort((a,b)=>a.date<b.date?1:-1).map(w=>{
     const b=S.bills.find(x=>x.id===w.billId)||{};
-    return `<tr><td>${dfmt(w.date)}</td><td>${esc(b.billNo||'—')}</td><td>${esc(schemeName(b.schemeId))}</td><td>${esc(w.type)}</td><td class="num">${fmt(w.amount)}</td>
+    return `<tr${w.draft?' class="paused"':''}><td>${dfmt(w.date)}</td><td>${esc(b.billNo||'—')}${pauseBadge(w.draft)}</td><td>${esc(schemeName(b.schemeId))}</td><td>${esc(w.type)}</td><td class="num">${fmt(w.amount)}</td>
     <td>${(w.tax||'pending')==='pending'?'<span class="tag r">Deduct taxes at payment</span>':'<span class="tag g">Taxes already deducted — pay full</span>'}</td>
-    <td><button class="btn-del" onclick="delWhRel('${w.id}')">✕</button></td></tr>`;}).join('');
+    <td>${pauseBtn('whRel',w.id,w.draft,'release')} <button class="btn-del" onclick="delWhRel('${w.id}')">✕</button></td></tr>`;}).join('');
   return `<h2 class="pg">Withheld Tracker — Adhoc &amp; CSC Temporary Withheld</h2>
   <div class="sub">${esc(periodLabel())} — when CSC clears a withheld amount, release it here; it becomes liability to be paid in Payments.
   <b>Adhoc (pre-bill)</b> — withheld before bill passing, taxes NOT yet deducted, so deduct GST-TDS/IT-TDS etc. when paying the released amount.
@@ -3471,6 +3621,7 @@ function pgWithheld(){
       ${whfSubs().length?msDD('whf_sub','Sub-component',whfSubs(),WHF.subs,'whfTogSub','WHF.subs=[];WHF.cons=[];render()'):''}
       ${whfCons().length?msDD('whf_con','Contract',whfCons(),WHF.cons,'whfTogCon','WHF.cons=[];render()'):''}
       ${whfContractors().length?msDD('whf_ctr','Contractor',whfContractors().map(nm=>[nm,nm]),WHF.contractors,'whfTogContractor','WHF.contractors=[];render()'):''}
+      ${msDD('whf_relst','Release status',[['Held','Held'],['Partly Released','Partly Released'],['Fully Released','Fully Released']],WHF.relst,'whfTogRelSt','WHF.relst=[];render()')}
       <input value="${esc(WHF.q||'')}" placeholder="🔍 SPS / Bill No." onchange="WHF.q=this.value;render()" style="padding:4px 11px;border:1px solid var(--bd);border-radius:14px;font-size:12px;min-width:150px">
     </div>
     <div class="note" style="margin-top:4px">Showing <b>${list.length}</b> bill(s) with withheld amounts.</div>
@@ -3493,7 +3644,7 @@ function relWh(billId){
   save();render();
 }
 function delWhRel(id){
-  if(S.ui.locked){alert("🔒 Entries are locked.\nType UNLOCK in the unlock dialog to enable deletion of withheld releases.");return;}if(!confirm('Delete this release entry?'))return;S.whRel=S.whRel.filter(w=>w.id!==id);save();render();}
+  if(S.ui.locked){alert("🔒 Entries are locked.\nClick the 🔒 Locked button (top of page) to enable deletion of withheld releases.");return;}if(!confirm('Delete this release entry?'))return;S.whRel=S.whRel.filter(w=>w.id!==id);save();render();}
 //__JS_BILLS__
 /* ================= CONTRACTOR LEDGER ================= */
 let CLF={comps:[],subs:[],contractors:[],cons:[]};
@@ -3540,7 +3691,7 @@ function pgContractors(){
       const st=conStats(x);const sn=++SLN;
       ['gross','liab','paid','ded','bal','whOut','advP','advR','advO','mobC','mobO'].forEach(k=>{T[k]+=st[k];G[k]+=st[k];});
       const det=st.pays.length?`<details><summary class="mini">${st.pays.length} payment(s)</summary><table>
-        <tr><th>Date</th><th class="num">Gross</th><th class="num">Deductions</th><th class="num">Net</th><th>Chq</th><th>Source · Share</th></tr>
+        <tr><th>Date</th><th class="num">Bill Passed</th><th class="num">Deductions</th><th class="num">Net</th><th>Chq</th><th>Source · Share</th></tr>
         ${st.pays.map(y=>`<tr><td>${dfmt(y.p.date)}</td><td class="num">${fmt(y.amt)}</td><td class="num">${fmt(y.ded)}</td><td class="num">${fmt(y.amt-y.ded)}</td><td>${esc(y.p.chqNo||'—')}</td><td>${esc(y.p.source||'')} · ${esc(y.p.share||'')}</td></tr>`).join('')}
       </table></details>`:'<span class="mini">—</span>';
       return `<tr><td class="num"><b>${sn}</b></td><td style="padding-left:14px">${esc(x.c.no)}${x.c.pkg?' <span class="mini">('+esc(x.c.pkg)+')</span>':''}<div class="mini">${esc(x.s.name)} · ${esc(compName(x.s,x.c.compId))}</div></td>
@@ -3574,7 +3725,7 @@ function pgContractors(){
     </table>
   </div>
   <div class="card"><h3>Ledger</h3><div class="tbl-wrap"><table>
-    <tr><th class="num">Sl.</th><th>Contractor / Contract</th><th class="num">Gross Bills</th><th class="num">Net Liability</th><th class="num">Paid</th><th class="num">Deductions</th><th class="num">Withheld O/s</th><th class="num">Advance O/s</th><th class="num">Balance O/s (Bill)</th><th class="num" style="background:#fff7ed">Mob. Adv. Payable</th><th class="num" style="background:#0b3d91;color:#fff">Total O/s</th><th>Payments</th></tr>
+    <tr><th class="num">Sl.</th><th>Contractor / Contract</th><th class="num">Gross Bills</th><th class="num">Net Liability</th><th class="num">Bill Passed</th><th class="num">Deductions</th><th class="num">Withheld O/s</th><th class="num">Advance O/s</th><th class="num">Balance O/s (Bill)</th><th class="num" style="background:#fff7ed">Mob. Adv. Payable</th><th class="num" style="background:#0b3d91;color:#fff">Total O/s</th><th>Payments</th></tr>
     ${body||'<tr><td colspan="12" class="empty">No contractors in this selection</td></tr>'}
     ${body?`<tr class="tot"><td></td><td>GRAND TOTAL</td><td class="num">${fmt(G.gross)}</td><td class="num">${fmt(G.liab)}</td><td class="num">${fmt(G.paid)}</td><td class="num">${fmt(G.ded)}</td><td class="num">${fmt(G.whOut)}</td><td class="num">${fmt(G.advO)}</td><td class="num">${fmt(G.bal)}</td><td class="num" style="background:#fff7ed"><b>${fmt(G.mobO)}</b></td><td class="num" style="background:#eaf2ff"><b>${fmt(G.bal+G.mobO)}</b></td><td></td></tr>`:''}
   </table></div></div>`;
@@ -3667,7 +3818,7 @@ function payDetailHTML(p){
   const gstOne=!!p.gstOneChq;
   const dedRows=DEDS.map(([k,lbl])=>{if(gstOne&&(k==='cgstTds'||k==='sgstTds'))return '';const v=payDedTotal(p,k);return v>0?`<tr><td>${esc(lbl)}</td><td class="num">${fmt(v)}</td><td>${esc((p.dedChq&&p.dedChq[k])||'—')}</td></tr>`:'';}).join('')+(gstOne?(function(){const v=payDedTotal(p,'cgstTds')+payDedTotal(p,'sgstTds');return v>0?`<tr><td>CGST + SGST TDS</td><td class="num">${fmt(v)}</td><td>${esc((p.dedChq&&p.dedChq.cgstTds)||'—')}</td></tr>`:'';})():'');
   return `<b class="mini">PER SPS / BILL — paid · each deduction · net</b>
-    <div class="tbl-wrap"><table><tr><th>SPS / Bill</th><th>Serial</th><th class="num">Paid</th>${DEDS.map(([k,l])=>`<th class="num">${esc(l.split(' (')[0])}</th>`).join('')}<th class="num">Net</th></tr>${lines||'<tr><td colspan="10" class="mini">no lines</td></tr>'}</table></div>
+    <div class="tbl-wrap"><table><tr><th>SPS / Bill</th><th>Serial</th><th class="num">Bill Passed</th>${DEDS.map(([k,l])=>`<th class="num">${esc(l.split(' (')[0])}</th>`).join('')}<th class="num">Net</th></tr>${lines||'<tr><td colspan="10" class="mini">no lines</td></tr>'}</table></div>
     <b class="mini">CHEQUES / CHALLANS ISSUED</b>
     <table><tr><th>Paid to</th><th class="num">Amount</th><th>Cheque / Challan No.</th></tr>
     <tr><td><b>Contractor (net)</b></td><td class="num"><b>${fmt(payNet(p))}</b></td><td><b>${esc(p.chqNo||'—')}</b></td></tr>${dedRows}</table>
@@ -3707,7 +3858,7 @@ function releaseConSummary(r){
 }
 function releaseConTableHTML(r){
   const arr=releaseConSummary(r);const T={eff:0,gross:0,net:0,nL:0};arr.forEach(x=>{T.eff+=x.eff;T.gross+=x.gross;T.net+=x.net;T.nL+=x.nL;});
-  return `<div class="tbl-wrap"><table><tr><th>Contract</th><th>Contractor</th><th class="num">Gross</th><th class="num">Net Paid</th><th class="num">Effective Spent</th><th class="num"># SPS/Bills/Adv</th></tr>
+  return `<div class="tbl-wrap"><table><tr><th>Contract</th><th>Contractor</th><th class="num">Bill Passed</th><th class="num">Net Paid</th><th class="num">Effective Spent</th><th class="num"># SPS/Bills/Adv</th></tr>
     ${arr.map(x=>`<tr><td><b>${esc(x.con.no||'—')}</b></td><td>${esc(x.con.contractor||'—')}</td><td class="num">${fmt(x.gross)}</td><td class="num">${fmt(x.net)}</td><td class="num"><b>${fmt(x.eff)}</b></td><td class="num">${x.nL}</td></tr>`).join('')||'<tr><td colspan="6" class="empty">No payments</td></tr>'}
     ${arr.length?`<tr class="tot-pay"><td colspan="2"><b>TOTAL</b></td><td class="num">${fmt(T.gross)}</td><td class="num">${fmt(T.net)}</td><td class="num"><b>${fmt(T.eff)}</b></td><td class="num">${T.nL}</td></tr>`:''}
   </table></div>`;
@@ -3751,7 +3902,7 @@ function releaseConTableI(r){
     let h=`<tr style="cursor:pointer" onclick="togRSC('${key}')"><td><b>${open?'▾':'▸'} ${esc(x.con.no||'—')}</b></td><td>${esc(x.con.contractor||'—')}</td><td class="num">${fmt(x.gross)}</td><td class="num">${fmt(x.net)}</td><td class="num"><b>${fmt(x.eff)}</b></td><td class="num">${x.nL}</td></tr>`;
     if(open)h+=`<tr><td colspan="6" style="background:#eef4fb;padding:6px"><b class="mini">Payment details — ${esc(x.con.no||'')} (${esc(x.con.contractor||'')})</b>${relConDetailHTML(r.id,cid)}</td></tr>`;
     return h;}).join('')||'<tr><td colspan="6" class="empty">No payments</td></tr>';
-  return `<div class="note" style="margin-bottom:4px">Click a contract to expand its bills/SPS &amp; payment details.</div><div class="tbl-wrap"><table><tr><th>Contract</th><th>Contractor</th><th class="num">Gross</th><th class="num">Net Paid</th><th class="num">Effective Spent</th><th class="num"># SPS/Bills/Adv</th></tr>${rows}${arr.length?`<tr class="tot-pay"><td colspan="2"><b>TOTAL</b></td><td class="num">${fmt(T.gross)}</td><td class="num">${fmt(T.net)}</td><td class="num"><b>${fmt(T.eff)}</b></td><td class="num">${T.nL}</td></tr>`:''}</table></div>`;
+  return `<div class="note" style="margin-bottom:4px">Click a contract to expand its bills/SPS &amp; payment details.</div><div class="tbl-wrap"><table><tr><th>Contract</th><th>Contractor</th><th class="num">Bill Passed</th><th class="num">Net Paid</th><th class="num">Effective Spent</th><th class="num"># SPS/Bills/Adv</th></tr>${rows}${arr.length?`<tr class="tot-pay"><td colspan="2"><b>TOTAL</b></td><td class="num">${fmt(T.gross)}</td><td class="num">${fmt(T.net)}</td><td class="num"><b>${fmt(T.eff)}</b></td><td class="num">${T.nL}</td></tr>`:''}</table></div>`;
 }
 function rsfTogSource(v){togArr(RSF.sources,v);render();}
 function rsfTogShare(v){togArr(RSF.shares,v);render();}
@@ -3858,6 +4009,9 @@ function mopStyle(){return `body{font-family:Arial,Helvetica,sans-serif;font-siz
   table.mt td.d{background:#eef0f2;color:#555;font-style:italic}
   table.mt th.d{background:#dfe3e7}
   tr.tot td{background:#f0f0f0;font-weight:bold}
+  table.mt tr.sec td{background:#e8edf3;font-weight:bold}
+  table.mt tr.ntot td{background:#f0f0f0;font-weight:bold}
+  table.nt th{background:#eef2f7}table.nt td,table.nt th{font-size:11px}
   .sig{margin-top:40px;display:flex;justify-content:space-between;text-align:center}
   .sig div{width:30%;padding-top:5px;font-size:11px}
   .sig2{margin-top:34px;display:flex;justify-content:space-around;text-align:center}
@@ -3874,26 +4028,32 @@ function mopHTML(p,li){
   const gross=n(l.amt);
   const it=n(d.itTds),cg=n(d.cgstTds),sg=n(d.sgstTds),ig=n(d.igstTds),gst=cg+sg+ig,cs=n(d.cess),ret=n(d.ret),oth=n(d.oth);
   const advRec=payGross(p)>0?n(p.advRec)*(gross/payGross(p)):0;
-  // Running-account (up-to-date) figures across all SPS/bills of this contract
+  // Payment-sequence running account (identical basis to the Previous/This/Cumulative statement).
+  // CPWA Form 26 note on item 6 (K): it MUST agree with items 7 + 8. We honour that by deriving K from
+  // what is actually paid, and showing any unpaid measured value (e.g. fund shortage) as item 5 withheld.
   let value, withheldPrev=0, withheldThis=0, paidBefore=0;
   if(isAdv){value=gross;}
   else{
-    const conBills=S.bills.filter(x=>!x.draft&&x.contractId===p.contractId).slice().sort((x,y)=>(x.date||'')!==(y.date||'')?((x.date||'')<(y.date||'')?-1:1):((x.billNo||'')<(y.billNo||'')?-1:1));
-    const bIdx=conBills.findIndex(x=>x.id===b.id);
-    const upto=bIdx<0?conBills:conBills.slice(0,bIdx+1);
-    const prevB=bIdx<=0?[]:conBills.slice(0,bIdx);
-    value=upto.reduce((a,x)=>a+billGross(x),0);                          // item 1 — total value of ALL work / SPS submitted up to date
-    const wh=x=>Math.max(0,billWh(x)-billWhRel(x));
-    withheldPrev=prevB.reduce((a,x)=>a+wh(x),0);                         // 5(a) withheld from previous bills
-    withheldThis=wh(b);                                                  // 5(b) withheld from this bill
-    S.payments.filter(x=>!x.draft&&x.contractId===p.contractId).forEach(x=>{const earlier=(x.date<p.date)||(x.date===p.date&&vnoNum(x.vno)<vnoNum(p.vno));if(!earlier)return;(x.lines||[]).forEach(ll=>{if(ll.billId)paidBefore+=n(ll.amt);});}); // item 7 — total of all bills passed before this
+    const order=[];
+    S.payments.filter(x=>!x.draft&&x.contractId===p.contractId).forEach(x=>{(x.lines||[]).forEach((ll,idx)=>{if(ll.billId)order.push({x:x,ll:ll,idx:idx});});});
+    order.sort((A,B)=>{const da=A.x.date||'',db=B.x.date||'';if(da!==db)return da<db?-1:1;const va=vnoNum(A.x.vno),vb=vnoNum(B.x.vno);if(va!==vb)return va-vb;return A.idx-B.idx;});
+    const thisPos=order.findIndex(o=>o.x.id===p.id&&o.idx===li);
+    const uptoL=thisPos<0?order:order.slice(0,thisPos+1);
+    const prevL=thisPos<=0?[]:order.slice(0,thisPos);
+    const stateOf=lines=>{let val=0,g=0;const seen=new Set();lines.forEach(o=>{const bb=S.bills.find(z=>z.id===o.ll.billId);if(bb&&bb.id&&!seen.has(bb.id)){seen.add(bb.id);val+=billGross(bb);}g+=n(o.ll.amt);});return {value:val,gross:g};};
+    const CUM=stateOf(uptoL),PRV=stateOf(prevL);
+    value=CUM.value;                                                     // item 1/4 — total value of work measured up to date
+    paidBefore=PRV.gross;                                                // item 7 — payments already made (= K of last bill)
+    const Know=paidBefore+gross;                                         // item 6 — K = item 7 + item 8 (guaranteed to tie)
+    const withheldTot=value-Know;                                        // item 5 — measured but not yet paid (withhold + any shortfall)
+    withheldPrev=PRV.value-PRV.gross;                                    // 5(a) — withheld carried from previous bill
+    withheldThis=withheldTot-withheldPrev;                               // 5(b) — withheld / (released) on this bill
   }
   const withheld=withheldPrev+withheldThis;                              // item 5 (a+b)
   const balance=value-withheld;                                          // item 6 (K) = item 4 − 5
   const passed=gross;                                                    // item 8 total = gross paid now (a+b+c)
   const rec8a=advRec;                                                     // 8(a) recovery creditable to THIS work (advance recovery)
-  const rec8b_other=gst+cs+ret+oth;                                       // 8(b) other recoveries
-  const rec8b=it+rec8b_other;                                             // 8(b) = Income Tax + other recoveries
+  const rec8b=it+gst+cs+ret+oth;                                          // 8(b) = Income Tax + other recoveries
   const cheque=passed-rec8a-rec8b;                                        // 8(c) By cheque = item8 − 8(a) − 8(b)
   const G=withheldThis+rec8a;                                            // Total 5(b)+8(a) = (G)
   const H=rec8b+cheque;                                                   // Total 8(b)+(c) = (H)
@@ -3918,7 +4078,7 @@ function mopHTML(p,li){
       ${R('','(a) From previous bills',withheldPrev,18)}
       ${R('','(b) From this bill',withheldThis,18)}
       ${R('6','Balance, i.e. up-to-date payment (item 4 − 5) (K)',balance,0,true,true)}
-      ${R('7','Total amount of bills passed before this bill',paidBefore,0,0,true)}
+      ${R('7','Total amount of payments already made (Entry K of last bill)',paidBefore,0,0,true)}
       ${R('8','Payments now to be made, as detailed below:',passed,0,true,true)}
       ${Hd('','(a) By recovery of amounts creditable to this work:')}
       ${R('','Mobilisation / Secured Advance recovered',rec8a,22)}
@@ -3973,19 +4133,29 @@ function mopBreakupHTML(p,li){
   const it=n(d.itTds),cg=n(d.cgstTds),sg=n(d.sgstTds),ig=n(d.igstTds),gst=cg+sg+ig,cs=n(d.cess),ret=n(d.ret),oth=n(d.oth);
   const advRec=payGross(p)>0?n(p.advRec)*(gross/payGross(p)):0;
   const thisChq=gross-advRec-(it+gst+cs+ret+oth);
-  const wh=x=>Math.max(0,billWh(x)-billWhRel(x));
-  const thisValue=isAdv?gross:billGross(b);
-  const thisWithheld=isAdv?0:wh(b);
-  let prevValue=0,prevWithheld=0,prevGross=0,prevIT=0,prevGST=0,prevCess=0,prevRet=0,prevOth=0,prevAdv=0;
-  if(!isAdv){
-    const conBills=S.bills.filter(x=>!x.draft&&x.contractId===p.contractId).slice().sort((x,y)=>(x.date||'')!==(y.date||'')?((x.date||'')<(y.date||'')?-1:1):((x.billNo||'')<(y.billNo||'')?-1:1));
-    const bIdx=conBills.findIndex(x=>x.id===b.id);const prevB=bIdx<=0?[]:conBills.slice(0,bIdx);
-    prevValue=prevB.reduce((a,x)=>a+billGross(x),0);prevWithheld=prevB.reduce((a,x)=>a+wh(x),0);
+  const wh=(x,asOf)=>Math.max(0,billWh(x)-S.whRel.filter(w=>!w.draft&&w.billId===x.id&&(w.date||'')<=(asOf||'')).reduce((a,w)=>a+n(w.amount),0)); // withheld still held as on a given date
+  // Payment-sequence running account: PRV = cumulative up to & incl. the PREVIOUS payment; CUM = up to & incl. THIS payment; This = CUM − PRV; so Cumulative = Previous + This on every row
+  let PRV,CUM;
+  if(isAdv){
+    PRV={value:0,withheld:0,gross:0,IT:0,GST:0,Cess:0,Ret:0,Oth:0,Adv:0,bal:0,chq:0};
+    CUM={value:gross,withheld:0,gross:gross,IT:it,GST:gst,Cess:cs,Ret:ret,Oth:oth,Adv:advRec,bal:gross,chq:thisChq};
+  }else{
+    const order=[];
+    S.payments.filter(x=>!x.draft&&x.contractId===p.contractId).forEach(x=>{(x.lines||[]).forEach((ll,idx)=>{if(ll.billId)order.push({x:x,ll:ll,idx:idx});});});
+    order.sort((A,B)=>{const da=A.x.date||'',db=B.x.date||'';if(da!==db)return da<db?-1:1;const va=vnoNum(A.x.vno),vb=vnoNum(B.x.vno);if(va!==vb)return va-vb;return A.idx-B.idx;});
+    const thisPos=order.findIndex(o=>o.x.id===p.id&&o.idx===li);
+    const uptoL=thisPos<0?order:order.slice(0,thisPos+1);
+    const prevL=thisPos<=0?[]:order.slice(0,thisPos);
+    const stateOf=(lines,asOf)=>{let value=0,withheld=0,g=0,IT=0,GST=0,Cess=0,Ret=0,Oth=0,Adv=0;const seen=new Set();
+      lines.forEach(o=>{const bb=S.bills.find(z=>z.id===o.ll.billId)||null;const dd=o.ll.deds||{};const pg=payGross(o.x);
+        if(bb&&bb.id&&!seen.has(bb.id)){seen.add(bb.id);value+=billGross(bb);}
+        g+=n(o.ll.amt);IT+=n(dd.itTds);GST+=n(dd.cgstTds)+n(dd.sgstTds)+n(dd.igstTds);Cess+=n(dd.cess);Ret+=n(dd.ret);Oth+=n(dd.oth);Adv+=pg>0?n(o.x.advRec)*(n(o.ll.amt)/pg):0;});
+      seen.forEach(id=>{const bb=S.bills.find(z=>z.id===id);if(bb)withheld+=wh(bb,asOf);});
+      return {value:value,withheld:withheld,gross:g,IT:IT,GST:GST,Cess:Cess,Ret:Ret,Oth:Oth,Adv:Adv,bal:value-withheld,chq:g-Adv-(IT+GST+Cess+Ret+Oth)};};
+    const prevDate=prevL.length?prevL[prevL.length-1].x.date:p.date;
+    CUM=stateOf(uptoL,p.date);PRV=stateOf(prevL,prevDate);
   }
-  S.payments.filter(x=>!x.draft&&x.contractId===p.contractId).forEach(x=>{const earlier=(x.date<p.date)||(x.date===p.date&&vnoNum(x.vno)<vnoNum(p.vno));if(!earlier)return;
-    (x.lines||[]).forEach(ll=>{if(ll.billId)prevGross+=n(ll.amt);});
-    prevIT+=payDedTotal(x,'itTds');prevGST+=payDedTotal(x,'cgstTds')+payDedTotal(x,'sgstTds')+payDedTotal(x,'igstTds');prevCess+=payDedTotal(x,'cess');prevRet+=payDedTotal(x,'ret');prevOth+=payDedTotal(x,'oth');prevAdv+=n(x.advRec);});
-  const prevChq=prevGross-prevAdv-(prevIT+prevGST+prevCess+prevRet+prevOth);
+  const TH=k=>n(CUM[k])-n(PRV[k]); // "This Bill / payment" increment
   const R3=(no,label,pv,tv,ind,bold)=>`<tr><td class="no">${no||''}</td><td style="padding-left:${ind||0}px${bold?';font-weight:bold':''}">${label}</td><td class="r">${pv!=null?fmt(pv):''}</td><td class="r">${tv!=null?fmt(tv):''}</td><td class="r"${bold?' style="font-weight:bold"':''}>${(pv!=null||tv!=null)?fmt(n(pv)+n(tv)):''}</td></tr>`;
   const Hd3=(no,label,ind)=>`<tr><td class="no">${no||''}</td><td colspan="4" style="padding-left:${ind||0}px;font-weight:${ind?'400':'bold'}">${label}</td></tr>`;
   let _spsN=(b.billNo||'—');_spsN=_spsN.replace(/^\s*SPS[\s\-\.:#]*/i,'')||_spsN;
@@ -3997,24 +4167,24 @@ function mopBreakupHTML(p,li){
     <div class="ctr">Name of Payee:- <b>${esc(c.contractor||'—')}</b>${c.no?' ('+esc(c.no)+')':''}${c.pkg?' — '+esc(c.pkg):''}</div>
     <table>
       <tr><th class="no">Item</th><th>Particulars</th><th class="r">Up to Previous Bill</th><th class="r">This Bill</th><th class="r">Cumulative</th></tr>
-      ${R3('1',isAdv?'Mobilisation / Other Advance sanctioned':'Total value of work done — all SPS submitted',prevValue,thisValue)}
+      ${R3('1',isAdv?'Mobilisation / Other Advance sanctioned':'Total value of work done — all SPS submitted',PRV.value,TH('value'))}
       ${R3('2','Total up-to-date Advance Payments for work not yet measured',0,0)}
       ${R3('3','Total up-to-date Secured Advances on security of materials',0,0)}
-      ${R3('4','Total (items 1 + 2 + 3)',prevValue,thisValue,0,true)}
-      ${R3('5','Deduct — Amount withheld  [(a) previous · (b) this bill]',prevWithheld,thisWithheld,0,true)}
-      ${R3('6','Balance, i.e. up-to-date payment (item 4 − 5) (K)',prevValue-prevWithheld,thisValue-thisWithheld,0,true)}
-      ${R3('7','Bills passed / paid (gross)',prevGross,gross,0,true)}
+      ${R3('4','Total (items 1 + 2 + 3)',PRV.value,TH('value'),0,true)}
+      ${R3('5','Deduct — Amount withheld  [(a) previous · (b) this payment]',PRV.withheld,TH('withheld'),0,true)}
+      ${R3('6','Balance, i.e. up-to-date payment (item 4 − 5) (K)',PRV.bal,TH('bal'),0,true)}
+      ${R3('7','Bills passed / paid (gross)',PRV.gross,TH('gross'),0,true)}
       ${Hd3('8','Less — recoveries from the amount passed:')}
-      ${R3('','(a) Mobilisation / Secured Advance recovered',prevAdv,advRec,18)}
+      ${R3('','(a) Mobilisation / Secured Advance recovered',PRV.Adv,TH('Adv'),18)}
       ${Hd3('','(b) By recovery creditable to other Works / Heads:',18)}
-      ${R3('','Income Tax @ 2%',prevIT,it,32)}
-      ${R3('','GST TDS @ 2%',prevGST,gst,32)}
-      ${R3('','Labour Cess @ 1%',prevCess,cs,32)}
-      ${R3('','Security Deposit / Retention',prevRet,ret,32)}
-      ${R3('','Adjustment by CSC / Other',prevOth,oth,32)}
-      ${R3('','(c) Net paid by Cheque / NEFT',prevChq,thisChq,0,true)}
+      ${R3('','Income Tax @ 2%',PRV.IT,TH('IT'),32)}
+      ${R3('','GST TDS @ 2%',PRV.GST,TH('GST'),32)}
+      ${R3('','Labour Cess @ 1%',PRV.Cess,TH('Cess'),32)}
+      ${R3('','Security Deposit / Retention',PRV.Ret,TH('Ret'),32)}
+      ${R3('','Adjustment by CSC / Other',PRV.Oth,TH('Oth'),32)}
+      ${R3('','(c) Net paid by Cheque / NEFT',PRV.chq,TH('chq'),0,true)}
     </table>
-    <div style="font-size:10px;color:#555;margin-top:6px">For information only. Columns: figures up to the previous bill, this bill alone, and the cumulative (up-to-date) total. Cumulative = Previous + This.</div>
+    <div style="font-size:10px;color:#555;margin-top:6px">For information only. <b>Up to Previous Bill</b> = running total up to &amp; including the previous payment; <b>This Bill</b> = this payment alone; <b>Cumulative</b> = up-to-date total. Cumulative = Previous + This on every row. A negative "This Bill" withheld figure means a previously-withheld amount was released and paid in this payment.</div>
   </div>`;
 }
 function mopBreakupPrint(pid,li){const p=S.payments.find(x=>x.id===pid);if(!p)return;mopDocWindow(mopBreakupHTML(p,+li),'Statement of Account');}
@@ -4044,11 +4214,161 @@ function mofQ(v){MOF.q=v;render();}
 function payInstNo(p){const list=S.payments.filter(x=>!x.draft&&x.contractId===p.contractId).slice().sort(relPaySort);const i=list.findIndex(x=>x.id===p.id);return i<0?1:i+1;}
 // Payment/installment number for a specific SPS/bill (how many-th time THIS bill is being paid)
 function billPayNo(p,billId){if(!billId)return payInstNo(p);const list=S.payments.filter(x=>!x.draft&&(x.lines||[]).some(ll=>ll.billId===billId)).slice().sort(relPaySort);const i=list.findIndex(x=>x.id===p.id);return i<0?1:i+1;}
+/* ===================== PAYMENT NOTE-SHEET (grouped with MOP) =====================
+   A running-account note for one or more SPS/bills and/or mobilisation advances paid TOGETHER
+   (grouped by cheque). Columns = cumulative BEFORE | each SPS/advance in this payment | cumulative AFTER.
+   Sections A (value of work/withheld), B (recoveries), C payment now, D retention, E taxes, By cheque + cheque break-up. */
+let MOPMODE='mop';
+function mopSetMode(m){MOPMODE=m;render();}
+function noteUnits(){
+  const list=S.payments.filter(p=>inF(p)&&!p.draft);
+  const gmap={},groups=[];
+  list.forEach(p=>{const key=(p.chqNo&&p.chqNo.trim())?('CHQ|'+p.date+'|'+p.chqNo.trim()+'|'+p.contractId):('SOLO|'+p.id);
+    if(!gmap[key]){gmap[key]={ids:[],ps:[],cid:p.contractId||'—',chqNo:(p.chqNo||'').trim(),date:p.date};groups.push(gmap[key]);}
+    gmap[key].ids.push(p.id);gmap[key].ps.push(p);});
+  return groups;
+}
+function noteSheetHTML(ids){
+  const idset=(ids||'').split(',').filter(Boolean);
+  const ps=S.payments.filter(x=>!x.draft&&idset.includes(x.id));
+  if(!ps.length)return '<div class="mop">No payment found.</div>';
+  const p0=ps.slice().sort(relPaySort)[0];
+  const s=S.schemes.find(x=>x.id===p0.schemeId)||{contracts:[]};
+  const c=(s.contracts||[]).find(x=>x.id===p0.contractId)||{};
+  const cid=p0.contractId;
+  const order=[];
+  S.payments.filter(x=>!x.draft&&x.contractId===cid).forEach(x=>{(x.lines||[]).forEach((l,idx)=>{order.push({q:x,l:l,idx:idx});});});
+  order.sort((A,B)=>{const da=A.q.date||'',db=B.q.date||'';if(da!==db)return da<db?-1:1;const va=vnoNum(A.q.vno),vb=vnoNum(B.q.vno);if(va!==vb)return va-vb;return A.idx-B.idx;});
+  const inGroup=o=>idset.includes(o.q.id);
+  const KEYS=['val','adhoc','csc','whRel','passed','it','gst','cess','ret','oth','adv','mobAdv'];
+  const zero=()=>{const o={};KEYS.forEach(k=>o[k]=0);return o;};
+  const addTo=(acc,i)=>{KEYS.forEach(k=>acc[k]+=n(i[k]));return acc;};
+  const firstSeen=new Set();
+  const inc=o=>{const l=o.l,q=o.q,isAdv=!l.billId,b=isAdv?{}:(S.bills.find(z=>z.id===l.billId)||{});
+    const first=!isAdv&&!firstSeen.has(l.billId);if(first)firstSeen.add(l.billId);
+    const d=l.deds||{},passed=n(l.amt);
+    return {val:isAdv?0:(first?billGross(b):0),adhoc:isAdv?0:(first?n(b.adhoc):0),csc:isAdv?0:(first?n(b.cscWh):0),whRel:isAdv?0:(first?billWhRel(b):0),passed:passed,
+      it:n(d.itTds),gst:n(d.cgstTds)+n(d.sgstTds)+n(d.igstTds),cess:n(d.cess),ret:n(d.ret),oth:n(d.oth),
+      adv:payGross(q)>0?n(q.advRec)*(passed/payGross(q)):0,mobAdv:isAdv?passed:0,
+      isAdv:isAdv,billNo:b.billNo||'',instNo:isAdv?'':billPayNo(q,l.billId),serial:l.serial||q.serial||''};};
+  const before=zero(),cols=[];let started=false;
+  order.forEach(o=>{if(inGroup(o)){started=true;cols.push({o:o,i:inc(o)});}else if(!started){addTo(before,inc(o));}});
+  const grpTot=cols.reduce((a,c)=>addTo(a,c.i),zero());
+  const after=addTo(Object.assign(zero(),before),grpTot);
+  const money=v=>Math.abs(v)>0.005?fmt(v):(v<-0.005?'('+fmt(-v)+')':'');
+  const colLbl=i=>i.isAdv?('This Payment<br>Mob. Adv'+(i.serial?' '+esc(i.serial):'')):('This Payment<br>'+esc(i.billNo||'—')+'<br><span class="mini">Payment '+i.instNo+'</span>');
+  const cellBg=ix=>ix===0?'background:#eff6ff':(ix===cols.length+1?'background:#fef9c3;font-weight:bold':(ix===cols.length+2?'background:#f0fdf4;font-weight:bold':''));
+  const R=(no,label,fn,bold,ind)=>{const cells=[fn(before)].concat(cols.map(c=>fn(c.i))).concat([fn(grpTot),fn(after)]);
+    return `<tr${bold?' class="ntot"':''}><td class="no">${no||''}</td><td style="padding-left:${ind||0}px${bold?';font-weight:bold':''}">${label}</td>`+cells.map((v,ix)=>`<td class="r" style="${cellBg(ix)}${bold?';font-weight:bold':''}">${money(v)}</td>`).join('')+`</tr>`;};
+  const nCol=cols.length+3;
+  const chqNo=k=>{const cs=[...new Set(ps.map(q=>(q.dedChq&&q.dedChq[k])||'').filter(Boolean))];return cs.join(', ');};
+  const contractorNet=grpTot.passed-grpTot.adv-grpTot.ret-grpTot.oth-grpTot.it-grpTot.gst-grpTot.cess;
+  const chqRows=[['1',esc(c.contractor||'—'),esc(p0.chqNo||'—'),contractorNet],
+    ['2','SBI for TDS GST @ 2%',esc(chqNo('cgstTds')||chqNo('sgstTds')||'—'),grpTot.gst],
+    ['3','SBI for TDS Income Tax @ 2%',esc(chqNo('itTds')||'—'),grpTot.it],
+    ['4','Manipur Building &amp; Other Const. Workers Board — Labour Cess @ 1%',esc(chqNo('cess')||'—'),grpTot.cess]]
+    .filter(r=>r[0]==='1'||n(r[3])>0.005);
+  const chqTot=chqRows.reduce((a,r)=>a+n(r[3]),0);
+  const dtxt=dfmt(p0.date);
+  return `<div class="mop">
+    <div class="ctr" style="font-weight:bold">${esc(s.name||'')}</div>
+    <div class="ctr" style="font-size:11px">The proposal is settlement of the running account bill(s) noted below.</div>
+    <h3>PAYMENT NOTE-SHEET</h3>
+    <div class="ctr"><b>${esc(c.contractor||'—')}${c.pkg?' ('+esc(c.pkg)+')':(c.no?' ('+esc(c.no)+')':'')}</b></div>
+    <div class="ctr mini">Cheque/NEFT: ${esc(p0.chqNo||'—')} &nbsp;·&nbsp; Dated ${dtxt} &nbsp;·&nbsp; Covers ${cols.length} item(s) in this payment</div>
+    <table class="mt nt">
+      <tr><th class="no">SL</th><th>Description</th>
+        <th class="r" style="background:#dbeafe">Cumulative<br>(Before)</th>
+        ${cols.map(c=>'<th class="r">'+colLbl(c.i)+'</th>').join('')}
+        <th class="r" style="background:#fde68a">Total of<br>THIS PAYMENT</th>
+        <th class="r" style="background:#bbf7d0">Cumulative<br>(After)</th></tr>
+      <tr class="sec"><td></td><td colspan="${nCol+1}"><b>A. VALUE OF WORK / SPS</b></td></tr>
+      ${R('A.1','Total SPS submitted — gross value of work (incl. GST &amp; cess)',i=>i.val)}
+      ${R('A.2','Less: Adhoc Withheld (pre-clearing)',i=>i.adhoc,false,10)}
+      ${R('A.3','Less: CSC / Additional Withheld',i=>i.csc,false,10)}
+      ${R('A.4','Add: Withheld Released',i=>i.whRel,false,10)}
+      ${R('A.5','Cleared Liability (A.1 − A.2 − A.3 + A.4)',i=>i.val-i.adhoc-i.csc+i.whRel,true)}
+      ${R('A.6','Bill Passed (amount paid this time)',i=>i.passed,true)}
+      ${R('A.7','Pending / Unpaid balance (A.5 − A.6)',i=>(i.val-i.adhoc-i.csc+i.whRel)-i.passed)}
+      <tr class="sec"><td></td><td colspan="${nCol+1}"><b>B. ADVANCES PAID</b></td></tr>
+      ${R('B.1','Mobilisation Advance',i=>i.mobAdv)}
+      ${R('B.2','Material / Secured Advance',i=>0)}
+      <tr class="sec"><td></td><td colspan="${nCol+1}"><b>C. RECOVERIES</b></td></tr>
+      ${R('C.1','Recovery of Mobilisation Advance',i=>i.adv)}
+      ${R('C.2','Recovery of Material / Secured Advance',i=>0)}
+      ${R('C.3','Royalty',i=>0)}
+      ${R('C.4','Cost of Departmental Material issued',i=>0)}
+      ${R('C.5','Liquidated Damages / Penalty',i=>0)}
+      ${R('C.6','Other / CSC Adjustment recovery',i=>i.oth)}
+      ${R('','Total Recoveries',i=>i.adv+i.oth,true)}
+      <tr class="sec"><td></td><td colspan="${nCol+1}"><b>D. RETENTION / SECURITY DEPOSIT</b></td></tr>
+      ${R('D.1','Retention Money / Security Deposit',i=>i.ret)}
+      ${R('','EFFECTIVE / REAL EXPENDITURE (Bill Passed − Retention − Other adj.)',i=>i.passed-i.ret-i.oth,true)}
+      <tr class="sec"><td></td><td colspan="${nCol+1}"><b>E. TAXES / TDS (deducted at source)</b></td></tr>
+      ${R('E.1','Income Tax @ 2%',i=>i.it)}
+      ${R('E.2','GST TDS @ 2% (CGST + SGST / IGST)',i=>i.gst)}
+      ${R('E.3','Labour Cess @ 1%',i=>i.cess)}
+      ${R('','Total TDS',i=>i.it+i.gst+i.cess,true)}
+      ${R('','NET PAYMENT BY CHEQUE (to contractor)',i=>i.passed-i.ret-i.oth-i.it-i.gst-i.cess-i.adv,true)}
+    </table>
+    <div style="margin-top:8px;font-weight:bold">The details of the Cheque(s) are as follows:</div>
+    <table class="mt" style="margin-top:4px">
+      <tr><th class="no">Sl.</th><th>Name of Payee</th><th>Cheque No.</th><th>Date</th><th class="r">Cheque Amount</th></tr>
+      ${chqRows.map(r=>`<tr><td class="no">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${dtxt}</td><td class="r">${fmt(r[3])}</td></tr>`).join('')}
+      <tr class="ntot"><td></td><td colspan="3"><b>TOTAL</b></td><td class="r"><b>${fmt(chqTot)}</b></td></tr>
+    </table>
+    <div style="margin-top:6px"><b>Pay ${fmt(contractorNet)}</b> (${esc(inWords(contractorNet))}) to ${esc(c.contractor||'the contractor')} by cheque; statutory deductions by separate cheques as above.</div>
+    <div style="margin-top:8px">Put up for kind signature, please.</div>
+    <div style="margin-top:80px;display:flex;justify-content:space-between">
+      <div style="width:44%;border-top:1px solid #333;padding-top:5px">Prepared / Verified by:</div>
+      <div style="width:44%;border-top:1px solid #333;padding-top:5px;text-align:right">Divisional Officer / DDO</div>
+    </div>
+  </div>`;
+}
+function noteView(ids){
+  const doc=`<!DOCTYPE html><html><head><meta charset="utf-8"><style>${mopStyle()}table.nt th,table.nt td{font-size:11px}</style></head><body>${noteSheetHTML(ids)}</body></html>`;
+  let ov=document.getElementById('mopov');if(!ov){ov=document.createElement('div');ov.id='mopov';document.body.appendChild(ov);}
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;flex-direction:column;align-items:center;padding:14px';
+  ov.innerHTML=`<div style="background:#fff;border-radius:8px;max-width:1100px;width:100%;max-height:100%;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.4)">
+    <div style="display:flex;gap:8px;align-items:center;padding:8px 12px;border-bottom:1px solid #e5e7eb">
+      <b style="margin-right:auto">Payment Note-sheet — preview</b>
+      <button class="btn2 btn-sm" onclick="notePrint('${ids}')">📄 Print / PDF</button>
+      <button class="btn2 btn-sm" onclick="notePNG('${ids}')">🖼 PNG</button>
+      <button class="btn2 btn-sm" onclick="mopCloseView()">✕ Close</button>
+    </div><iframe id="mopf" style="flex:1;border:none;width:100%;min-height:72vh"></iframe></div>`;
+  document.getElementById('mopf').srcdoc=doc;
+  ov.onclick=function(e){if(e.target===ov)mopCloseView();};
+}
+function notePrint(ids){mopDocWindow(noteSheetHTML(ids),'Payment Note-sheet');}
+function notePNG(ids){xpPNG('<style>'+mopStyle()+'</style>'+noteSheetHTML(ids),'NoteSheet_'+(ids.split(',')[0]));}
+function mopModeBar(){return `<div class="card" style="padding:8px 12px;margin:6px 0"><div class="flex" style="gap:8px;align-items:center"><b class="mini">VIEW:</b>
+  <span class="chip ${MOPMODE==='mop'?'on':''}" onclick="mopSetMode('mop')">📝 Memorandum of Payment (per bill)</span>
+  <span class="chip ${MOPMODE==='note'?'on':''}" onclick="mopSetMode('note')">🧾 Payment Note-sheet (paid together)</span></div></div>`;}
+function pgNoteSheets(){
+  const groups=noteUnits();
+  const byCon={};groups.forEach(g=>{(byCon[g.cid]=byCon[g.cid]||[]).push(g);});
+  const cons=Object.keys(byCon).map(cid=>({cid:cid,con:conById(cid)||{},groups:byCon[cid]})).sort((a,b)=>((a.con.no||'')<(b.con.no||'')?-1:1));
+  const head=`<h2 class="pg">Payment Note-sheet</h2>`+`
+  <div class="sub">${esc(periodLabel())} — one note per cheque covering the SPS/bills &amp; mobilisation advances in that payment: value before, this payment, cumulative after, and the cheque break-up.</div>`;
+  if(!cons.length)return head+'<div class="card empty">No payments in this selection.</div>';
+  let sel=MOF.con;if(!sel||!cons.some(x=>x.cid===sel))sel=cons[0].cid;
+  const g=cons.find(x=>x.cid===sel)||cons[0];
+  const tabs=`<div class="card"><div class="chips"><b class="mini" style="margin-right:4px">CONTRACT:</b>${cons.map(x=>`<span class="chip ${x.cid===sel?'on':''}" onclick="mofSetCon('${x.cid}')">${esc(x.con.no||'—')} · ${esc(x.con.contractor||'')} <span class="mini">(${x.groups.length})</span></span>`).join('')}</div></div>`;
+  const rows=g.groups.slice().sort((a,b)=>(a.date<b.date?1:-1)).map(u=>{
+    const ps=u.ps;const gross=ps.reduce((a,q)=>a+payGross(q),0),net=ps.reduce((a,q)=>a+payNet(q),0),adv=ps.reduce((a,q)=>a+n(q.advRec),0);
+    const sps=[];ps.forEach(q=>(q.lines||[]).forEach(l=>{if(l.billId){const b=S.bills.find(z=>z.id===l.billId)||{};sps.push(b.billNo||'?');}else sps.push('Adv'+(l.serial||q.serial?' '+(l.serial||q.serial):''));}));
+    return `<tr><td>${dfmt(u.date)}</td><td>${sps.map(x=>'<span class="tag b">'+esc(x)+'</span>').join(' ')||'—'}</td><td>${esc(u.chqNo||'—')}</td><td class="num">${fmt(gross)}</td><td class="num">${adv>0?fmt(adv):'—'}</td><td class="num"><b>${fmt(net)}</b></td>
+    <td style="white-space:nowrap"><button class="btn2 btn-sm" onclick="noteView('${u.ids.join(',')}')" title="View note-sheet">👁 View</button> <button class="btn2 btn-sm" onclick="notePrint('${u.ids.join(',')}')" title="Print / PDF">📄</button> <button class="btn2 btn-sm" onclick="notePNG('${u.ids.join(',')}')" title="PNG">🖼</button></td></tr>`;}).join('');
+  const table=`<div class="card"><h3>👷 ${esc(g.con.contractor||'—')} <span class="mini">— ${esc(g.con.no||'')}</span></h3>
+    <div class="tbl-wrap"><table><tr><th>Date</th><th>SPS / Advances in this payment</th><th>Cheque</th><th class="num">Bill Passed</th><th class="num">Adv. Rec.</th><th class="num">Net by Cheque</th><th>Note-sheet</th></tr>${rows||'<tr><td colspan="7" class="empty">No payments</td></tr>'}</table></div></div>`;
+  return head+tabs+table;
+}
 function pgMOP(){
+  if(MOPMODE==='note')return pgNoteSheets();
   const units=mopUnits();
   const byCon={};units.forEach(u=>{const key=u.p.contractId||'—';(byCon[key]=byCon[key]||[]).push(u);});
   const cons=Object.keys(byCon).map(cid=>({cid:cid,con:conById(cid)||{},units:byCon[cid]})).sort((a,b)=>((a.con.no||'')<(b.con.no||'')?-1:1));
-  const head=`<h2 class="pg">Memoranda of Payment (MOP) — CPWD format</h2>
+  const head=`<h2 class="pg">Memoranda of Payment (MOP) — CPWD format</h2>`+`
   <div class="sub">${esc(periodLabel())} — one MOP per bill passed / mobilisation advance. Pick a contract, then filter by SPS / advance / installment no. When several bills share one cheque, each still gets its own MOP.</div>`;
   if(!cons.length)return head+'<div class="card empty">No payments in this selection. A MOP is generated for every bill passed and every mobilisation advance paid.</div>';
   let sel=MOF.con;if(!sel||!cons.some(g=>g.cid===sel))sel=cons[0].cid;
@@ -4066,7 +4386,7 @@ function pgMOP(){
     const gross=n(l.amt),ded=payLineDeds(l)+(payGross(p)>0?n(p.advRec)*(gross/payGross(p)):0),net=gross-ded;
     return `<tr><td>${dfmt(p.date)}<div class="mini">${esc(p.vno||'')}</div></td><td>${isAdv?'—':'<b>'+esc(b.billNo||'?')+'</b>'}</td><td>${isAdv?'<span class="tag o">Mob./Other Adv.</span>'+((l.serial||p.serial)?' <span class="mini">'+esc(l.serial||p.serial)+'</span>':''):'—'}</td><td class="num"><b>${billPayNo(p,l.billId)}</b></td><td class="num">${fmt(gross)}</td><td class="num">${fmt(ded)}</td><td class="num"><b>${fmt(net)}</b></td><td>${esc(p.chqNo||'—')}</td><td style="white-space:nowrap"><button class="btn2 btn-sm" onclick="mopView('${p.id}',${u.li})" title="View this MOP on screen">👁 View</button> <button class="btn2 btn-sm" onclick="mopBreakupView('${p.id}',${u.li})" title="Previous / This Bill / Cumulative statement (information only)">📊</button> <button class="btn2 btn-sm" onclick="mopPrint('${p.id}',${u.li})" title="Print / save as PDF this MOP">📄</button> <button class="btn2 btn-sm" onclick="mopPNG('${p.id}',${u.li})" title="Save this MOP as PNG">🖼</button></td></tr>`;}).join('');
   const table=`<div class="card"><h3>👷 ${esc(g.con.contractor||'—')} <span class="mini">— ${esc(g.con.no||'')}${g.con.pkg?' ('+esc(g.con.pkg)+')':''}</span><span style="float:right"><button class="btn2 btn-sm" onclick="mopPrintContract('${g.cid}')">🖨 Print ALL MOPs (this contract)</button></span></h3>
-    <div class="tbl-wrap"><table><tr><th>Date</th><th>Bill / SPS No.</th><th>Mob. Advance</th><th class="num">Pay No.<div class="mini" style="font-weight:400">(for this SPS)</div></th><th class="num">Gross</th><th class="num">Deductions</th><th class="num">Net by Cheque</th><th>Cheque</th><th>MOP</th></tr>${rows||'<tr><td colspan="9" class="empty">No MOPs match the filter</td></tr>'}</table></div></div>`;
+    <div class="tbl-wrap"><table><tr><th>Date</th><th>Bill / SPS No.</th><th>Mob. Advance</th><th class="num">Payment No.<div class="mini" style="font-weight:400">(for this SPS)</div></th><th class="num">Bill Passed</th><th class="num">Deductions</th><th class="num">Net by Cheque</th><th>Cheque</th><th>MOP</th></tr>${rows||'<tr><td colspan="9" class="empty">No MOPs match the filter</td></tr>'}</table></div></div>`;
   return head+tabs+filt+table;
 }
 function pgPayments(){
@@ -4105,7 +4425,7 @@ function pgPayments(){
     <td class="num"><b>${fmt(gNet)}</b><div class="mini">Chq: ${esc(p.chqNo||'—')}</div>${p.bankId?'<div class="mini">🏦 '+esc(bankName(p.bankId))+'</div>':''}</td>
     <td><details><summary class="mini">details${multi?' ('+ps.length+' vouchers)':''}</summary>
       <b class="mini">PER BILL/SPS (gross · deductions · net):</b>
-      <div class="tbl-wrap"><table><tr><th>Bill</th><th>Serial</th><th class="num">Paid</th>${DEDS.map(([k,l])=>`<th class="num">${l.split(' ')[0]}</th>`).join('')}<th class="num">Net</th></tr>${perBill}</table></div>
+      <div class="tbl-wrap"><table><tr><th>Bill</th><th>Serial</th><th class="num">Bill Passed</th>${DEDS.map(([k,l])=>`<th class="num">${l.split(' ')[0]}</th>`).join('')}<th class="num">Net</th></tr>${perBill}</table></div>
       <b class="mini">DEDUCTION CHEQUES:</b>
       <table><tr><th>Deduction</th><th class="num">Total</th><th>Cheque No.</th><th>Date</th></tr>${dedRows||'<tr><td colspan="4" class="mini">none</td></tr>'}
       <tr class="tot-pay"><td>Paid to Contractor (net)</td><td class="num">${fmt(gNet)}</td><td>${esc(p.chqNo||'—')}</td><td>${dfmt(p.date)}</td></tr></table>
@@ -4123,9 +4443,9 @@ function pgPayments(){
       <td class="num">${fmt(g)}</td><td class="num">${fmt(d)}</td>
       <td class="num"><b>${fmt(net)}</b><div class="mini">Chq: ${esc(p.chqNo||'—')}</div>${p.bankId?'<div class="mini">🏦 '+esc(bankName(p.bankId))+'</div>':''}</td>
       <td>${_pp} <button class="btn2 btn-sm" onclick="printVoucher('${p.id}')" title="Print voucher">🖨</button> <button class="btn2 btn-sm" onclick="editPay('${p.id}')" title="Edit advance">✎</button> <button class="btn-del" onclick="delPay('${p.id}')" title="Delete advance">✕</button></td></tr>`;}).join('');
-  return `<h2 class="pg">Payments — Disburse Contractor Liability${entryLockChip('payments')}</h2>
-  <div class="sub">${esc(periodLabel())} — pay one bill or parts of many SPS together in one cheque. Statutory deductions are applied here.</div>
-  <div class="card entry-only" style="border-left:4px solid var(--acc)"><h3>${ED.pay?'✎ Edit Payment <span class="tag o">EDITING</span>':'➕ Record Payment'}</h3>
+  const head=`<h2 class="pg">Payments — Disburse Contractor Liability${entryLockChip('payments')}</h2>
+  <div class="sub">${esc(periodLabel())} — pay one bill or parts of many SPS together in one cheque. Statutory deductions are applied here. <span class="mini">Detailed expenditure, summary &amp; registers are on the <b>Expenditure &amp; Registers</b> tab.</span></div>`;
+  const entryCard=`<div class="card entry-only" style="border-left:4px solid var(--acc)"><h3>${ED.pay?'✎ Edit Payment <span class="tag o">EDITING</span>':'➕ Record Payment'}</h3>
     <div class="frm">
       <div><label>Scheme *</label><select id="py_sch" onchange="cascade('py');pySchChange()">${ss.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select></div>
       <div><label>Component</label><select id="py_comp" onchange="cascadeSub('py')"></select></div>
@@ -4136,16 +4456,10 @@ function pgPayments(){
       <div><label>Serial / Name (default — or set per SPS)</label><input id="py_serial" placeholder="e.g. RA-1, Payment-2, Stage-1"></div>
       <div class="wide"><span class="mini" id="py_conName"></span></div>
     </div>
+    <div id="py_recov"></div>
     <div class="sec-line"></div>
     <div id="py_spsblock">
     <b style="font-size:12.5px">Outstanding SPS / Bills — enter amount paid now against each (part payment allowed, many SPS in one cheque). A <b>Mobilisation / Other Advance</b> line at the bottom lets you pay an advance in the same cheque. ⚡ = auto taxes (IT 2%, CGST/SGST TDS 1%+1%, Cess 1% of amount ÷ 1.19)</b>
-    <div class="flex" style="margin-top:8px;gap:8px;align-items:flex-end;flex-wrap:wrap;background:#f8fafc;padding:8px;border-radius:6px">
-      <div><label class="mini">🔎 SPS / Bill No.</label><input id="pof_q" value="${esc(POF.q||'')}" placeholder="type, then Enter" onchange="POF.q=this.value;pyBills()" style="max-width:150px"></div>
-      <div><label class="mini">From (bill date)</label><input type="date" value="${esc(POF.from||'')}" onchange="POF.from=this.value;pyBills()"></div>
-      <div><label class="mini">To (bill date)</label><input type="date" value="${esc(POF.to||'')}" onchange="POF.to=this.value;pyBills()"></div>
-      <div><label class="mini">Sort by</label><select onchange="POF.sort=this.value;pyBills()">${[['date_asc','Bill date ↑ then SPS no.'],['date_desc','Bill date ↓ then SPS no.'],['sps_asc','SPS no. ↑ then date'],['sps_desc','SPS no. ↓ then date']].map(function(o){return '<option value="'+o[0]+'" '+(POF.sort===o[0]?'selected':'')+'>'+o[1]+'</option>';}).join('')}</select></div>
-      <button class="btn2 btn-sm" onclick="pofClear()">✕ Clear</button>
-    </div>
     <div id="py_bills" style="margin-top:8px"></div>
     </div>
     <div id="py_advblock" style="display:none">
@@ -4165,26 +4479,24 @@ function pgPayments(){
       <div id="py_headbox" style="display:${(schSources(ss[0]?ss[0].id:'')[0])==='State Budget'?'block':'none'}"><label>If State Budget — Head</label><select id="py_head"><option>State Share Head</option><option>AIIB/Central Share Head</option></select></div>
       <div><label>Expenditure From Share *</label><select id="py_share">${schShares(ss[0]?ss[0].id:'').map(s=>`<option>${esc(s)}</option>`).join('')}</select></div>
       <div><label>Against Release</label><select id="py_rel"></select></div>
-      <div><label>Paid From Project A/c * <a style="cursor:pointer;color:var(--acc)" onclick="quickAddBank('py_bank')">+ new</a></label><select id="py_bank">${projBankOpts('')}</select>
-        <div class="mini">contractor payments go out of the Project account only</div></div>
+      <div><label>Paid From Project A/c * <a style="cursor:pointer;color:var(--acc)" onclick="quickAddBank('py_bank')">+ new</a></label><select id="py_bank">${projBankOpts('')}</select></div>
       <div><label>Cheque No. — Paid to Contractor</label><input id="py_chq" placeholder="cheque / NEFT ref"><div class="mini" id="py_chq_amt" style="color:var(--ok);font-weight:700"></div></div>
       <div><label>Less: Advance Recovery (₹)</label><input type="number" step="0.01" id="py_advrec" oninput="pyCalc()" placeholder="mob. adv recovered"></div>
       <div class="wide"><label>Note / Voucher No.</label><input id="py_note"></div>
     </div>
     <b style="font-size:12.5px">Cheque Nos. for Statutory Deductions <span class="mini" style="font-weight:600">(separate cheque for each — tick below if CGST &amp; SGST go in one cheque)</span></b>
     <div style="margin:6px 0"><label style="font-weight:600;cursor:pointer;font-size:12.5px"><input type="checkbox" id="py_gstone" onchange="togGstChq()"> CGST + SGST TDS issued in <b>one combined cheque</b> (single cheque no. &amp; combined total)</label></div>
-    <div class="ded-grid" style="margin-top:8px">
-      ${DEDS.filter(([k])=>k!=='ret'&&k!=='oth').map(([k,l])=>`<div id="py_dchqwrap_${k}"><label>${l} — Chq No.</label><input id="py_dchq_${k}"><div class="mini" id="py_dchq_amt_${k}" style="color:var(--mut);font-weight:600"></div></div>`).join('')}
-      <div id="py_dchqwrap_gst" style="display:none"><label>CGST + SGST TDS — Chq No.</label><input id="py_dchq_gst"><div class="mini" id="py_dchq_amt_gst" style="color:var(--mut);font-weight:600"></div></div>
+    <div style="margin-top:8px;display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto">
+      ${DEDS.filter(([k])=>k!=='ret'&&k!=='oth').map(([k,l])=>`<div id="py_dchqwrap_${k}" style="flex:1 1 0;min-width:150px"><label>${l} — Chq No.</label><input id="py_dchq_${k}" style="width:100%"><div class="mini" id="py_dchq_amt_${k}" style="color:var(--mut);font-weight:600"></div></div>`).join('')}
+      <div id="py_dchqwrap_gst" style="display:none;flex:1 1 0;min-width:150px"><label>CGST + SGST TDS — Chq No.</label><input id="py_dchq_gst" style="width:100%"><div class="mini" id="py_dchq_amt_gst" style="color:var(--mut);font-weight:600"></div></div>
     </div>
     <div class="stick-act">
       <div id="py_tot" style="margin-right:auto;font-weight:700"></div>
       ${ED.pay?'<button class="btn2" onclick="cancelEdit()">Cancel</button><button class="btn btn-ok" style="font-size:15px;padding:10px 26px" onclick="addPay()">💾 UPDATE PAYMENT</button>'
        :'<button class="btn btn-ok" style="font-size:15px;padding:10px 26px" onclick="addPay()">✅ RECORD PAYMENT</button>'}
     </div>
-  </div>
-  ${payFilterCard()}
-  <div class="card" style="margin-bottom:16px">
+  </div>`;
+  const compCard=`<div class="card" style="margin-bottom:16px">
     <h3>Component &amp; Contract-wise Expenditure (filtered)</h3>
     <div class="note" style="margin-bottom:6px">SPS submitted, cleared, bill passed, deductions, net paid and effective expenditure (bill &amp; advance), component &amp; contract-wise. Per-payment detail with every deduction is in the next table below.</div>
     ${(function(){
@@ -4195,7 +4507,7 @@ function pgPayments(){
       const compMap={};
       ss.forEach(s=>{
         (s.components||[]).forEach(comp=>{
-          const compContracts=(s.contracts||[]).filter(c=>c.compId===comp.id);
+          const compContracts=(s.contracts||[]).filter(c=>c.compId===comp.id).sort(cmpConNo);
           if(!compContracts.length)return;
           const compTotal=newT();
           const conRows=compContracts.map(con=>{
@@ -4237,20 +4549,24 @@ function pgPayments(){
         <tr class="tot-pay"><td><b>GRAND TOTAL</b></td>${tcell(G)}</tr>
       </table></div>`;
     })()}
-  </div>
-  ${(function(){
+  </div>`;
+  const detailsCard=(function(){
     const ps=livePays.slice().sort((a,b)=>a.date!==b.date?(a.date<b.date?1:-1):(vnoNum(b.vno)-vnoNum(a.vno)));
     const conNm=cid=>{for(const s of S.schemes){const c=(s.contracts||[]).find(x=>x.id===cid);if(c)return c;}return null;};
     const spsList=p=>p.kind==='adv'?'Mob./Other Advance':((p.lines||[]).map(l=>{if(!l.billId)return 'Advance';const b=S.bills.find(z=>z.id===l.billId)||{};return b.billNo||'?';}).join(', ')||'—');
-    const T={g:0,net:0,eff:0,adv:0};const DT={};DEDS.forEach(([k])=>DT[k]=0);
+    const T={g:0,net:0,eff:0,adv:0,cl:0,sh:0,bp:0};const DT={};DEDS.forEach(([k])=>DT[k]=0);
     const rows=ps.map(p=>{
       const c=conNm(p.contractId)||{};
       const g=payGross(p),net=payNet(p),eff=payEff(p),adv=n(p.advRec);
-      T.g+=g;T.net+=net;T.eff+=eff;T.adv+=adv;DEDS.forEach(([k])=>DT[k]+=payDedTotal(p,k));
+      const cleared=payClearedForPay(p),billPassed=payBillPassed(p),shortfall=Math.max(0,cleared-billPassed);
+      T.g+=g;T.net+=net;T.eff+=eff;T.adv+=adv;T.cl+=cleared;T.sh+=shortfall;T.bp+=billPassed;DEDS.forEach(([k])=>DT[k]+=payDedTotal(p,k));
       const open=PDX.has(p.id);
       const main=`<tr style="cursor:pointer" onclick="togPD('${p.id}')"><td>${dfmt(p.date)}${p.vno?'<div class="mini">'+esc(p.vno)+'</div>':''}</td>
         <td>${esc(c.no||'—')}<div class="mini">${esc(c.contractor||'')}</div></td>
         <td><b>${open?'▾':'▸'}</b> ${p.kind==='adv'?'<span class="tag o">Mob./Other Advance</span>':esc(spsList(p))} <span class="mini">${(p.lines||[]).length} SPS</span></td>
+        <td class="num">${cleared?fmt(cleared):'—'}</td>
+        <td class="num"><b style="color:${shortfall>0.005?'#dc2626':'#16a34a'}">${cleared?fmt(shortfall):'—'}</b></td>
+        <td class="num">${(p.kind||'sps')!=='adv'?fmt(billPassed):'—'}</td>
         <td class="num"><b>${fmt(g)}</b></td>
         ${DEDS.map(([k])=>`<td class="num">${fmt(payDedTotal(p,k))}</td>`).join('')}
         <td class="num">${fmt(payAllDeds(p))}</td>
@@ -4263,21 +4579,21 @@ function pgPayments(){
       let subs='';
       if(open){
         (p.lines||[]).forEach(l=>{const b=S.bills.find(z=>z.id===l.billId)||{};const lineNet=n(l.amt)-payLineDeds(l);
-          subs+=`<tr style="background:#f8fafc"><td></td><td></td><td><span style="padding-left:20px">${l.billId?esc(b.billNo||'?'):'<b>Mob./Other Advance</b>'}${l.serial?' <span class="mini">'+esc(l.serial)+'</span>':''}</span></td><td class="num">${fmt(l.amt)}</td>${DEDS.map(([k])=>`<td class="num">${fmt(l.deds&&l.deds[k])}</td>`).join('')}<td class="num">${fmt(payLineDeds(l))}</td><td></td><td class="num">${fmt(lineNet)}</td><td></td><td></td><td></td><td></td></tr>`;});
-        subs+=`<tr style="background:#eef4fb"><td></td><td></td><td><span class="mini" style="padding-left:20px">Cheque / Challan No. →</span></td><td></td>${DEDS.map(([k])=>`<td class="num" style="font-size:11px">${esc((p.dedChq&&p.dedChq[k])||'—')}</td>`).join('')}<td></td><td></td><td class="num" style="font-size:11px">${esc(p.chqNo||'—')}</td><td></td><td></td><td></td><td></td></tr>`;
+          subs+=`<tr style="background:#f8fafc"><td></td><td></td><td><span style="padding-left:20px">${l.billId?esc(b.billNo||'?'):'<b>Mob./Other Advance</b>'}${l.serial?' <span class="mini">'+esc(l.serial)+'</span>':''}</span></td><td></td><td></td><td class="num">${l.billId?fmt(l.amt):'—'}</td><td class="num">${fmt(l.amt)}</td>${DEDS.map(([k])=>`<td class="num">${fmt(l.deds&&l.deds[k])}</td>`).join('')}<td class="num">${fmt(payLineDeds(l))}</td><td></td><td class="num">${fmt(lineNet)}</td><td></td><td></td><td></td><td></td></tr>`;});
+        subs+=`<tr style="background:#eef4fb"><td></td><td></td><td><span class="mini" style="padding-left:20px">Cheque / Challan No. →</span></td><td></td><td></td><td></td><td></td>${DEDS.map(([k])=>`<td class="num" style="font-size:11px">${esc((p.dedChq&&p.dedChq[k])||'—')}</td>`).join('')}<td></td><td></td><td class="num" style="font-size:11px">${esc(p.chqNo||'—')}</td><td></td><td></td><td></td><td></td></tr>`;
       }
       return main+subs;
     }).join('');
     const dedGrand=Object.keys(DT).reduce((a,k)=>a+DT[k],0);
-    return `<div class="card" style="margin-bottom:16px"><h3>💳 Payment Details — each payment: SPS → all deductions → net</h3>
-      <div class="note" style="margin-bottom:6px">Click any payment to expand its SPS/bill lines &amp; cheque numbers in the same columns. Use 📄 / 🖼 to save that payment (with full details) as PDF / PNG. ${ps.length} payment(s).</div>
+    return `<div class="card" style="margin-bottom:16px"><h3>💳 Payment Details — each payment: cleared → shortfall → bill passed → deductions → net</h3>
+      <div class="note" style="margin-bottom:6px">Click any payment to expand its SPS/bill lines &amp; cheque numbers in the same columns. <b>Cleared for Payment</b> is the net liability of the SPS/bills this payment settles; <b>WH (Shortage of Fund)</b> is the cleared amount not yet passed for want of funds (Cleared − Bill Passed); <b>Bill Passed</b> is what was passed in this payment. Use 📄 / 🖼 to save that payment (with full details) as PDF / PNG. ${ps.length} payment(s).</div>
       <div class="tbl-wrap"><table>
-      <tr><th>Date</th><th>Contract</th><th>SPS / Bill</th><th class="num">Gross</th>${DEDS.map(([k,l])=>`<th class="num">${esc(l.split(' (')[0])}</th>`).join('')}<th class="num">Total Ded.</th><th class="num">Adv. Rec.</th><th class="num">Net Paid</th><th class="num">Effective</th><th>Source</th><th>Share</th><th>Export</th></tr>
-      ${rows||'<tr><td colspan="18" class="empty">No payments in this selection</td></tr>'}
-      ${ps.length?`<tr class="tot-pay"><td colspan="3"><b>TOTAL</b></td><td class="num"><b>${fmt(T.g)}</b></td>${DEDS.map(([k])=>`<td class="num">${fmt(DT[k])}</td>`).join('')}<td class="num"><b>${fmt(dedGrand)}</b></td><td class="num">${fmt(T.adv)}</td><td class="num"><b>${fmt(T.net)}</b></td><td class="num"><b>${fmt(T.eff)}</b></td><td colspan="3"></td></tr>`:''}
+      <tr><th>Date</th><th>Contract</th><th>SPS / Bill</th><th class="num">Cleared for Payment</th><th class="num">WH (Shortage of Fund)</th><th class="num">Bill Passed</th><th class="num">Gross (Bill + Adv.)</th>${DEDS.map(([k,l])=>`<th class="num">${esc(l.split(' (')[0])}</th>`).join('')}<th class="num">Total Ded.</th><th class="num">Adv. Rec.</th><th class="num">Net Paid</th><th class="num">Effective</th><th>Source</th><th>Share</th><th>Export</th></tr>
+      ${rows||'<tr><td colspan="21" class="empty">No payments in this selection</td></tr>'}
+      ${ps.length?`<tr class="tot-pay"><td colspan="3"><b>TOTAL</b></td><td class="num"><b>${fmt(T.cl)}</b></td><td class="num"><b>${fmt(T.sh)}</b></td><td class="num"><b>${fmt(T.bp)}</b></td><td class="num"><b>${fmt(T.g)}</b></td>${DEDS.map(([k])=>`<td class="num">${fmt(DT[k])}</td>`).join('')}<td class="num"><b>${fmt(dedGrand)}</b></td><td class="num">${fmt(T.adv)}</td><td class="num"><b>${fmt(T.net)}</b></td><td class="num"><b>${fmt(T.eff)}</b></td><td colspan="3"></td></tr>`:''}
       </table></div></div>`;
-  })()}
-  <div class="card" style="margin-bottom:16px">
+  })();
+  const summaryEtc=`<div class="card" style="margin-bottom:16px">
     <h3>Payment Summary (filtered)</h3>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;align-items:start">
     <div><table style="max-width:560px">
@@ -4306,8 +4622,12 @@ function pgPayments(){
     ${advRows||'<tr><td colspan="9" class="empty">No mobilisation / other advances in this selection</td></tr>'}
     ${advRows?`<tr class="tot-pay"><td colspan="5"><b>TOTAL ADVANCES</b></td><td class="num"><b>${fmt(aGross)}</b></td><td class="num">${fmt(aDed)}</td><td class="num"><b>${fmt(aNet)}</b></td><td></td></tr>`:''}
     </table></div></div>`;
+  if(PAYTAB==='expend')return head+payFilterCard()+compCard+payRecoveryCard()+summaryEtc;
+  return head+entryCard+payFilterCard()+detailsCard;
 }
+function after_payhub(){after_payments();} // page id is 'payhub'; this fires the payment form's cascade on load
 function after_payments(){
+  if(!document.getElementById('py_sch'))return;
   cascade('py');pyRel();
   if(ED.pay){
     const p=S.payments.find(x=>x.id===ED.pay);if(!p)return;
@@ -4346,7 +4666,7 @@ function after_payments(){
   }
 }
 function editPay(id){
-  if(S.ui.locked){alert("🔒 Entries are locked.\nType UNLOCK in the unlock dialog to enable editing.");return;}ED={pay:id};render();}
+  if(S.ui.locked){alert("🔒 Entries are locked.\nClick the 🔒 Locked button (top of page) to enable editing.");return;}ED={pay:id};render();}
 function pySrc(){document.getElementById('py_headbox').style.display=val('py_src')==='State Budget'?'block':'none';}
 function pySchChange(){
   const sid=val('py_sch');
@@ -4364,6 +4684,7 @@ function pyBills(){
   const con=val('py_con');const box=document.getElementById('py_bills');if(!box)return;
   PYB=[];
   if(!con){box.innerHTML='<div class="empty">Select a contract to see its outstanding SPS/bills</div>';pyCalc();return;}
+  let _cCon=null;for(const s of S.schemes){const cc=(s.contracts||[]).find(x=>x.id===con);if(cc){_cCon=cc;break;}}
   const ex=ED.pay||null;
   const edP=ex?S.payments.find(p=>p.id===ex):null;
   const inEd=function(b){return edP&&(edP.lines||[]).some(function(l){return l.billId===b.id;});};
@@ -4394,8 +4715,33 @@ function pyBills(){
     <tr class="tot"><td>TOTAL</td><td></td><td class="num">${fmt(bills.reduce((a,b)=>a+billPayableEx(b,ex),0))}</td><td class="num" id="pt_wsf">—</td>
       <td class="num" id="pt_amt">₹0.00</td><td class="num" id="pt_ret">₹0.00</td><td class="num" id="pt_oth">₹0.00</td><td class="num" id="pt_eff">₹0.00</td><td class="num" id="pt_itTds">₹0.00</td><td class="num" id="pt_cgstTds">₹0.00</td><td class="num" id="pt_sgstTds">₹0.00</td><td class="num" id="pt_igstTds">₹0.00</td><td class="num" id="pt_cess">₹0.00</td><td class="num" id="pt_net">₹0.00</td></tr>
   </table></div><div class="mini" style="margin-top:4px">Showing <b>${bills.length}</b> of ${allCount} outstanding SPS/bill(s)${(POF.q||POF.from||POF.to)?' (filtered — <a style="cursor:pointer;color:var(--acc)" onclick="pofClear()">clear</a>)':''}</div>`;
-  pyCalc();
+  pyCalc();pyReminders();
 }
+function payRecoveryCard(){
+  var rows=[];
+  S.schemes.filter(function(s){return inScheme(s.id);}).forEach(function(s){(s.contracts||[]).forEach(function(c){
+    var av=contractAdv(c.id),sf=conShortfall(c.id,null);var sfTot=sf.it+sf.gst+sf.cess+sf.ret;
+    if(av.out>0.5||sfTot>1)rows.push({c:c,av:av,sf:sf});});});
+  if(!rows.length)return '';
+  return '<div class="card" style="border-left:4px solid var(--warn)"><h3>⚠ Recoveries pending — advances &amp; possible under-deductions</h3>'+
+    '<div class="note" style="margin-bottom:6px">Recover the outstanding mobilisation/material advance and any short deduction from the contractor\'s next payment. Deduction shortfalls are estimated from your standard rates (IT '+RATES().it+'% · GST TDS '+RATES().gstTds+'% · Cess '+RATES().cess+'% · Retention '+RATES().retention+'%); recovering later (deducting extra) clears them automatically.</div>'+
+    '<div class="tbl-wrap"><table><tr><th>Contract</th><th class="num">Advance Outstanding</th><th class="num">IT TDS</th><th class="num">GST TDS</th><th class="num">Labour Cess</th><th class="num">Retention</th></tr>'+
+    rows.map(function(r){return '<tr><td><b>'+esc(r.c.no)+'</b><div class="mini">'+esc(r.c.contractor||'')+'</div></td><td class="num">'+(r.av.out>0.5?'<b style="color:#b45309">'+fmt(r.av.out)+'</b>':'—')+'</td><td class="num">'+(r.sf.it>1?fmt(r.sf.it):'—')+'</td><td class="num">'+(r.sf.gst>1?fmt(r.sf.gst):'—')+'</td><td class="num">'+(r.sf.cess>1?fmt(r.sf.cess):'—')+'</td><td class="num">'+(r.sf.ret>1?fmt(r.sf.ret):'—')+'</td></tr>';}).join('')+
+    '</table></div></div>';
+}
+function pyReminders(){
+  var el=document.getElementById('py_recov');if(!el)return;
+  var cid=val('py_con');if(!cid){el.innerHTML='';return;}
+  var av=contractAdv(cid),sf=conShortfall(cid,ED.pay||null);
+  var parts=[];
+  if(av.out>0.5)parts.push('<span class="tag o">Mob./Material advance outstanding: <b>'+fmt(av.out)+'</b></span> <button class="btn2 btn-sm" onclick="pyFillAdvRec('+r2(av.out)+')">↴ fill recovery</button>');
+  var lbl={it:'IT TDS',gst:'GST TDS',cess:'Labour Cess',ret:'Retention'},ds=[];
+  ['it','gst','cess','ret'].forEach(function(k){if(sf[k]>1)ds.push(lbl[k]+' ~'+fmt(sf[k]));});
+  if(ds.length)parts.push('<span class="tag r">Possibly under-deducted earlier: '+ds.join(' · ')+'</span> <span class="mini">— add to the deduction fields below to recover now</span>');
+  el.innerHTML=parts.length?('<div class="card" style="background:#fffbeb;border-left:4px solid var(--warn);padding:8px 12px;margin:6px 0"><b class="mini">⚠ RECOVERY REMINDERS — this contractor</b><div style="margin-top:5px;display:flex;flex-wrap:wrap;gap:10px;align-items:center">'+parts.join(' ')+'</div><div class="mini" style="margin-top:5px">Standard rates: IT '+RATES().it+'% · GST TDS '+RATES().gstTds+'% · Cess '+RATES().cess+'% · Retention '+RATES().retention+'% <a style="cursor:pointer;color:var(--acc)" onclick="editRates()">✎ edit</a></div></div>'):'';
+}
+function pyFillAdvRec(v){var e=document.getElementById('py_advrec');if(e){e.value=r2(v);pyCalc();}}
+function editRates(){var r=RATES();var v=prompt('Standard deduction rates (%) — enter IT, GST TDS, Cess, Retention separated by commas:',[r.it,r.gstTds,r.cess,r.retention].join(', '));if(v===null)return;var p=v.split(',').map(function(x){return n(x);});S.settings=S.settings||{};S.settings.rates={it:p[0]||2,gstTds:p[1]||2,cess:p[2]||1,retention:p[3]||6};save();render();}
 function togGstChq(){
   const cb=document.getElementById('py_gstone');const on=!!(cb&&cb.checked);
   const cg=document.getElementById('py_dchqwrap_cgstTds'),sg=document.getElementById('py_dchqwrap_sgstTds'),gs=document.getElementById('py_dchqwrap_gst');
@@ -4485,6 +4831,8 @@ function addPay(){
   if(ar>0){const av=contractAdv(con);const avail=av.out+(ex?n((S.payments.find(p=>p.id===ex)||{}).advRec):0);
     if(ar>avail+0.005&&!confirm('Advance recovery ('+fmt(ar)+') exceeds outstanding advance for this contract ('+fmt(avail)+'). Save anyway?'))return;}
   }
+  // Missed-deduction (under-deduction) soft check vs standard rates
+  {const pe=payExpDed({lines:lines}),pa=payActDed({lines:lines});const lbl={it:'IT TDS',gst:'GST TDS',cess:'Labour Cess',ret:'Retention'};const w=[];['it','gst','cess','ret'].forEach(function(k){const short=pe[k]-pa[k];if(short>Math.max(100,0.05*pe[k]))w.push('• '+lbl[k]+': deducted '+fmt(pa[k])+', expected ~'+fmt(pe[k])+' (short ~'+fmt(short)+')');});if(w.length&&!confirm('⚠ Possible UNDER-DEDUCTION on this payment (vs standard rates):\n\n'+w.join('\n')+'\n\nAdd the missing amount to the deduction fields to deduct now, OR click OK to save anyway — the shortfall is carried forward and you\'ll be reminded to recover it on the next payment to this contractor.\n\nSave anyway?'))return;}
   const relId=val('py_rel');
   if(relId){const r=S.releases.find(x=>x.id===relId);const g=lines.reduce((a,l)=>a+n(l.amt)-n(l.deds&&l.deds.ret)-n(l.deds&&l.deds.oth),0);
     const already=S.payments.filter(p=>p.id!==ex&&p.releaseId===relId).reduce((a,p)=>a+payEff(p),0);
@@ -4501,11 +4849,11 @@ function addPay(){
   save();render();alert('Payment recorded ✓');
 }
 function pausePays(ids,val){
-  if(S.ui.locked){alert("🔒 Entries are locked.\nType UNLOCK in the unlock dialog to enable pausing payments.");return;}ids.split(',').forEach(id=>{const p=S.payments.find(x=>x.id===id);if(p)p.draft=!!val;});logAudit(val?'Paused cheque group':'Resumed cheque group','');save();render();}
+  if(S.ui.locked){alert("🔒 Entries are locked.\nClick the 🔒 Locked button (top of page) to enable pausing payments.");return;}ids.split(',').forEach(id=>{const p=S.payments.find(x=>x.id===id);if(p)p.draft=!!val;});logAudit(val?'Paused cheque group':'Resumed cheque group','');save();render();}
 function delPays(ids){
-  if(S.ui.locked){alert("🔒 Entries are locked.\nType UNLOCK in the unlock dialog to enable deletion of payments.");return;}const arr=ids.split(',');if(!confirm('Delete this payment ('+arr.length+' voucher'+(arr.length>1?'s':'')+' on this cheque)? Bill balances will be restored.'))return;S.payments=S.payments.filter(p=>!arr.includes(p.id));save();render();}
+  if(S.ui.locked){alert("🔒 Entries are locked.\nClick the 🔒 Locked button (top of page) to enable deletion of payments.");return;}const arr=ids.split(',');if(!confirm('Delete this payment ('+arr.length+' voucher'+(arr.length>1?'s':'')+' on this cheque)? Bill balances will be restored.'))return;S.payments=S.payments.filter(p=>!arr.includes(p.id));save();render();}
 function editPayGroup(ids){
-  if(S.ui.locked){alert("🔒 Entries are locked.\nType UNLOCK in the unlock dialog to enable editing.");return;}const arr=ids.split(',').map(id=>S.payments.find(p=>p.id===id)).filter(Boolean);if(!arr.length)return;
+  if(S.ui.locked){alert("🔒 Entries are locked.\nClick the 🔒 Locked button (top of page) to enable editing.");return;}const arr=ids.split(',').map(id=>S.payments.find(p=>p.id===id)).filter(Boolean);if(!arr.length)return;
   if(arr.length===1){ED={pay:arr[0].id};render();return;}
   if(!confirm('These '+arr.length+' vouchers were entered separately on the same cheque. Combine them into ONE payment so you can edit them together?'))return;
   const base=arr[0];base.lines=base.lines||[];base.dedChq=base.dedChq||{};
@@ -4513,7 +4861,7 @@ function editPayGroup(ids){
   const delIds=arr.slice(1).map(q=>q.id);S.payments=S.payments.filter(p=>!delIds.includes(p.id));
   logAudit('Merged '+arr.length+' vouchers into one payment',base.vno||'');ED={pay:base.id};save();render();}
 function delPay(id){
-  if(S.ui.locked){alert("🔒 Entries are locked.\nType UNLOCK in the unlock dialog to enable deletion of payments.");return;}if(!confirm('Delete this payment? Bill balances will be restored.'))return;S.payments=S.payments.filter(p=>p.id!==id);save();render();}
+  if(S.ui.locked){alert("🔒 Entries are locked.\nClick the 🔒 Locked button (top of page) to enable deletion of payments.");return;}if(!confirm('Delete this payment? Bill balances will be restored.'))return;S.payments=S.payments.filter(p=>p.id!==id);save();render();}
 
 /* ================= CASH BOOK ================= */
 let CBVIEW='two';let CBF={banks:[],src:[],share:[],showTr:false,comp:[],sub:[],con:[],sps:''};function cbfTogComp(v){var i=CBF.comp.indexOf(v);if(i>=0)CBF.comp.splice(i,1);else CBF.comp.push(v);CBF.sub=[];CBF.con=[];render();}function cbfTogSub(v){var i=CBF.sub.indexOf(v);if(i>=0)CBF.sub.splice(i,1);else CBF.sub.push(v);CBF.con=[];render();}function cbfTogConx(v){var i=CBF.con.indexOf(v);if(i>=0)CBF.con.splice(i,1);else CBF.con.push(v);render();}function cbfSps(v){CBF.sps=v;render();}function cbfTogBank(id){var i=CBF.banks.indexOf(id);if(i>=0)CBF.banks.splice(i,1);else CBF.banks.push(id);render();}function cbfTogSrc(v){var i=CBF.src.indexOf(v);if(i>=0)CBF.src.splice(i,1);else CBF.src.push(v);render();}function cbfTogShare(v){var i=CBF.share.indexOf(v);if(i>=0)CBF.share.splice(i,1);else CBF.share.push(v);render();}let CBR='all'; // quick range: all/day/week/month/quarter/fy
@@ -4544,13 +4892,13 @@ function cashRows(){
     const sps=(p.lines||[]).map(l=>{const b=S.bills.find(z=>z.id===l.billId);return b&&b.billNo;}).filter(Boolean).join(', ');
     const dc=p.dedChq||{};const itChq=dc.itTds;const gstChq=dc.cgstTds||dc.sgstTds||dc.igstTds;const cessChq=dc.cess;
     const base={date:p.date,vno:p.vno,sch:p.schemeId,bankId:p.bankId,bank:!!p.bankId,acct:acct,fsrc:paySource2(p),shs:payShareParts(p).map(function(s){return s.name;}),cid:p.contractId,sps:sps};
-    rows.push(Object.assign({},base,{part:(p.kind==='adv'?'Mob. advance paid to ':'Bill paid to ')+nm+(sps?' · SPS '+sps:'')+(p.serial?' · '+p.serial:'')+(p.chqNo?' · Chq '+p.chqNo:''),rcpt:0,pay:payNet(p),cls:p.kind==='adv'?'Mobilisation advance — contractor cheque':'Works expenditure — contractor cheque',rec:{gross:payGross(p),ret:payDedTotal(p,'ret'),oth:payDedTotal(p,'oth'),eff:payEff(p),net:payNet(p),it:it,gst:gst,cess:cess,advRec:n(p.advRec),total:total},rowTotal:total,src:'auto'}));
+    rows.push(Object.assign({},base,{part:(p.kind==='adv'?'Mob. advance paid to ':'Bill paid to ')+nm+(sps?' · '+sps:'')+(p.serial?' · '+p.serial:'')+(p.chqNo?' · Chq '+p.chqNo:''),rcpt:0,pay:payNet(p),cls:p.kind==='adv'?'Mobilisation advance — contractor cheque':'Works expenditure — contractor cheque',rec:{gross:payGross(p),ret:payDedTotal(p,'ret'),oth:payDedTotal(p,'oth'),eff:payEff(p),net:payNet(p),it:it,gst:gst,cess:cess,advRec:n(p.advRec),total:total},rowTotal:total,src:'auto'}));
     if(it>0.005)rows.push(Object.assign({},base,{part:'↳ IT TDS → Government'+(itChq?' · Chq '+itChq:''),rcpt:0,pay:it,cls:'IT TDS',sub:true,src:'auto'}));
     if(gst>0.005)rows.push(Object.assign({},base,{part:'↳ GST TDS → Government'+(gstChq?' · Chq '+gstChq:''),rcpt:0,pay:gst,cls:'GST TDS',sub:true,src:'auto'}));
     if(cess>0.005)rows.push(Object.assign({},base,{part:'↳ Labour Cess → Government'+(cessChq?' · Chq '+cessChq:''),rcpt:0,pay:cess,cls:'Labour Cess',sub:true,src:'auto'}));
   });
   S.others.filter(e=>!e.draft&&inScheme(e.schemeId)).forEach(e=>rows.push({date:e.date,vno:e.vno,sch:e.schemeId,bankId:e.bankId,bank:!!e.bankId,acct:bankName(e.bankId)||'Cash in hand',part:(e.cat||'Other')+(e.party?' — '+e.party:'')+(e.ref?' · '+e.ref:''),rcpt:e.kind==='receipt'?n(e.amount):0,pay:e.kind==='payment'?n(e.amount):0,cls:e.cat||'Other',src:'auto'}));
-  S.cash.filter(e=>inScheme(e.schemeId)).forEach(e=>rows.push({date:e.date,vno:e.vno,sch:e.schemeId,bankId:e.bankId,bank:!!e.bankId,acct:e.acct||(e.bankId?bankName(e.bankId):'Cash in hand'),part:(e.part||'')+(e.ref?' · '+e.ref:''),rcpt:e.type==='receipt'?n(e.amount):0,pay:e.type==='payment'?n(e.amount):0,cls:'Manual entry',src:'man',id:e.id}));
+  S.cash.filter(e=>!e.draft&&inScheme(e.schemeId)).forEach(e=>rows.push({date:e.date,vno:e.vno,sch:e.schemeId,bankId:e.bankId,bank:!!e.bankId,acct:e.acct||(e.bankId?bankName(e.bankId):'Cash in hand'),part:(e.part||'')+(e.ref?' · '+e.ref:''),rcpt:e.type==='receipt'?n(e.amount):0,pay:e.type==='payment'?n(e.amount):0,cls:'Manual entry',src:'man',id:e.id}));
   return rows.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:((a.vno||'')<(b.vno||'')?-1:1));
 }
 function pgCash(){
@@ -4646,6 +4994,13 @@ function pgCash(){
       <div><label>Chq / Ref No.</label><input id="cb_ref" value="${ed?esc(ed.ref||''):''}"></div>
       <div>${ed?'<button class="btn btn-ok" onclick="addCash()">💾 Update</button> <button class="btn2" onclick="cancelEdit()">Cancel</button>':'<button class="btn" onclick="addCash()">💾 Add Entry</button>'}</div>
     </div></div>`;})();
+  const manEntries=S.cash.filter(e=>inScheme(e.schemeId)).slice().sort((a,b)=>a.date<b.date?1:-1);
+  const manCard=manEntries.length?`<div class="card"><h3>✍ Manual Cash / Bank Entries — edit, pause or delete</h3>
+    <div class="note" style="margin-bottom:6px">Only manually added entries appear here (auto entries flow from receipts, transfers, payments &amp; remittances). Paused entries are excluded from the cash book above.</div>
+    <div class="tbl-wrap"><table>
+    <tr><th>Date</th><th>V.No.</th><th>Scheme</th><th>A/c</th><th>Type</th><th>Particulars</th><th class="num">Amount</th><th>Actions</th></tr>
+    ${manEntries.map(e=>`<tr${e.draft?' class="paused"':''}><td>${dfmt(e.date)}</td><td>${esc(e.vno||'—')}</td><td>${esc(schemeName(e.schemeId))}</td><td>${esc(e.acct||(e.bankId?bankName(e.bankId):'Cash in hand'))}</td><td>${e.type==='receipt'?'<span class="tag g">Receipt</span>':'<span class="tag r">Payment</span>'}${pauseBadge(e.draft)}</td><td>${esc(e.part||'')}${e.ref?'<div class="mini">Ref: '+esc(e.ref)+'</div>':''}</td><td class="num"><b>${fmt(e.amount)}</b></td><td>${pauseBtn('cash',e.id,e.draft,'entry')} <button class="btn2 btn-sm" onclick="editCash('${e.id}')">✎</button> <button class="btn-del" onclick="delCash('${e.id}')">✕</button></td></tr>`).join('')}
+    </table></div></div>`:'';
   return `<h2 class="pg">Cash Book — CPWA Form 1 (Receipts &amp; Payments)${entryLockChip('cashbook')}</h2>
   <div class="sub">${esc(periodLabel())} — voucher-wise, double-entry, with opening &amp; closing balances and monthly closing. Auto entries from receipts, transfers, payments &amp; remittances + manual entries.</div>
   <div class="card"><div class="flex" style="gap:10px;align-items:center"><b class="mini">VIEW:</b>
@@ -4658,6 +5013,7 @@ function pgCash(){
   <div class="card"><div class="flex" style="gap:8px;align-items:center;flex-wrap:wrap"><b class="mini">BANK A/C:</b><span class="chip ${CBF.banks.length===0?'on':''}" onclick="CBF.banks=[];render()">All (combined)</span>${S.banks.map(b=>`<span class="chip ${CBF.banks.includes(b.id)?'on':''}" onclick="cbfTogBank('${b.id}')">${esc(b.name)}</span>`).join('')}<span class="chip ${CBF.banks.includes('cash')?'on':''}" onclick="cbfTogBank('cash')">Cash in hand</span><span style="margin-left:10px"></span>${msDD('cbf_src','Fund Source',unionSources().map(s=>[s,s]),CBF.src,'cbfTogSrc','CBF.src=[];render()')}${msDD('cbf_share','Share',unionShares().map(s=>[s,s]),CBF.share,'cbfTogShare','CBF.share=[];render()')}<span class="chip ${showTr?'on':''}" onclick="CBF.showTr=!CBF.showTr;render()">${singleBank?'Transfers (auto)':'Include transfers'}</span></div><div class="flex" style="gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px"><b class="mini">DRILL:</b>${cbCompOpts.length?msDD('cbf_comp','Component',cbCompOpts,CBF.comp,'cbfTogComp','CBF.comp=[];CBF.sub=[];CBF.con=[];render()'):''}${cbSubOpts.length?msDD('cbf_sub','Sub-component',cbSubOpts,CBF.sub,'cbfTogSub','CBF.sub=[];CBF.con=[];render()'):''}${cbConOpts.length?msDD('cbf_con','Contract',cbConOpts,CBF.con,'cbfTogConx','CBF.con=[];render()'):''}<input value="${esc(CBF.sps)}" placeholder="🔍 SPS / Bill No." onchange="cbfSps(this.value)" style="width:150px;padding:3px 9px;border:1px solid var(--bd);border-radius:12px;font-size:11.5px"><button class="btn2 btn-sm" onclick="CBF={banks:[],src:[],share:[],showTr:false,comp:[],sub:[],con:[],sps:''};render()">✕ Clear</button></div><div class="note" style="margin-top:4px">Select one account or several to combine. Inter-account transfers are excluded when accounts are combined, so the same money is never booked twice as both a receipt and a transfer; they appear automatically when a single account is selected.</div></div>
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:14px;align-items:start">${summary}${recon}</div>
   ${form}
+  ${manCard}
   ${CBVIEW==='two'?twoSided:colCard}`;
 }
 function addCash(){
@@ -4736,22 +5092,22 @@ function printCashBook(){
   w.document.write(html);w.document.close();
 }
 function editCash(id){
-  if(S.ui.locked){alert("🔒 Entries are locked.\nType UNLOCK in the unlock dialog to enable editing.");return;}ED={cb:id};render();}
+  if(S.ui.locked){alert("🔒 Entries are locked.\nClick the 🔒 Locked button (top of page) to enable editing.");return;}ED={cb:id};render();}
 function delCash(id){
-  if(S.ui.locked){alert("🔒 Entries are locked.\nType UNLOCK in the unlock dialog to enable deletion of cash book entries.");return;}if(!confirm('Delete entry?'))return;S.cash=S.cash.filter(e=>e.id!==id);save();render();}
+  if(S.ui.locked){alert("🔒 Entries are locked.\nClick the 🔒 Locked button (top of page) to enable deletion of cash book entries.");return;}if(!confirm('Delete entry?'))return;S.cash=S.cash.filter(e=>e.id!==id);save();render();}
 
 /* ================= OTHER RECEIPTS / EXPENDITURE ================= */
 function pgOthers(){
   const ss=selSchemes();
   const recs=S.others.filter(inF).filter(e=>e.kind==='receipt').sort((a,b)=>a.date<b.date?1:-1);
   const pys=S.others.filter(inF).filter(e=>e.kind==='payment').sort((a,b)=>a.date<b.date?1:-1);
-  const tR=recs.reduce((a,e)=>a+n(e.amount),0),tP=pys.reduce((a,e)=>a+n(e.amount),0);
-  const row=e=>`<tr><td>${dfmt(e.date)}</td><td>${esc(schemeName(e.schemeId))}</td><td><span class="tag">${esc(e.cat)}</span></td>
+  const tR=recs.filter(e=>!e.draft).reduce((a,e)=>a+n(e.amount),0),tP=pys.filter(e=>!e.draft).reduce((a,e)=>a+n(e.amount),0);
+  const row=e=>`<tr${e.draft?' class="paused"':''}><td>${dfmt(e.date)}</td><td>${esc(schemeName(e.schemeId))}</td><td><span class="tag">${esc(e.cat)}</span>${pauseBadge(e.draft)}</td>
     <td>${esc(e.party||'—')}</td><td>${esc(bankName(e.bankId)||'Cash')}</td><td class="num"><b>${fmt(e.amount)}</b></td>
-    <td>${esc(e.ref||'')}</td><td><button class="btn2 btn-sm" onclick="editOther('${e.id}')">✎</button> <button class="btn-del" onclick="delOther('${e.id}')">✕</button></td></tr>`;
+    <td>${esc(e.ref||'')}</td><td>${pauseBtn('oth',e.id,e.draft,e.kind==='receipt'?'receipt':'expenditure')} <button class="btn2 btn-sm" onclick="editOther('${e.id}')">✎</button> <button class="btn-del" onclick="delOther('${e.id}')">✕</button></td></tr>`;
   // deposit register (EMD / SD held per party)
-  const depIn=S.others.filter(e=>e.kind==='receipt'&&/emd|deposit/i.test(e.cat)&&inScheme(e.schemeId));
-  const depOut=S.others.filter(e=>e.kind==='payment'&&/emd|deposit|refund/i.test(e.cat)&&inScheme(e.schemeId));
+  const depIn=S.others.filter(e=>!e.draft&&e.kind==='receipt'&&/emd|deposit/i.test(e.cat)&&inScheme(e.schemeId));
+  const depOut=S.others.filter(e=>!e.draft&&e.kind==='payment'&&/emd|deposit|refund/i.test(e.cat)&&inScheme(e.schemeId));
   const parties=[...new Set(depIn.concat(depOut).map(e=>e.party||'(unnamed)'))].sort();
   const depRows=parties.map(pt=>{
     const i=depIn.filter(e=>(e.party||'(unnamed)')===pt).reduce((a,e)=>a+n(e.amount),0);
@@ -4821,9 +5177,9 @@ function addOther(){
   save();render();
 }
 function editOther(id){
-  if(S.ui.locked){alert("🔒 Entries are locked.\nType UNLOCK in the unlock dialog to enable editing.");return;}ED={oth:id};render();}
+  if(S.ui.locked){alert("🔒 Entries are locked.\nClick the 🔒 Locked button (top of page) to enable editing.");return;}ED={oth:id};render();}
 function delOther(id){
-  if(S.ui.locked){alert("🔒 Entries are locked.\nType UNLOCK in the unlock dialog to enable deletion of other receipts/expenditure.");return;}if(!confirm('Delete entry?'))return;S.others=S.others.filter(e=>e.id!==id);save();render();}
+  if(S.ui.locked){alert("🔒 Entries are locked.\nClick the 🔒 Locked button (top of page) to enable deletion of other receipts/expenditure.");return;}if(!confirm('Delete entry?'))return;S.others=S.others.filter(e=>e.id!==id);save();render();}
 
 /* ================= DEDUCTIONS & REMITTANCES ================= */
 const REMIT_DEDS=DEDS.filter(([k])=>k!=='ret'&&k!=='oth'); // statutory deductions deposited by cheque/challan
@@ -4849,9 +5205,9 @@ function pgRemit(){
     return `<tr><td><b>${l}</b></td><td class="num">${fmt(c)}</td><td class="num">${fmt(m)}</td>
       <td class="num"><b style="color:${b>0.005?'#dc2626':'#16a34a'}">${fmt(b)}</b></td><td>${st}</td></tr>`;}).join('');
   const list=S.remit.filter(inF).sort((a,b)=>a.date<b.date?1:-1);
-  const rows=list.map(m=>`<tr><td>${dfmt(m.date)}</td><td>${esc(schemeName(m.schemeId))}</td><td><b>${dedLabel(m.dedType)}</b></td>
+  const rows=list.map(m=>`<tr${m.draft?' class="paused"':''}><td>${dfmt(m.date)}</td><td>${esc(schemeName(m.schemeId))}</td><td><b>${dedLabel(m.dedType)}</b>${pauseBadge(m.draft)}</td>
     <td>${esc(bankName(m.bankId)||'—')}</td><td class="num"><b>${fmt(m.amount)}</b></td><td>${esc(m.chqNo||'—')}</td><td>${esc(m.note||'')}</td>
-    <td><button class="btn2 btn-sm" onclick="editRemit('${m.id}')">✎</button> <button class="btn-del" onclick="delRemit('${m.id}')">✕</button></td></tr>`).join('');
+    <td>${pauseBtn('remit',m.id,m.draft,'remittance')} <button class="btn2 btn-sm" onclick="editRemit('${m.id}')">✎</button> <button class="btn-del" onclick="delRemit('${m.id}')">✕</button></td></tr>`).join('');
   return `<h2 class="pg">Statutory Deductions — Collected vs Remitted to Govt.${entryLockChip('remit')}</h2>
   <div class="sub">${esc(periodLabel())} — deductions withheld from contractor bills must be deposited with the respective authorities (IT, GST, Labour Board etc.). Retention money is refundable to the contractor.</div>
   <div class="card"><h3>Deduction Account — balance payable to authorities</h3><div class="tbl-wrap"><table>
@@ -4922,9 +5278,9 @@ function addRemit(){
   save();render();
 }
 function editRemit(id){
-  if(S.ui.locked){alert("🔒 Entries are locked.\nType UNLOCK in the unlock dialog to enable editing.");return;}ED={rm:id};render();}
+  if(S.ui.locked){alert("🔒 Entries are locked.\nClick the 🔒 Locked button (top of page) to enable editing.");return;}ED={rm:id};render();}
 function delRemit(id){
-  if(S.ui.locked){alert("🔒 Entries are locked.\nType UNLOCK in the unlock dialog to enable deletion of remittances.");return;}if(!confirm('Delete remittance?'))return;S.remit=S.remit.filter(m=>m.id!==id);save();render();}
+  if(S.ui.locked){alert("🔒 Entries are locked.\nClick the 🔒 Locked button (top of page) to enable deletion of remittances.");return;}if(!confirm('Delete remittance?'))return;S.remit=S.remit.filter(m=>m.id!==id);save();render();}
 
 /* ================= RECEIPTS & PAYMENTS STATEMENT ================= */
 var RNPWH=false;function rnpTogWh(){RNPWH=!RNPWH;render();}
@@ -5056,15 +5412,17 @@ function dbfTogSrc(v){var i=DBF.srcs.indexOf(v);if(i>=0)DBF.srcs.splice(i,1);els
 function pgDaybook(){
   const rows=[];
   const conName=cid=>{for(const s of S.schemes){const c=(s.contracts||[]).find(x=>x.id===cid);if(c)return c.no+' — '+c.contractor;}return '';};
-  S.releases.filter(r=>inF(r)&&!r.draft).forEach(r=>rows.push({d:r.date,v:r.vno,t:'Receipt',cls:'g',sch:r.schemeId,part:'Fund received — '+r.source+(r.head?' ('+r.head+')':'')+(r.note?' · '+r.note:''),amt:n(r.amount),pg:'fund',src:r.source}));
-  S.transfers.filter(t=>inF(t)&&!t.draft).forEach(t=>rows.push({d:t.date,v:t.vno,t:'Transfer',cls:'b',sch:t.schemeId,part:(bankName(t.fromBank)||t.from||'?')+' → '+(bankName(t.toBank)||t.to||'?'),amt:n(t.amount),pg:'transfers'}));
-  S.bills.filter(b=>inF(b)&&!b.draft).forEach(b=>rows.push({d:b.date,v:b.vno,t:'SPS/Bill',cls:'o',sch:b.schemeId,part:b.billNo+' — '+conName(b.contractId),amt:billGross(b),idt:b.date||'',pg:'bills',cid:b.contractId}));
-  S.whRel.filter(w=>inPeriod(w.date)&&inScheme(w.schemeId)).forEach(w=>{const b=S.bills.find(x=>x.id===w.billId)||{};
-    rows.push({d:w.date,v:w.vno,t:'WH Release',cls:'o',sch:w.schemeId,part:(b.billNo||'?')+' — '+w.type+((w.tax||'pending')==='pending'?' (taxes at payment)':' (taxes done)'),amt:n(w.amount),pg:'withheld',cid:b.contractId});});
-  S.payments.filter(p=>inF(p)&&!p.draft).forEach(p=>rows.push({d:p.date,v:p.vno,t:p.kind==='adv'?'Advance':'Payment',cls:'r',sch:p.schemeId,part:conName(p.contractId)+(p.serial?' · '+p.serial:'')+(p.chqNo?' · Chq '+p.chqNo:''),amt:payGross(p),idt:p.invd||'',pg:'payments',cid:p.contractId,src:paySource2(p)}));
-  S.others.filter(e=>inF(e)&&!e.draft).forEach(e=>rows.push({d:e.date,v:e.vno,t:e.kind==='receipt'?'Receipt':'Payment',cls:e.kind==='receipt'?'g':'r',sch:e.schemeId,part:e.cat+(e.party?' — '+e.party:''),amt:n(e.amount),pg:'others'}));
-  S.remit.filter(inF).forEach(m=>rows.push({d:m.date,v:m.vno,t:'Remittance',cls:'r',sch:m.schemeId,part:dedLabel(m.dedType)+(m.chqNo?' · '+m.chqNo:''),amt:n(m.amount),pg:'remit'}));
-  S.cash.filter(inF).forEach(e=>rows.push({d:e.date,v:e.vno,t:e.type==='receipt'?'Receipt':'Payment',cls:e.type==='receipt'?'g':'r',sch:e.schemeId,part:e.part,amt:n(e.amount),pg:'cashbook'}));
+  const spsOf=p=>p.kind==='adv'?'Mob./Other Advance':((p.lines||[]).map(l=>{const b=S.bills.find(z=>z.id===l.billId)||{};return b.billNo||(l.billId?'?':'Advance');}).filter(Boolean).join(', ')||'—');
+  // nat: in = cash into account, out = cash out, xfer = between own accounts, memo = non-cash (booking/adjustment only)
+  S.releases.filter(r=>inF(r)&&!r.draft).forEach(r=>rows.push({d:r.date,v:r.vno,t:'Fund Receipt',nat:'in',cls:'g',sch:r.schemeId,part:'Fund received from C.E. — '+r.source+(r.head?' ('+r.head+')':'')+' → '+(bankName(r.bankId)||'bank')+(r.note?' · '+r.note:''),amt:n(r.amount),pg:'fund',src:r.source}));
+  S.transfers.filter(t=>inF(t)&&!t.draft).forEach(t=>rows.push({d:t.date,v:t.vno,t:'Transfer',nat:'xfer',cls:'b',sch:t.schemeId,part:'Fund transferred: '+(bankName(t.fromBank)||t.from||'?')+' → '+(bankName(t.toBank)||t.to||'?')+(t.note?' · '+t.note:''),amt:n(t.amount),pg:'transfers'}));
+  S.bills.filter(b=>inF(b)&&!b.draft).forEach(b=>rows.push({d:b.date,v:b.vno,t:'SPS / Bill',nat:'memo',cls:'o',sch:b.schemeId,part:'SPS/Bill '+b.billNo+' booked (gross value) — '+conName(b.contractId),amt:billGross(b),idt:b.date||'',pg:'bills',cid:b.contractId}));
+  S.whRel.filter(w=>!w.draft&&inPeriod(w.date)&&inScheme(w.schemeId)).forEach(w=>{const b=S.bills.find(x=>x.id===w.billId)||{};
+    rows.push({d:w.date,v:w.vno,t:'Withheld Release',nat:'memo',cls:'o',sch:w.schemeId,part:'Withheld released — '+(b.billNo||'?')+' · '+w.type+((w.tax||'pending')==='pending'?' (deduct taxes at payment)':' (taxes already done)'),amt:n(w.amount),pg:'withheld',cid:b.contractId});});
+  S.payments.filter(p=>inF(p)&&!p.draft).forEach(p=>rows.push({d:p.date,v:p.vno,t:p.kind==='adv'?'Advance':'Payment',nat:'out',cls:'r',sch:p.schemeId,part:(p.kind==='adv'?'Mobilisation/Other advance to ':'Payment to ')+conName(p.contractId)+' against '+spsOf(p)+(p.serial?' · '+p.serial:'')+(p.chqNo?' · Cheque '+p.chqNo:''),amt:payGross(p),idt:p.invd||'',pg:'payments',cid:p.contractId,src:paySource2(p)}));
+  S.others.filter(e=>inF(e)&&!e.draft).forEach(e=>rows.push({d:e.date,v:e.vno,t:e.kind==='receipt'?'Other Receipt':'Other Expenditure',nat:e.kind==='receipt'?'in':'out',cls:e.kind==='receipt'?'g':'r',sch:e.schemeId,part:(e.kind==='receipt'?'Other receipt — ':'Other expenditure — ')+e.cat+(e.party?' · '+e.party:'')+(e.bankId?' · '+(bankName(e.bankId)||''):'')+(e.ref?' · '+e.ref:''),amt:n(e.amount),pg:'others'}));
+  S.remit.filter(m=>inF(m)&&!m.draft).forEach(m=>rows.push({d:m.date,v:m.vno,t:'Remittance',nat:'out',cls:'r',sch:m.schemeId,part:'Remitted to Govt. — '+dedLabel(m.dedType)+(m.bankId?' from '+(bankName(m.bankId)||''):'')+(m.chqNo?' · Challan/Chq '+m.chqNo:''),amt:n(m.amount),pg:'remit'}));
+  S.cash.filter(e=>inF(e)&&!e.draft).forEach(e=>rows.push({d:e.date,v:e.vno,t:e.type==='receipt'?'Cash Receipt':'Cash Payment',nat:e.type==='receipt'?'in':'out',cls:e.type==='receipt'?'g':'r',sch:e.schemeId,part:e.part+(e.acct?' · '+esc(e.acct):'')+(e.ref?' · '+e.ref:'')+' (manual entry)',amt:n(e.amount),pg:'cashbook'}));
   rows.sort((a,b)=>a.d<b.d?1:a.d>b.d?-1:(a.v||'')<(b.v||'')?1:-1);
   const types=[...new Set(rows.map(r=>r.t))];
   const fr=rows.filter(r=>{
@@ -5078,8 +5436,9 @@ function pgDaybook(){
   const consOpts=[];S.schemes.forEach(s=>(s.contracts||[]).forEach(c=>consOpts.push([c.id,c.no+' — '+c.contractor])));
   const srcOpts=unionSources().map(x=>[x,x]);
   const active=DBF.types.length||DBF.cons.length||DBF.srcs.length||DBF.q;
-  const dbSum=ts=>fr.filter(r=>ts.indexOf(r.t)>=0).reduce((a,r)=>a+r.amt,0);
-  const totRcpt=dbSum(['Receipt']),totPay=dbSum(['Payment','Advance','Remittance']),totXfer=dbSum(['Transfer']);
+  const dbNatSum=nt=>fr.filter(r=>r.nat===nt).reduce((a,r)=>a+r.amt,0);
+  const totRcpt=dbNatSum('in'),totPay=dbNatSum('out'),totXfer=dbNatSum('xfer');
+  const natCell=nt=>nt==='in'?'<span style="color:#146c3a;font-weight:600">⬆ Money In</span>':nt==='out'?'<span style="color:#991b1b;font-weight:600">⬇ Money Out</span>':nt==='xfer'?'<span style="color:#1a56a8;font-weight:600">🔁 Transfer</span>':'<span style="color:#92400e">ℹ Memo · non-cash</span>';
   return `<h2 class="pg">Day Book — every receipt, payment & transfer</h2>
   <div class="sub">${esc(periodLabel())} · ${fr.length} of ${rows.length} vouchers${active?' (filtered)':''} — ${Object.keys(cnt).map(k=>cnt[k]+' '+k).join(', ')||'none'}</div>
   <div class="card filtbar"><h3>🔎 Filter Day Book ${active?'<span class="mini" style="color:var(--acc)">— active</span>':''}<span style="float:right"><button class="btn2 btn-sm" onclick="dbfClear()">✕ Clear All</button></span></h3>
@@ -5091,16 +5450,16 @@ function pgDaybook(){
     <div class="chips" style="margin-top:6px"><b class="mini" style="margin-right:4px">Types:</b>${types.map(tp=>`<span class="chip ${DBF.types.indexOf(tp)>=0?'on':''}" onclick="dbfTogType('${esc(tp).replace(/'/g,'')}')">${esc(tp)}</span>`).join('')}</div>
   </div>
   <div class="card"><div class="tbl-wrap"><table>
-    <tr><th>Date</th><th>Vch No.</th><th>Type</th><th>Scheme</th><th>Particulars</th><th class="num">Amount</th><th></th></tr>
+    <tr><th>Date</th><th>Vch No.</th><th>Type</th><th>Nature / Purpose</th><th>Scheme</th><th>Particulars (details)</th><th class="num">Amount</th><th></th></tr>
     ${fr.map(r=>`<tr><td>${dfmt(r.d)}</td><td><b>${esc(r.v||'—')}</b></td>
-      <td><span class="tag ${r.cls}">${r.t}</span></td><td>${esc(schemeName(r.sch))}</td>
+      <td><span class="tag ${r.cls}">${esc(r.t)}</span></td><td>${natCell(r.nat)}</td><td>${esc(schemeName(r.sch))}</td>
       <td>${esc(r.part)}</td><td class="num"><b>${fmt(r.amt)}</b></td>
-      <td><button class="btn2 btn-sm" onclick="go('${r.pg}')">open</button></td></tr>`).join('')||'<tr><td colspan="7" class="empty">No vouchers in this selection</td></tr>'}
-    ${fr.length?`<tr class="tot-rcpt"><td colspan="4"></td><td><b>Total Receipts (inflow)</b></td><td class="num"><b>${fmt(totRcpt)}</b></td><td></td></tr>
-    <tr class="tot-pay"><td colspan="4"></td><td><b>Total Payments / Advances / Remittances (outflow)</b></td><td class="num"><b>${fmt(totPay)}</b></td><td></td></tr>
-    <tr class="tot-bal"><td colspan="4"></td><td><b>Total Transfers</b></td><td class="num"><b>${fmt(totXfer)}</b></td><td></td></tr>`:''}
+      <td><button class="btn2 btn-sm" onclick="go('${r.pg}')">open</button></td></tr>`).join('')||'<tr><td colspan="8" class="empty">No vouchers in this selection</td></tr>'}
+    ${fr.length?`<tr class="tot-rcpt"><td colspan="5"></td><td><b>Total Receipts (money in)</b></td><td class="num"><b>${fmt(totRcpt)}</b></td><td></td></tr>
+    <tr class="tot-pay"><td colspan="5"></td><td><b>Total Payments / Advances / Remittances (money out)</b></td><td class="num"><b>${fmt(totPay)}</b></td><td></td></tr>
+    <tr class="tot-bal"><td colspan="5"></td><td><b>Total Transfers (between own accounts)</b></td><td class="num"><b>${fmt(totXfer)}</b></td><td></td></tr>`:''}
   </table></div></div>
-  <div class="note" style="margin-top:6px">Receipts, payments and transfers are totalled separately (money in vs money out). SPS/Bill and Withheld-Release rows are memo entries (not cash movement) and are excluded from the totals.</div>`;
+  <div class="note" style="margin-top:6px"><b>Nature / Purpose</b> tells you what each voucher does: <span style="color:#146c3a">⬆ Money In</span> (receipts), <span style="color:#991b1b">⬇ Money Out</span> (payments/remittances), <span style="color:#1a56a8">🔁 Transfer</span> (own accounts), <span style="color:#92400e">ℹ Memo</span> (SPS/Bill booking &amp; Withheld release — no cash moves). Only cash movements are totalled; memo entries are excluded.</div>`;
 }
 
 /* ================= PAYMENT VOUCHER PRINT ================= */
@@ -5136,7 +5495,7 @@ function printVoucher(pid){
     <td><b>Against Release:</b> ${r?(r.note?esc(r.note)+' · ':'')+dfmt(r.date)+' · '+esc(r.source):'—'}</td></tr>
   <tr><td colspan="3"><b>Source / Share:</b> ${esc(p.source||'—')} ${p.head?'('+esc(p.head)+')':''} · ${esc(p.share||'—')} ${p.inv?'· Invoice: '+esc(p.inv)+(p.invd?' dt. '+dfmt(p.invd):''):''}</td></tr>
   </table>
-  <table><tr><th>SPS / Particulars</th><th class="r">Gross</th>${DEDS.map(([k,l])=>`<th class="r">${l}</th>`).join('')}<th class="r">Net</th></tr>
+  <table><tr><th>SPS / Particulars</th><th class="r">Bill Passed</th>${DEDS.map(([k,l])=>`<th class="r">${l}</th>`).join('')}<th class="r">Net</th></tr>
   ${lines}
   <tr><th>TOTAL</th><th class="r">${fmt(gross)}</th>${DEDS.map(([k])=>`<th class="r">${fmt(payDedTotal(p,k))}</th>`).join('')}<th class="r">${fmt(gross-payAllDeds(p))}</th></tr></table>
   ${n(p.advRec)>0?`<p><b>Less: Mobilisation Advance recovered:</b> ${fmt(p.advRec)}</p>`:''}
@@ -5162,7 +5521,7 @@ function showUndoToast(label){
   clearTimeout(window._toastT);window._toastT=setTimeout(()=>{t.style.display='none';},10000);
 }
 function undoDelete(){
-  if(S.ui.locked){alert("🔒 Entries are locked.\nType UNLOCK in the unlock dialog to enable undo-delete operations.");return;}
+  if(S.ui.locked){alert("🔒 Entries are locked.\nClick the 🔒 Locked button (top of page) to enable undo-delete operations.");return;}
   const u=UNDO.pop();persistUndo();
   if(!u)return alert('Nothing to undo — no deleted entries in this session.');
   S=JSON.parse(u.snap);save();render();
@@ -5301,6 +5660,17 @@ function pgExport(){
 const BGTYPES=['EMD / Bid Security','Performance Guarantee','Security Deposit','Advance Payment Guarantee','Mobilisation Advance','Retention BG','Other'];
 function bgDays(bg){if(!bg.expiryDate)return 99999;return Math.ceil((new Date(bg.expiryDate)-new Date(today()))/86400000);}
 function bgIsAlert(bg){return !bg.released&&!bg.renewalSent&&!!bg.expiryDate&&bgDays(bg)<=30;}
+// Staged reminder window: 'expired' | 10 | 20 | 30 | 0 (none). 10 = within 10 days, 20 = 11–20, 30 = 21–30.
+function bgWindow(bg){
+  if(bg.released||!bg.expiryDate)return 0;
+  const d=bgDays(bg);
+  if(d<0)return 'expired';
+  if(bg.renewalSent)return 0;
+  if(d<=10)return 10;
+  if(d<=20)return 20;
+  if(d<=30)return 30;
+  return 0;
+}
 function bgState(bg){
   if(bg.released)return 'Released';
   const d=bgDays(bg);
@@ -5309,13 +5679,16 @@ function bgState(bg){
   if(bg.expiryDate&&d<=30)return 'Expiring';
   return 'Active';
 }
-function bgAlertCount(){return (S.bgs||[]).filter(bgIsAlert).length;}
-function bgStateTag(bg){const st=bgState(bg);
-  return st==='Released'?'<span class="tag g">Released</span>':
-    st==='Expired'?'<span class="tag r">⛔ Expired</span>':
-    st==='Expiring'?'<span class="tag r">⚠ Expiring</span>':
-    st==='Renewal Sent'?'<span class="tag b">↻ Renewal Sent</span>':
-    '<span class="tag g">Active</span>';}
+function bgAlertCount(){return (S.bgs||[]).filter(b=>!b.draft&&bgIsAlert(b)).length;}
+function bgStateTag(bg){
+  if(bg.released)return '<span class="tag g">Released</span>';
+  const w=bgWindow(bg),d=bgDays(bg);
+  if(w==='expired')return '<span class="tag" style="background:#7f1d1d;color:#fff">⛔ Expired '+(-d)+'d</span>';
+  if(bg.renewalSent)return '<span class="tag b">↻ Renewal Sent</span>';
+  if(w===10)return '<span class="tag" style="background:#dc2626;color:#fff">🔴 ≤10 days · '+d+'d left</span>';
+  if(w===20)return '<span class="tag" style="background:#ea580c;color:#fff">🟠 ≤20 days · '+d+'d left</span>';
+  if(w===30)return '<span class="tag" style="background:#f59e0b;color:#111">🟡 ≤30 days · '+d+'d left</span>';
+  return '<span class="tag g">Active</span>';}
 function bgConById(cid){if(!cid)return null;for(const s of S.schemes){const c=(s.contracts||[]).find(x=>x.id===cid);if(c)return c;}return null;}
 function bgConOpts(sid,sel){const s=S.schemes.find(x=>x.id===sid);const cs=(s&&s.contracts)||[];return '<option value="">— none / not linked —</option>'+cs.map(c=>`<option value="${c.id}" ${sel===c.id?'selected':''}>${esc(c.no)} — ${esc(c.contractor||'')}</option>`).join('');}
 function bgSchChange(){const sid=val('bg_sch');const e=document.getElementById('bg_con');if(e)e.innerHTML=bgConOpts(sid,'');const p=document.getElementById('bg_party');if(p)p.value='';}
@@ -5325,19 +5698,24 @@ function pgBG(){
   let list=S.bgs.filter(b=>inScheme(b.schemeId));
   const rank=bg=>bg.released?3:bgIsAlert(bg)?0:bg.renewalSent?1:2;
   list=list.slice().sort((a,b)=>{const ra=rank(a),rb=rank(b);if(ra!==rb)return ra-rb;return bgDays(a)-bgDays(b);});
-  const active=list.filter(b=>!b.released);
+  const active=list.filter(b=>!b.released&&!b.draft);
   const totVal=active.reduce((a,b)=>a+n(b.amount),0);
-  const nAlert=list.filter(bgIsAlert).length;
-  const nExpired=list.filter(b=>!b.released&&b.expiryDate&&bgDays(b)<0).length;
+  const nAlert=list.filter(b=>!b.draft&&bgIsAlert(b)).length;
+  const n10=list.filter(b=>!b.draft&&bgWindow(b)===10).length;
+  const n20=list.filter(b=>!b.draft&&bgWindow(b)===20).length;
+  const n30=list.filter(b=>!b.draft&&bgWindow(b)===30).length;
+  const nExpired=list.filter(b=>!b.draft&&bgWindow(b)==='expired').length;
+  const dueList=list.filter(b=>!b.draft&&(bgWindow(b)===10||bgWindow(b)===20||bgWindow(b)===30||bgWindow(b)==='expired'))
+    .sort((a,b)=>bgDays(a)-bgDays(b));
   const ed=ED.bg?S.bgs.find(x=>x.id===ED.bg):null;
   const conNames=[];ss.forEach(s=>(s.contracts||[]).forEach(c=>{if(c.contractor&&!conNames.includes(c.contractor))conNames.push(c.contractor);}));
   const fsch=ed?ed.schemeId:(ss[0]?ss[0].id:'');
   const rows=list.map(b=>{
-    const d=bgDays(b);const al=bgIsAlert(b);
-    const cls=al?' class="bgrow-alert"':'';
+    const d=bgDays(b);const al=bgIsAlert(b)&&!b.draft;
+    const cls=b.draft?' class="paused"':(al?' class="bgrow-alert"':'');
     const daysTxt=(!b.expiryDate||b.released)?'—':d<0?('<b style="color:#dc2626">'+(-d)+'d overdue</b>'):(d<=30?'<b style="color:#dc2626">'+d+'d left</b>':d+'d');
     return `<tr${cls}>
-      <td><b>${esc(b.bgNo||'—')}</b>${b.vno?'<div class="mini">'+esc(b.vno)+'</div>':''}</td>
+      <td>${pauseBtn('bg',b.id,b.draft,'guarantee')} <b>${esc(b.bgNo||'—')}</b>${pauseBadge(b.draft)}${b.vno?'<div class="mini">'+esc(b.vno)+'</div>':''}${b.renewals&&b.renewals.length?'<div class="mini" style="color:#166534">↻ renewed '+b.renewals.length+'× · was '+dfmt(b.renewals[b.renewals.length-1].from||'')+'</div>':''}</td>
       <td>${esc(b.bgType||'—')}</td>
       <td>${esc(b.contractor||'—')}</td>
       <td>${(function(){const c=bgConById(b.contractId);return c?esc(c.no):'—';})()}</td>
@@ -5358,13 +5736,20 @@ function pgBG(){
         <button class="btn-del" onclick="delBG('${b.id}')">✕</button>
       </div></td></tr>`;}).join('');
   return `<h2 class="pg">Bank Guarantee Tracker — expiry &amp; renewal alerts</h2>
-  <div class="sub">${esc(periodLabel())} — the top-bar ⚠ badge and the red rows below warn you the moment a guarantee is within 30 days of expiry, until you mark it <b>Renewal Sent</b>.</div>
-  ${nAlert?`<div class="card" style="border-left:4px solid var(--bad);background:#fef2f2"><b style="color:#b91c1c">⚠ ${nAlert} bank guarantee${nAlert>1?'s':''} within 30 days of expiry (or overdue)</b> — mark each <b>Renewal Sent</b> once renewal is initiated, or <b>Renew</b> to set the new expiry date.</div>`:''}
+  <div class="sub">${esc(periodLabel())} — staged reminders fire at <b>30, 20 and 10 days</b> before expiry (and after, if overdue), until you mark a guarantee <b>Renewal Sent</b> or <b>Renew</b> it.</div>
+  ${(nExpired||n10||n20||n30)?`<div class="card" style="border-left:4px solid var(--bad);background:#fef2f2">
+    <b style="color:#b91c1c">🔔 Bank guarantee reminders</b>
+    <div class="flex" style="gap:6px;margin:6px 0">${nExpired?'<span class="tag" style="background:#7f1d1d;color:#fff">⛔ '+nExpired+' expired</span>':''}${n10?'<span class="tag" style="background:#dc2626;color:#fff">🔴 '+n10+' within 10 days</span>':''}${n20?'<span class="tag" style="background:#ea580c;color:#fff">🟠 '+n20+' within 20 days</span>':''}${n30?'<span class="tag" style="background:#f59e0b;color:#111">🟡 '+n30+' within 30 days</span>':''}</div>
+    <table style="margin-top:4px"><tr><th>BG No.</th><th>Party</th><th>Bank</th><th class="num">Amount</th><th>Expiry</th><th class="num">Days</th></tr>
+    ${dueList.map(b=>{const d=bgDays(b);const col=d<0?'#7f1d1d':d<=10?'#dc2626':d<=20?'#ea580c':'#b45309';return `<tr><td><b>${esc(b.bgNo||'—')}</b></td><td>${esc(b.contractor||'—')}</td><td>${esc(b.bank||'—')}</td><td class="num">${fmt(b.amount)}</td><td>${b.expiryDate?dfmt(b.expiryDate):'—'}</td><td class="num" style="color:${col};font-weight:700">${d<0?(-d)+'d overdue':d+'d'}</td></tr>`;}).join('')}
+    </table>
+    <div class="note" style="margin-top:6px">Mark <b>↻ Renewal Sent</b> once you've initiated renewal (stops the reminder), or <b>✓ Renew</b> to set the new expiry date.</div>
+  </div>`:''}
   <div class="cards">
     <div class="kpi c"><div class="t">Active Guarantees</div><div class="v">${active.length}</div></div>
     <div class="kpi g"><div class="t">Total Value (active)</div><div class="v">${fmt(totVal)}</div></div>
-    <div class="kpi r"><div class="t">Expiring ≤ 30 days</div><div class="v">${nAlert}</div></div>
-    <div class="kpi o"><div class="t">Expired (not released)</div><div class="v">${nExpired}</div></div>
+    <div class="kpi" style="background:#fef3c7"><div class="t">≤30 days (30/20/10)</div><div class="v">${n30} / ${n20} / ${n10}</div></div>
+    <div class="kpi r"><div class="t">Expired (not released)</div><div class="v">${nExpired}</div></div>
   </div>
   <div class="card entry-only" style="border-left:4px solid var(--acc)"><h3>${ed?'✎ Edit Bank Guarantee <span class="tag o">EDITING</span>':'➕ Record Bank Guarantee'}</h3>
     <div class="frm">
@@ -5410,11 +5795,11 @@ function addBG(){
   save();render();
 }
 function editBG(id){
-  if(S.ui.locked){alert("🔒 Entries are locked.\nType UNLOCK in the unlock dialog to enable editing.");return;}ED={bg:id};render();}
+  if(S.ui.locked){alert("🔒 Entries are locked.\nClick the 🔒 Locked button (top of page) to enable editing.");return;}ED={bg:id};render();}
 function delBG(id){
-  if(S.ui.locked){alert("🔒 Entries are locked.\nType UNLOCK in the unlock dialog to enable deletion of bank guarantees.");return;}if(!confirm('Delete this bank guarantee record?'))return;S.bgs=S.bgs.filter(b=>b.id!==id);save();render();}
+  if(S.ui.locked){alert("🔒 Entries are locked.\nClick the 🔒 Locked button (top of page) to enable deletion of bank guarantees.");return;}if(!confirm('Delete this bank guarantee record?'))return;S.bgs=S.bgs.filter(b=>b.id!==id);save();render();}
 function bgToggleRenewal(id){const b=S.bgs.find(x=>x.id===id);if(!b)return;b.renewalSent=!b.renewalSent;logAudit(b.renewalSent?'BG marked sent for renewal':'BG renewal flag cleared',b.bgNo||id);save();render();}
-function bgRenew(id){const b=S.bgs.find(x=>x.id===id);if(!b)return;const nd=prompt('Renewal done — enter the NEW expiry date (YYYY-MM-DD):',b.expiryDate||today());if(!nd)return;if(!/^\d{4}-\d{2}-\d{2}$/.test(nd))return alert('Please use the format YYYY-MM-DD');b.expiryDate=nd;b.renewalSent=false;logAudit('BG renewed — new expiry '+nd,b.bgNo||id);save();render();}
+function bgRenew(id){const b=S.bgs.find(x=>x.id===id);if(!b)return;const nd=prompt('Renewal done — enter the NEW expiry date (YYYY-MM-DD):',b.expiryDate||today());if(!nd)return;if(!/^\d{4}-\d{2}-\d{2}$/.test(nd))return alert('Please use the format YYYY-MM-DD');b.renewals=b.renewals||[];const oldExp=b.expiryDate||'';b.renewals.push({from:oldExp,to:nd,on:today()});b.expiryDate=nd;b.renewalSent=false;logAudit('BG renewed — '+(oldExp||'?')+' → '+nd,b.bgNo||id);save();render();alert('✓ Renewed. New expiry '+dfmt(nd)+'. Reminders will fire again at 30, 20 & 10 days before this new date.');}
 function bgRelease(id){const b=S.bgs.find(x=>x.id===id);if(!b)return;b.released=!b.released;if(b.released)b.renewalSent=false;logAudit(b.released?'BG released/returned':'BG re-activated',b.bgNo||id);save();render();}
 function tplBG(){dlTemplate('Bank_Guarantees',['Scheme','Contract No','Contractor/Party','BG Type','BG/Reference No','Issuing Bank','Amount','Issue Date (YYYY-MM-DD)','Expiry Date (YYYY-MM-DD)','Claim-by Date (YYYY-MM-DD)','Remarks'],['My Scheme Name','MUR-CW-01','ABC Constructions','Performance Guarantee','BG-12/2026','SBI Imphal','500000','2026-01-15','2027-01-14','2027-02-14','example row - delete me']);}
 function impBG(){S.bgs=S.bgs||[];impRead('imp_bg',rows=>{const data=rows.slice(1);let ok=0;const errs=[];data.forEach((r,idx)=>{try{
@@ -5835,8 +6220,45 @@ function idbMirror(){
   if(_idbT)clearTimeout(_idbT);
   _idbT=setTimeout(function(){try{idbSet('state',{json:JSON.stringify(S),ts:Date.now()});}catch(e){}},800);
 }
+/* ===== CRITICAL ALERT ON APP OPEN — Bank Guarantees near / past expiry ===== */
+var _bgOpenAlertShown=false;
+function bgOpenAlert(){
+  if(_bgOpenAlertShown)return;_bgOpenAlertShown=true;
+  var list=(S.bgs||[]).filter(function(b){return !b.draft&&bgIsAlert(b);}).sort(function(a,b){return bgDays(a)-bgDays(b);});
+  if(!list.length)return;
+  if(document.getElementById('bgOpenAlert'))return;
+  var nExp=list.filter(function(b){return bgDays(b)<0;}).length;
+  var rows=list.map(function(b){
+    var d=bgDays(b),col=d<0?'#7f1d1d':d<=10?'#dc2626':d<=20?'#ea580c':'#b45309';
+    return '<tr><td style="padding:5px 8px;border-bottom:1px solid #f0e4e4"><b>'+esc(b.bgNo||'—')+'</b></td>'
+      +'<td style="padding:5px 8px;border-bottom:1px solid #f0e4e4">'+esc(b.contractor||'—')+'</td>'
+      +'<td style="padding:5px 8px;border-bottom:1px solid #f0e4e4">'+esc(b.bank||'—')+'</td>'
+      +'<td style="padding:5px 8px;border-bottom:1px solid #f0e4e4;text-align:right">'+fmt(b.amount)+'</td>'
+      +'<td style="padding:5px 8px;border-bottom:1px solid #f0e4e4">'+(b.expiryDate?dfmt(b.expiryDate):'—')+'</td>'
+      +'<td style="padding:5px 8px;border-bottom:1px solid #f0e4e4;text-align:right;color:'+col+';font-weight:700">'+(d<0?(-d)+'d overdue':d+'d left')+'</td></tr>';
+  }).join('');
+  var ov=document.createElement('div');
+  ov.id='bgOpenAlert';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:100000;display:flex;align-items:flex-start;justify-content:center;padding:26px;overflow:auto';
+  ov.innerHTML='<div style="background:#fff;color:#1a2333;max-width:720px;width:100%;border-radius:12px;box-shadow:0 14px 44px rgba(0,0,0,.35);overflow:hidden">'
+    +'<div style="background:#b91c1c;color:#fff;padding:14px 20px;display:flex;align-items:center;gap:10px">'
+      +'<span style="font-size:22px">⚠</span><div><div style="font-size:16px;font-weight:700">Bank Guarantee alert</div>'
+      +'<div style="font-size:12.5px;opacity:.9">'+list.length+' guarantee'+(list.length>1?'s':'')+' within 30 days of expiry'+(nExp?' — including '+nExp+' already expired':'')+'</div></div></div>'
+    +'<div style="padding:16px 20px">'
+      +'<table style="border-collapse:collapse;width:100%;font-size:12.5px">'
+      +'<tr style="text-align:left;color:#64748b"><th style="padding:5px 8px">BG No.</th><th style="padding:5px 8px">Party</th><th style="padding:5px 8px">Bank</th><th style="padding:5px 8px;text-align:right">Amount</th><th style="padding:5px 8px">Expiry</th><th style="padding:5px 8px;text-align:right">Days</th></tr>'
+      +rows+'</table>'
+      +'<div style="font-size:12px;color:#64748b;margin-top:10px">Mark each as <b>↻ Renewal Sent</b> or <b>✓ Renew</b> in the Bank Guarantee tracker to stop the alert.</div>'
+      +'<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">'
+        +'<button onclick="bgOpenAlertClose()" style="background:#e2e8f0;color:#1a2333;border:none;border-radius:7px;padding:9px 16px;font-weight:700;cursor:pointer;font-size:13px">Dismiss</button>'
+        +'<button onclick="bgOpenAlertClose();go(\'bg\')" style="background:#b91c1c;color:#fff;border:none;border-radius:7px;padding:9px 18px;font-weight:700;cursor:pointer;font-size:13px">Open BG Tracker →</button>'
+      +'</div></div></div>';
+  ov.addEventListener('click',function(e){if(e.target===ov)bgOpenAlertClose();});
+  document.body.appendChild(ov);
+}
+function bgOpenAlertClose(){var o=document.getElementById('bgOpenAlert');if(o)o.remove();}
 function bootApp(){
-  var start=function(){ensureVnos();render();};
+  var start=function(){ensureVnos();render();setTimeout(bgOpenAlert,350);};
   if(window.__DB_PRIMARY__){
     // DATABASE EDITION: IndexedDB is the primary store (no 5 MB limit).
     var c=document.getElementById('content');if(c)c.innerHTML='<div class="card">⏳ Loading database…</div>';
