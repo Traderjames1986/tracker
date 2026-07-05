@@ -65,7 +65,7 @@ body{background:var(--bg);color:var(--tx);font-size:13.5px;line-height:1.5}
 .xp-fb.alt{background:#fff;color:var(--acc);border:1px solid var(--bd2)}
 #xp-rep{display:flex;flex-direction:column;gap:5px;align-items:flex-end}
 @media print{.xp-bar,.tf-ic,#xp-fab{display:none!important}}
-@media print{thead{display:table-header-group}tfoot{display:table-footer-group}table{page-break-inside:avoid}tr{page-break-inside:avoid}.tbl-wrap{overflow:visible!important;max-height:none!important}tr.tot-top{display:none!important}.card{page-break-inside:avoid}h1,h2,h3{page-break-after:avoid}}
+@media print{thead{display:table-header-group}tfoot{display:table-footer-group}table{page-break-inside:auto}tr,td,th{page-break-inside:avoid}.tbl-wrap{overflow:visible!important;max-height:none!important}tr.tot-top{display:none!important}.card{page-break-inside:auto}h1,h2,h3{page-break-after:avoid;break-after:avoid}}
 
 
 /* ===== FORM CONTROLS ===== */
@@ -1464,26 +1464,39 @@ function pgMobAdv(){
     ${rows?`<tr class="tot-pay"><td><b>TOTAL</b></td><td class="num"><b>${fmt(T.perm)}</b></td><td class="num">${fmt(T.paid)}</td><td class="num">${fmt(T.rec)}</td><td class="num">${fmt(T.out)}</td><td class="num"><b>${fmt(T.pend)}</b></td><td></td></tr>`:''}
   </table></div></div>`;
 }
-var XPCSS="*{font-family:Arial,Helvetica,sans-serif;box-sizing:border-box}body{padding:16px;color:#111}h1{font-size:16px;margin:0 0 2px}h2{font-size:13px;margin:14px 0 4px;color:#1a56a8}.xp-meta{font-size:10px;color:#666;margin-bottom:8px}table{border-collapse:collapse;font-size:11px;width:100%;margin-bottom:8px;background:#fff;color:#111}th,td{border:1px solid #cbd5e1;padding:3px 7px;text-align:left}th{background:#1a56a8;color:#fff}td.num,th.num{text-align:right}.tot,.tot-bal,.tot-pay{font-weight:bold;background:#eef2f7}.mini{font-size:9px;color:#555}.tag{padding:0 4px;border-radius:3px;font-size:9px;border:1px solid #ccc}.empty{color:#999}thead{display:table-header-group}@media print{table{page-break-inside:avoid}tr{page-break-inside:avoid}h1,h2,h3{page-break-after:avoid}}";
+var XPCSS="*{font-family:Arial,Helvetica,sans-serif;box-sizing:border-box}body{padding:6px;color:#111}h1{font-size:12px;margin:0 0 1px}h2{font-size:10.5px;margin:4px 0 1px;color:#1a56a8}h3{font-size:10px;margin:4px 0 1px;color:#1a56a8}.xp-meta{font-size:8.5px;color:#666;margin-bottom:3px}table{border-collapse:collapse;font-size:9.5px;width:100%;margin-bottom:3px;background:#fff;color:#111}th,td{border:1px solid #cbd5e1;padding:1px 4px;text-align:left;line-height:1.2}th{background:#1a56a8;color:#fff}td.num,th.num{text-align:right}.tot,.tot-bal,.tot-pay{font-weight:bold;background:#eef2f7}.mini{font-size:9px;color:#555}.tag{padding:0 4px;border-radius:3px;font-size:9px;border:1px solid #ccc}.empty{color:#999}thead{display:table-header-group}thead th{background:#1a56a8;color:#fff}@media print{@page{size:A4 landscape;margin:8mm}table{page-break-inside:auto}tr,td,th{page-break-inside:avoid;break-inside:avoid}thead{display:table-header-group}tfoot{display:table-footer-group}h1,h2,h3{page-break-after:avoid;break-after:avoid}.xp-sec{page-break-inside:avoid;break-inside:avoid}}";
 function xpDate(){try{return new Date().toLocaleString("en-IN");}catch(e){return ""+new Date();}}
 function xpPeriod(){try{return typeof periodLabel==="function"?periodLabel():"";}catch(e){return "";}}
-function xpClean(tb){var c=tb.cloneNode(true);Array.prototype.slice.call(c.querySelectorAll(".tf-ic")).forEach(function(x){x.remove();});Array.prototype.slice.call(c.querySelectorAll("tr.dsel-hide")).forEach(function(r){r.remove();});Array.prototype.slice.call(c.querySelectorAll(".dsel-col")).forEach(function(x){x.remove();});Array.prototype.slice.call(c.querySelectorAll("tr")).forEach(function(r){if(r.style&&r.style.display==="none")r.remove();});Array.prototype.slice.call(c.querySelectorAll("input")).forEach(function(inp){var s=document.createElement("span");s.textContent=inp.value||"";if(inp.parentNode)inp.parentNode.replaceChild(s,inp);});Array.prototype.slice.call(c.querySelectorAll("details")).forEach(function(d){var sm=d.querySelector("summary");if(sm)sm.remove();var p=d.parentNode;if(p){while(d.firstChild)p.insertBefore(d.firstChild,d);p.removeChild(d);}});return c.outerHTML;}
+function xpNoGlyph(s){return (""+s).replace(/[←-⇿⌀-⏿■-◿☀-➿⬀-⯿️]/g,'').replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g,'');}
+function xpClean(tb){var c=tb.cloneNode(true);Array.prototype.slice.call(c.querySelectorAll(".tf-ic")).forEach(function(x){x.remove();});Array.prototype.slice.call(c.querySelectorAll("tr.dsel-hide")).forEach(function(r){r.remove();});Array.prototype.slice.call(c.querySelectorAll(".dsel-col")).forEach(function(x){x.remove();});Array.prototype.slice.call(c.querySelectorAll("tr")).forEach(function(r){if(r.style&&r.style.display==="none")r.remove();});Array.prototype.slice.call(c.querySelectorAll("input")).forEach(function(inp){var s=document.createElement("span");s.textContent=inp.value||"";if(inp.parentNode)inp.parentNode.replaceChild(s,inp);});Array.prototype.slice.call(c.querySelectorAll("details")).forEach(function(d){var sm=d.querySelector("summary");if(sm)sm.remove();var p=d.parentNode;if(p){while(d.firstChild)p.insertBefore(d.firstChild,d);p.removeChild(d);}});try{var _tb=c.tBodies&&c.tBodies[0];if(_tb&&_tb.rows.length&&!c.tHead){var _hr=[];for(var _i=0;_i<_tb.rows.length;_i++){var _r=_tb.rows[_i];if(_r.querySelector("td"))break;if(!_r.querySelector("th"))break;_hr.push(_r);}if(_hr.length){var _th=c.createTHead();_hr.forEach(function(_r){_th.appendChild(_r);});}}}catch(e){}return xpNoGlyph(c.outerHTML);}
 function xpDownload(blob,name){var a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){a.remove();URL.revokeObjectURL(a.href);},120);}
-function xpPrintWin(items,heading){var w=window.open("","_blank");if(!w){alert("Pop-up blocked — please allow pop-ups to export PDF.");return;}var h='<html><head><title>'+(heading||"Report")+'</title><style>'+XPCSS+'</style></head><body>';h+='<h1>PWD Fund Tracker'+(heading?' — '+heading:'')+'</h1><div class="xp-meta">'+xpPeriod()+' · generated '+xpDate()+'</div>';items.forEach(function(it){h+='<h2>'+(it.t||"").replace(/_/g," ")+'</h2>'+it.h;});h+='<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},250);};</scr'+'ipt></body></html>';w.document.write(h);w.document.close();}
+var XPOPT={paper:'A4',orient:'landscape',scale:100};try{var _xo=JSON.parse(localStorage.getItem('xpopt')||'null');if(_xo)XPOPT=Object.assign(XPOPT,_xo);}catch(e){}
+function xpPageCSS(){return '@media print{@page{size:'+XPOPT.paper+' '+XPOPT.orient+';margin:8mm}}';}
+function xpSettings(){var ov=document.getElementById('xpset');if(ov)ov.remove();ov=document.createElement('div');ov.id='xpset';ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10000;display:flex;align-items:center;justify-content:center';ov.innerHTML='<div style="background:#fff;border-radius:10px;padding:18px;width:340px;max-width:92vw;box-shadow:0 12px 40px rgba(0,0,0,.4);font-size:13px;color:#111"><h3 style="margin:0 0 10px">🖨 Export / Print Settings</h3><div class="mini" style="margin-bottom:10px">Applies to every PDF / Print export. If a table spills onto extra pages, lower the Size % (e.g. 70–80%) so it fits, or switch paper/orientation.</div><label style="display:block;margin:8px 0 3px;font-weight:bold">Paper size</label><select id="xo_paper" style="width:100%;padding:6px"><option value="A4">A4</option><option value="legal">Legal</option><option value="A3">A3 (very wide reports)</option></select><label style="display:block;margin:10px 0 3px;font-weight:bold">Orientation</label><select id="xo_orient" style="width:100%;padding:6px"><option value="landscape">Landscape (wide tables)</option><option value="portrait">Portrait</option></select><label style="display:block;margin:10px 0 3px;font-weight:bold">Size / Zoom: <span id="xo_sval">'+XPOPT.scale+'%</span> <span class="mini">(smaller fits more per page)</span></label><input id="xo_scale" type="range" min="50" max="120" step="5" value="'+XPOPT.scale+'" style="width:100%" oninput="document.getElementById(\'xo_sval\').textContent=this.value+\'%\'"><div style="display:flex;gap:8px;margin-top:16px"><button class="btn" style="flex:1" onclick="xpSetApply()">Save</button><button class="btn2" style="flex:1" onclick="document.getElementById(\'xpset\').remove()">Cancel</button></div></div>';document.body.appendChild(ov);document.getElementById('xo_paper').value=XPOPT.paper;document.getElementById('xo_orient').value=XPOPT.orient;ov.onclick=function(e){if(e.target===ov)ov.remove();};}
+function xpSetApply(){XPOPT.paper=document.getElementById('xo_paper').value;XPOPT.orient=document.getElementById('xo_orient').value;XPOPT.scale=+document.getElementById('xo_scale').value||100;try{localStorage.setItem('xpopt',JSON.stringify(XPOPT));}catch(e){}var o=document.getElementById('xpset');if(o)o.remove();if(typeof xpToast==='function')xpToast('Print settings saved — '+XPOPT.paper+' · '+XPOPT.orient+' · '+XPOPT.scale+'%');}
+function xpPrintWin(items,heading){var w=window.open("","_blank");if(!w){alert("Pop-up blocked — please allow pop-ups to export PDF.");return;}var h='<html><head><title>'+(heading||"Report")+'</title><style>'+XPCSS+xpPageCSS()+'</style></head><body><div style="zoom:'+(XPOPT.scale/100)+'">';if(heading)h+='<h1>'+xpNoGlyph((""+heading).replace(/_/g," "))+'</h1>';h+='<div class="xp-meta">'+xpPeriod()+' · generated '+xpDate()+'</div>';var _single=items.length===1;items.forEach(function(it){h+='<div class="'+(_single?'xp-flow':'xp-sec')+'">'+(_single?'':'<h2>'+xpNoGlyph((it.t||"").replace(/_/g," "))+'</h2>')+xpNoGlyph(it.h)+'</div>';});h+='</div><scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},250);};</scr'+'ipt></body></html>';w.document.write(h);w.document.close();}
+function xpPvDims(){var mm=3.779527,margin=8;var dm=({A4:[297,210],legal:[355.6,215.9],A3:[420,297]})[XPOPT.paper]||[297,210];var big=Math.max(dm[0],dm[1]),sml=Math.min(dm[0],dm[1]);var W=(XPOPT.orient==='landscape'?big:sml),H=(XPOPT.orient==='landscape'?sml:big);return {w:(W-2*margin)*mm,h:(H-2*margin)*mm};}
+function xpPvScreenCSS(){return '@media screen{body{background:#eceff3;margin:0;padding:14px 0}#xpdoc{background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.25);padding:0;margin:0 auto;box-sizing:border-box}}';}
+function xpPvApply(paginate){var ifr=document.getElementById('pv_if');if(!ifr||!ifr.contentDocument)return;var dc=ifr.contentDocument.getElementById('xpdoc');if(!dc)return;var z=(XPOPT.scale/100)||1,dims=xpPvDims();dc.style.zoom=z;dc.style.width=Math.round(dims.w/z)+'px';if(paginate)xpPvPaginate();}
+function xpBuildDoc(items,heading){var inner='';if(heading)inner+='<h1>'+xpNoGlyph((""+heading).replace(/_/g," "))+'</h1>';inner+='<div class="xp-meta">'+xpPeriod()+' · generated '+xpDate()+'</div>';var _single=items.length===1;items.forEach(function(it){inner+='<div class="'+(_single?'xp-flow':'xp-sec')+'">'+(_single?'':'<h2>'+xpNoGlyph((it.t||"").replace(/_/g," "))+'</h2>')+xpNoGlyph(it.h)+'</div>';});var scr='@media screen{body{background:#eceff3;margin:0;padding:14px}#xpdoc{background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.25);padding:14px;margin:0 auto;max-width:1100px}}';return '<!DOCTYPE html><html><head><meta charset="utf-8"><style>'+XPCSS+xpPageCSS()+scr+'</style></head><body><div id="xpdoc" contenteditable="true" style="zoom:'+(XPOPT.scale/100)+';outline:none">'+inner+'</div></body></html>';}
+function xpPreview(items,heading){var ov=document.getElementById('xppv');if(ov)ov.remove();ov=document.createElement('div');ov.id='xppv';ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:10001;display:flex;flex-direction:column;padding:10px';ov.innerHTML='<div style="background:#fff;border-radius:8px;max-width:1240px;width:100%;margin:0 auto;flex:1;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.4)"><div style="display:flex;gap:8px;align-items:center;padding:8px 12px;border-bottom:1px solid #e5e7eb;flex-wrap:wrap;font-size:12px"><b style="margin-right:auto">Preview &amp; Edit — click to edit / delete · <span style="color:#d33">red dashed line = end of a print page</span></b><label>Paper <select id="pv_paper"><option value="A4">A4</option><option value="legal">Legal</option><option value="A3">A3</option></select></label><label>Orient. <select id="pv_orient"><option value="landscape">Landscape</option><option value="portrait">Portrait</option></select></label><label>Zoom <input id="pv_scale" type="range" min="50" max="120" step="5" value="'+XPOPT.scale+'" style="vertical-align:middle"><span id="pv_sv">'+XPOPT.scale+'%</span></label><button class="btn2 btn-sm" onclick="xpPvPaginate()" title="Refresh page-break lines">⟳ Pages</button><button class="btn2 btn-sm" onclick="xpPvPrint()">📄 Print / PDF</button><button class="btn2 btn-sm" onclick="xpPvPNG()">🖼 PNG</button><button class="btn2 btn-sm" onclick="document.getElementById(\'xppv\').remove()">✕ Close</button></div><iframe id="pv_if" style="flex:1;border:none;width:100%;background:#eceff3"></iframe></div>';document.body.appendChild(ov);document.getElementById('pv_paper').value=XPOPT.paper;document.getElementById('pv_orient').value=XPOPT.orient;var _ifr=document.getElementById('pv_if');_ifr.onload=function(){var _d=_ifr.contentDocument;if(_d){_d.body.style.position='relative';_d.addEventListener('input',function(){clearTimeout(window._xpgt);window._xpgt=setTimeout(xpPvPaginate,350);});}setTimeout(xpPvPaginate,60);};_ifr.srcdoc=xpBuildDoc(items,heading);var reflow=function(){XPOPT.paper=document.getElementById('pv_paper').value;XPOPT.orient=document.getElementById('pv_orient').value;XPOPT.scale=+document.getElementById('pv_scale').value||100;document.getElementById('pv_sv').textContent=XPOPT.scale+'%';try{localStorage.setItem('xpopt',JSON.stringify(XPOPT));}catch(e){}var ifr=document.getElementById('pv_if');var d=ifr&&ifr.contentDocument;if(d){var st=d.querySelector('style');if(st)st.textContent=XPCSS+xpPageCSS()+'@media screen{body{background:#eceff3;margin:0;padding:14px}#xpdoc{background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.25);padding:14px;margin:0 auto;max-width:1100px}}';var dc=d.getElementById('xpdoc');if(dc)dc.style.zoom=(XPOPT.scale/100);setTimeout(xpPvPaginate,60);}};document.getElementById('pv_paper').onchange=reflow;document.getElementById('pv_orient').onchange=reflow;document.getElementById('pv_scale').oninput=reflow;}
+function xpPvPaginate(){var ifr=document.getElementById('pv_if');if(!ifr||!ifr.contentDocument)return;var d=ifr.contentDocument,b=d.body;Array.prototype.slice.call(d.querySelectorAll('.pgline')).forEach(function(e){e.remove();});var mm=3.779527,margin=8;var dm=({A4:[297,210],legal:[355.6,215.9],A3:[420,297]})[XPOPT.paper]||[297,210];var pageHmm=(XPOPT.orient==='landscape')?Math.min(dm[0],dm[1]):Math.max(dm[0],dm[1]);var usable=(pageHmm-2*margin)*mm;if(usable<50)return;b.style.position='relative';var total=b.scrollHeight,n=Math.max(1,Math.ceil(total/usable));for(var i=1;i<n;i++){var y=Math.round(i*usable);var ln=d.createElement('div');ln.className='pgline';ln.style.cssText='position:absolute;left:0;right:0;top:'+y+'px;border-top:2px dashed #d33;pointer-events:none;z-index:5';var lb=d.createElement('div');lb.className='pgline';lb.style.cssText='position:absolute;right:8px;top:'+(y+2)+'px;background:#d33;color:#fff;font-size:9px;padding:1px 6px;border-radius:3px;pointer-events:none;z-index:6';lb.textContent='Page '+(i+1)+' →';b.appendChild(ln);b.appendChild(lb);}}
+function xpPvPrint(){var ifr=document.getElementById('pv_if');if(ifr&&ifr.contentWindow){ifr.contentWindow.focus();setTimeout(function(){try{ifr.contentWindow.print();}catch(e){window.print();}},60);}}
+function xpPvPNG(){var ifr=document.getElementById('pv_if');if(!ifr||!ifr.contentDocument)return;var dc=ifr.contentDocument.getElementById('xpdoc');xpPNG(dc?dc.innerHTML:'','Export_'+Date.now());}
 function xpCSV(tb,title){var rows=[];Array.prototype.slice.call(tb.rows).forEach(function(r){if(r.style&&r.style.display==="none")return;if(r.classList&&r.classList.contains("dsel-hide"))return;var cells=Array.prototype.slice.call(r.cells).filter(function(c){return !(c.classList&&c.classList.contains("dsel-col"));}).map(function(c){var inp=c.querySelector&&c.querySelector("input");if(inp)return inp.value||"";var cc=c.cloneNode(true);Array.prototype.slice.call(cc.querySelectorAll(".tf-ic")).forEach(function(x){x.remove();});return cc.textContent.trim();});rows.push(cells);});var csv="﻿"+rows.map(function(r){return r.map(function(v){v=(v==null?"":String(v));return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}).join(",");}).join("\r\n");xpDownload(new Blob([csv],{type:"text/csv"}),title+".csv");}
 function xpToast(m){var d=document.createElement("div");d.textContent=m;d.style.cssText="position:fixed;left:50%;bottom:64px;transform:translateX(-50%);background:#0e1d30;color:#fff;padding:8px 16px;border-radius:8px;z-index:400;font-size:12px;box-shadow:0 4px 16px rgba(0,0,0,.3)";document.body.appendChild(d);setTimeout(function(){d.remove();},1900);}
 function xpCopy(tb){var html=xpClean(tb);try{var tmp=document.createElement("div");tmp.innerHTML=html;tmp.style.cssText="position:fixed;left:-99999px;top:0";document.body.appendChild(tmp);var rng=document.createRange();rng.selectNode(tmp);var sel=window.getSelection();sel.removeAllRanges();sel.addRange(rng);var ok=document.execCommand("copy");sel.removeAllRanges();tmp.remove();if(ok){xpToast("Table copied — paste into Word / Excel / email");return;}}catch(e){}alert("Copy not supported here — use CSV or PDF.");}
-function xpPNG(htmlStr,filename){try{var wrap=document.createElement("div");wrap.setAttribute("xmlns","http://www.w3.org/1999/xhtml");wrap.style.cssText="display:inline-block;background:#fff;padding:10px";wrap.innerHTML="<style>"+XPCSS+"</style>"+htmlStr;var meas=document.createElement("div");meas.style.cssText="position:fixed;left:-99999px;top:0";meas.appendChild(wrap);document.body.appendChild(meas);var rect=wrap.getBoundingClientRect();var w=Math.ceil(rect.width)+2,h=Math.ceil(rect.height)+2;var ser=new XMLSerializer().serializeToString(wrap);document.body.removeChild(meas);var data='<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'"><foreignObject x="0" y="0" width="'+w+'" height="'+h+'">'+ser+'</foreignObject></svg>';var img=new Image();img.onload=function(){var s=2;var cv=document.createElement("canvas");cv.width=w*s;cv.height=h*s;var ctx=cv.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,cv.width,cv.height);ctx.scale(s,s);ctx.drawImage(img,0,0);try{cv.toBlob(function(b){if(!b){alert("Image export failed — please use PDF.");return;}xpDownload(b,filename+".png");});}catch(e){alert("Image export blocked in this browser — please use PDF.");}};img.onerror=function(){alert("Image export not supported in this browser — please use PDF.");};img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(data);}catch(e){alert("Image export error — please use PDF.");}}
-function exportEl(tb,title,mode){var html=xpClean(tb);if(mode==="pdf")xpPrintWin([{t:title,h:html}],title);else if(mode==="png")xpPNG(html,title);else if(mode==="csv")xpCSV(tb,title);else if(mode==="copy")xpCopy(tb);}
+function xpPNG(htmlStr,filename){try{var wrap=document.createElement("div");wrap.setAttribute("xmlns","http://www.w3.org/1999/xhtml");wrap.style.cssText="display:inline-block;background:#fff;padding:10px";wrap.innerHTML="<style>"+XPCSS+"</style>"+xpNoGlyph(htmlStr);var meas=document.createElement("div");meas.style.cssText="position:fixed;left:-99999px;top:0";meas.appendChild(wrap);document.body.appendChild(meas);var rect=wrap.getBoundingClientRect();var w=Math.ceil(rect.width)+2,h=Math.ceil(rect.height)+2;var ser=new XMLSerializer().serializeToString(wrap);document.body.removeChild(meas);var data='<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'"><foreignObject x="0" y="0" width="'+w+'" height="'+h+'">'+ser+'</foreignObject></svg>';var img=new Image();img.onload=function(){var s=2;var cv=document.createElement("canvas");cv.width=w*s;cv.height=h*s;var ctx=cv.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,cv.width,cv.height);ctx.scale(s,s);ctx.drawImage(img,0,0);try{cv.toBlob(function(b){if(!b){alert("Image export failed — please use PDF.");return;}xpDownload(b,filename+".png");});}catch(e){alert("Image export blocked in this browser — please use PDF.");}};img.onerror=function(){alert("Image export not supported in this browser — please use PDF.");};img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(data);}catch(e){alert("Image export error — please use PDF.");}}
+function exportEl(tb,title,mode){var html=xpClean(tb);if(mode==="view")xpPreview([{t:title,h:html}],title);else if(mode==="pdf")xpPrintWin([{t:title,h:html}],title);else if(mode==="png")xpPNG(html,title);else if(mode==="csv")xpCSV(tb,title);else if(mode==="copy")xpCopy(tb);}
 var REPORT=[];
 function pickReport(tb,title){REPORT.push({t:title,h:xpClean(tb)});xpToast(title.replace(/_/g," ")+" added to report ("+REPORT.length+")");updateReportBar();}
 function exportReport(mode){if(!REPORT.length){alert("No tables added. Click the Report button on the tables you want to combine.");return;}if(mode==="pdf")xpPrintWin(REPORT.slice(),"Combined Report");else xpPNG(REPORT.map(function(it){return "<h2>"+it.t.replace(/_/g," ")+"</h2>"+it.h;}).join(""),"Combined_Report");}
 function clearReport(){REPORT=[];updateReportBar();}
 function exportPage(mode){var items=[];Array.prototype.slice.call(document.querySelectorAll("#content table")).forEach(function(tb){if(tb.closest("td"))return;var card=tb.closest(".card");var h3=card?card.querySelector("h3"):null;var ttl=h3?h3.textContent.replace(/[^a-zA-Z0-9]+/g,"_").replace(/^_+|_+$/g,"").slice(0,40):"table";items.push({t:ttl,h:xpClean(tb)});});if(!items.length){alert("No tables on this page to export.");return;}if(mode==="png")xpPNG(items.map(function(it){return "<h2>"+it.t.replace(/_/g," ")+"</h2>"+it.h;}).join(""),"Page_Report");else xpPrintWin(items,"Page Report");}
 function updateReportBar(){var r=document.getElementById("xp-rep");if(!r)return;if(!REPORT.length){r.innerHTML="";return;}r.innerHTML='<div class="xp-fb alt" onclick="exportReport(\'pdf\')">📄 Report PDF ('+REPORT.length+')</div><div class="xp-fb alt" onclick="exportReport(\'png\')">🖼️ Report PNG</div><div class="xp-fb alt" onclick="clearReport()">✕ Clear</div>';}
-function exportFab(){if(document.getElementById("xp-fab")){updateReportBar();return;}var fb=document.createElement("div");fb.id="xp-fab";fb.innerHTML='<div id="xp-rep"></div>';document.body.appendChild(fb);updateReportBar();}
-function exportEls(tbs,title,mode){if(!tbs||!tbs.length)return;if(tbs.length===1)return exportEl(tbs[0],title,mode);if(mode==="pdf"){xpPrintWin(tbs.map(function(x){return {t:title,h:xpClean(x)};}),title);return;}if(mode==="png"){xpPNG(tbs.map(function(x){return xpClean(x);}).join('<div style="height:10px"></div>'),title);return;}if(mode==="csv"){var rows=[];tbs.forEach(function(tb){Array.prototype.slice.call(tb.rows).forEach(function(r){if(r.style&&r.style.display==="none")return;if(r.classList&&r.classList.contains("dsel-hide"))return;rows.push(Array.prototype.slice.call(r.cells).filter(function(c){return !(c.classList&&c.classList.contains("dsel-col"));}).map(function(c){var inp=c.querySelector&&c.querySelector("input");if(inp)return inp.value||"";var cc=c.cloneNode(true);Array.prototype.slice.call(cc.querySelectorAll(".tf-ic")).forEach(function(x){x.remove();});return cc.textContent.trim();}));});rows.push([]);});var csv="\ufeff"+rows.map(function(r){return r.map(function(v){v=(v==null?"":String(v));return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}).join(",");}).join("\r\n");xpDownload(new Blob([csv],{type:"text/csv"}),title+".csv");return;}if(mode==="copy"){var tmp=document.createElement("div");tmp.innerHTML=tbs.map(function(x){return xpClean(x);}).join("<br>");tmp.style.cssText="position:fixed;left:-99999px;top:0";document.body.appendChild(tmp);var rng=document.createRange();rng.selectNode(tmp);var sel=window.getSelection();sel.removeAllRanges();sel.addRange(rng);try{document.execCommand("copy");}catch(e){}sel.removeAllRanges();tmp.remove();xpToast("Copied to clipboard");return;}}
-function enhanceExports(){try{Array.prototype.slice.call(document.querySelectorAll("#content .card")).forEach(function(card){var tb=card.querySelector("table");if(!tb||tb.closest("td"))return;if(card.querySelector(".xp-bar"))return;var h=card.querySelector("h3");var title=(h?h.textContent:"table").replace(/[^a-zA-Z0-9]+/g,"_").replace(/^_+|_+$/g,"").slice(0,40)||"table";var bar=document.createElement("span");bar.className="xp-bar";bar.style.cssText="float:right;display:inline-flex;gap:4px;margin-left:8px";bar.innerHTML='<span class="xp-b" data-m="pdf" title="Save as PDF / Print">🖨 PDF</span><span class="xp-b" data-m="png" title="Save as image">🖼️ PNG</span><span class="xp-b" data-m="csv" title="Download CSV (Excel)">⬇ CSV</span><span class="xp-b" data-m="copy" title="Copy table — paste into Word/Excel/email">📋 Copy</span><span class="xp-b" data-m="rep" title="Add to combined multi-table report">➕ Report</span>';var tbs=Array.prototype.slice.call(card.querySelectorAll("table")).filter(function(x){return !x.closest("td");});Array.prototype.slice.call(bar.querySelectorAll(".xp-b")).forEach(function(b){b.onclick=function(ev){ev.stopPropagation();var m=b.getAttribute("data-m");if(m==="rep"){tbs.forEach(function(x){pickReport(x,title);});}else exportEls(tbs,title,m);};});var selTbs=tbs.filter(function(x){return x.querySelector(".dsel-col");});if(selTbs.length){var sb=document.createElement("span");sb.className="xp-b";sb.style.cssText="margin-right:6px";sb.textContent="☑ Select rows";sb.title="Show tick boxes to pick specific rows — only ticked rows stay, with their own total";sb.onclick=function(ev){ev.stopPropagation();var on=!selTbs[0].classList.contains("selon");selTbs.forEach(function(t){dselSetOn(t,on);});sb.classList.toggle("on",on);sb.textContent=on?"☑ Selecting…":"☑ Select rows";};bar.insertBefore(sb,bar.firstChild);}if(h)h.appendChild(bar);else card.insertBefore(bar,card.firstChild);});exportFab();}catch(e){}}
+function exportFab(){if(document.getElementById("xp-fab")){updateReportBar();return;}var fb=document.createElement("div");fb.id="xp-fab";fb.innerHTML='<div class="xp-fb alt" onclick="xpSettings()" title="Export / Print settings — paper, orientation, size">⚙ Print setup</div><div id="xp-rep"></div>';document.body.appendChild(fb);updateReportBar();}
+function exportEls(tbs,title,mode){if(!tbs||!tbs.length)return;if(mode==="view"){xpPreview(tbs.map(function(x){return {t:title,h:xpClean(x)};}),title);return;}if(tbs.length===1)return exportEl(tbs[0],title,mode);if(mode==="pdf"){xpPrintWin(tbs.map(function(x){return {t:title,h:xpClean(x)};}),title);return;}if(mode==="png"){xpPNG(tbs.map(function(x){return xpClean(x);}).join('<div style="height:10px"></div>'),title);return;}if(mode==="csv"){var rows=[];tbs.forEach(function(tb){Array.prototype.slice.call(tb.rows).forEach(function(r){if(r.style&&r.style.display==="none")return;if(r.classList&&r.classList.contains("dsel-hide"))return;rows.push(Array.prototype.slice.call(r.cells).filter(function(c){return !(c.classList&&c.classList.contains("dsel-col"));}).map(function(c){var inp=c.querySelector&&c.querySelector("input");if(inp)return inp.value||"";var cc=c.cloneNode(true);Array.prototype.slice.call(cc.querySelectorAll(".tf-ic")).forEach(function(x){x.remove();});return cc.textContent.trim();}));});rows.push([]);});var csv="\ufeff"+rows.map(function(r){return r.map(function(v){v=(v==null?"":String(v));return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}).join(",");}).join("\r\n");xpDownload(new Blob([csv],{type:"text/csv"}),title+".csv");return;}if(mode==="copy"){var tmp=document.createElement("div");tmp.innerHTML=tbs.map(function(x){return xpClean(x);}).join("<br>");tmp.style.cssText="position:fixed;left:-99999px;top:0";document.body.appendChild(tmp);var rng=document.createRange();rng.selectNode(tmp);var sel=window.getSelection();sel.removeAllRanges();sel.addRange(rng);try{document.execCommand("copy");}catch(e){}sel.removeAllRanges();tmp.remove();xpToast("Copied to clipboard");return;}}
+function enhanceExports(){try{Array.prototype.slice.call(document.querySelectorAll("#content .card")).forEach(function(card){var tb=card.querySelector("table");if(!tb||tb.closest("td"))return;if(card.querySelector(".xp-bar"))return;var h=card.querySelector("h3");var title=(h?h.textContent:"table").replace(/[^a-zA-Z0-9]+/g,"_").replace(/^_+|_+$/g,"").slice(0,40)||"table";var bar=document.createElement("span");bar.className="xp-bar";bar.style.cssText="float:right;display:inline-flex;gap:4px;margin-left:8px";bar.innerHTML='<span class="xp-b" data-m="view" title="Preview &amp; edit before printing">👁 Preview</span><span class="xp-b" data-m="pdf" title="Save as PDF / Print">🖨 PDF</span><span class="xp-b" data-m="png" title="Save as image">🖼️ PNG</span><span class="xp-b" data-m="csv" title="Download CSV (Excel)">⬇ CSV</span><span class="xp-b" data-m="copy" title="Copy table — paste into Word/Excel/email">📋 Copy</span><span class="xp-b" data-m="rep" title="Add to combined multi-table report">➕ Report</span><span class="xp-b" data-m="set" title="Export / Print settings — paper, orientation, size">⚙ Setup</span>';var tbs=Array.prototype.slice.call(card.querySelectorAll("table")).filter(function(x){return !x.closest("td");});Array.prototype.slice.call(bar.querySelectorAll(".xp-b")).forEach(function(b){b.onclick=function(ev){ev.stopPropagation();var m=b.getAttribute("data-m");if(m==="set"){xpSettings();}else if(m==="rep"){tbs.forEach(function(x){pickReport(x,title);});}else exportEls(tbs,title,m);};});var selTbs=tbs.filter(function(x){return x.querySelector(".dsel-col");});if(selTbs.length){var sb=document.createElement("span");sb.className="xp-b";sb.style.cssText="margin-right:6px";sb.textContent="☑ Select rows";sb.title="Show tick boxes to pick specific rows — only ticked rows stay, with their own total";sb.onclick=function(ev){ev.stopPropagation();var on=!selTbs[0].classList.contains("selon");selTbs.forEach(function(t){dselSetOn(t,on);});sb.classList.toggle("on",on);sb.textContent=on?"☑ Selecting…":"☑ Select rows";};bar.insertBefore(sb,bar.firstChild);}if(h)h.appendChild(bar);else card.insertBefore(bar,card.firstChild);});exportFab();}catch(e){}}
 function normDashboards(){if(!S.dashboards)return;if(!S.dashboards.find(function(d){return d.id==='d5';}))S.dashboards.push({id:'d5',name:'Mob. Adv. Based',kpis:['advPaid','advRec','mobPay'],slicers:['component','contract','contractor'],expCols:null});if(!S.dashboards.find(function(d){return d.id==='d6';}))S.dashboards.push({id:'d6',name:'Liability Based',kpis:['currentLiab','mobPay','dedPayable','liabOutstanding','netLiab'],slicers:['component','contract','contractor'],expCols:null});var nm={d3:'Receipt and Transfer',d5:'Mob. Adv. Based',d6:'Liability Based'};S.dashboards.forEach(function(d){if(nm[d.id])d.name=nm[d.id];});var order=['d1','d3','d2','d5','d4','d6'];var known=order.map(function(id){return S.dashboards.find(function(d){return d.id===id;});}).filter(Boolean);var rest=S.dashboards.filter(function(d){return order.indexOf(d.id)<0;});S.dashboards=known.concat(rest);}
 var ASKQ="";
 function askRun(){var e=document.getElementById("askq");ASKQ=e?e.value:"";render();}
@@ -3927,10 +3940,11 @@ function exportRelease(rid,mode){
   const pays=S.payments.filter(p=>!p.draft&&p.releaseId===rid).sort(relPaySort);
   const util=pays.reduce((a,p)=>a+payEff(p),0);
   const head=`<table><tr><td><b>Fund Release:</b> ${esc(r.note||r.vno||'')}</td><td><b>Source:</b> ${esc(r.source||'')}${r.head?' ('+esc(r.head)+')':''}</td></tr><tr><td><b>Date:</b> ${dfmt(r.date)}</td><td><b>Release Amount:</b> ${fmt(r.amount)}</td></tr><tr><td><b>Effective Spent:</b> ${fmt(util)}</td><td><b>Unspent:</b> ${fmt(n(r.amount)-util)}</td></tr></table>`;
-  const body=pays.map(p=>{const c=conById(p.contractId)||{};return `<h3 style="margin-top:14px">${dfmt(p.date)} · ${esc(p.vno||'')} · ${esc(c.no||'—')} (${esc(c.contractor||'')}) — ${p.kind==='adv'?'Advance':'Bill Payment'}</h3>${payDetailHTML(p)}`;}).join('')||'<div class="empty">No payments made from this release.</div>';
-  const html=head+'<h3 style="margin-top:12px">Contract-wise Expenditure of this Release</h3>'+releaseConTableHTML(r)+'<h3 style="margin-top:12px">Payment Details</h3>'+body;
+  const body=pays.map(p=>{const c=conById(p.contractId)||{};return `<h3 style="margin:5px 0 1px">${dfmt(p.date)} · ${esc(p.vno||'')} · ${esc(c.no||'—')} (${esc(c.contractor||'')}) — ${p.kind==='adv'?'Advance':'Bill Payment'}</h3>${payDetailHTML(p)}`;}).join('')||'<div class="empty">No payments made from this release.</div>';
+  const html=head+'<h3 style="margin:6px 0 1px">Contract-wise Expenditure of this Release</h3>'+releaseConTableHTML(r)+'<h3 style="margin:6px 0 1px">Payment Details</h3>'+body;
   const title='Release_'+((r.note||r.vno||r.id)+'').replace(/[^a-zA-Z0-9]+/g,'_');
-  if(mode==='pdf')xpPrintWin([{t:'Release Spending — '+(r.note||r.vno||''),h:html}],title);
+  if(mode==='view')xpPreview([{t:'Release Spending — '+(r.note||r.vno||''),h:html}],title);
+  else if(mode==='pdf')xpPrintWin([{t:'Release Spending — '+(r.note||r.vno||''),h:html}],title);
   else if(mode==='png')xpPNG(html,title);
   else if(mode==='csv')xpDownload(new Blob([toCsv(releaseCsvRows(r))],{type:'text/csv;charset=utf-8'}),title+'.csv');
   else if(mode==='copy')xpCopyHTML('<h2>Release Spending — '+esc(r.note||r.vno||'')+'</h2>'+html);
@@ -3949,11 +3963,11 @@ function relConDetailHTML(rid,cid){
 }
 function releaseConTableI(r){
   const arr=releaseConSummary(r);const T={eff:0,gross:0,net:0,nL:0};arr.forEach(x=>{T.eff+=x.eff;T.gross+=x.gross;T.net+=x.net;T.nL+=x.nL;});
-  const rows=arr.map(x=>{const cid=x.con.id||'';const key=r.id+'|'+cid;const open=RSC.has(key);
-    let h=`<tr style="cursor:pointer" onclick="togRSC('${key}')"><td><b>${open?'▾':'▸'} ${esc(x.con.no||'—')}</b></td><td>${esc(x.con.contractor||'—')}</td><td class="num">${fmt(x.gross)}</td><td class="num">${fmt(x.net)}</td><td class="num"><b>${fmt(x.eff)}</b></td><td class="num">${x.nL}</td></tr>`;
-    if(open)h+=`<tr><td colspan="6" style="background:#eef4fb;padding:6px"><b class="mini">Payment details — ${esc(x.con.no||'')} (${esc(x.con.contractor||'')})</b>${relConDetailHTML(r.id,cid)}</td></tr>`;
-    return h;}).join('')||'<tr><td colspan="6" class="empty">No payments</td></tr>';
-  return `<div class="note" style="margin-bottom:4px">Click a contract to expand its bills/SPS &amp; payment details.</div><div class="tbl-wrap"><table><tr><th>Contract</th><th>Contractor</th><th class="num">Bill Passed</th><th class="num">Net Paid</th><th class="num">Effective Spent</th><th class="num"># SPS/Bills/Adv</th></tr>${rows}${arr.length?`<tr class="tot-pay"><td colspan="2"><b>TOTAL</b></td><td class="num">${fmt(T.gross)}</td><td class="num">${fmt(T.net)}</td><td class="num"><b>${fmt(T.eff)}</b></td><td class="num">${T.nL}</td></tr>`:''}</table></div>`;
+  const rows=arr.map(x=>{const cid=x.con.id||'';const key=r.id+'|'+cid;const open=RSC.has(key);const bills=relConBillList(r.id,cid);
+    let h=`<tr style="cursor:pointer" onclick="togRSC('${key}')"><td><b>${open?'▾':'▸'} ${esc(x.con.no||'—')}</b></td><td>${esc(x.con.contractor||'—')}</td><td>${bills.map(b=>'<span class="tag b">'+esc(b)+'</span>').join(' ')||'—'}</td><td class="num">${fmt(x.gross)}</td><td class="num">${fmt(x.net)}</td><td class="num"><b>${fmt(x.eff)}</b></td><td class="num">${x.nL}</td></tr>`;
+    if(open)h+=`<tr><td colspan="7" style="background:#eef4fb;padding:6px"><b class="mini">Payment details — ${esc(x.con.no||'')} (${esc(x.con.contractor||'')})</b>${relConDetailHTML(r.id,cid)}</td></tr>`;
+    return h;}).join('')||'<tr><td colspan="7" class="empty">No payments</td></tr>';
+  return `<div class="note" style="margin-bottom:4px">Click a contract row to expand its bills/SPS &amp; payment details.</div><div class="tbl-wrap"><table><tr><th>Contract</th><th>Contractor</th><th>SPS / Bill Nos. · Payment No.</th><th class="num">Bill Passed</th><th class="num">Net Paid</th><th class="num">Effective Spent</th><th class="num"># SPS/Bills/Adv</th></tr>${rows}${arr.length?`<tr class="tot-pay"><td colspan="3"><b>TOTAL</b></td><td class="num">${fmt(T.gross)}</td><td class="num">${fmt(T.net)}</td><td class="num"><b>${fmt(T.eff)}</b></td><td class="num">${T.nL}</td></tr>`:''}</table></div>`;
 }
 function rsfTogSource(v){togArr(RSF.sources,v);render();}
 function rsfTogShare(v){togArr(RSF.shares,v);render();}
@@ -3973,14 +3987,14 @@ function rsExpandAll(){rsFilteredReleases().forEach(r=>RSX.add(r.id));render();}
 function rsCollapseAll(){RSX.clear();render();}
 function relConBillList(rid,cid){
   const set=[];
-  S.payments.filter(p=>!p.draft&&p.releaseId===rid&&p.contractId===cid).forEach(p=>{(p.lines||[]).forEach(l=>{if(l.billId){const b=S.bills.find(z=>z.id===l.billId)||{};set.push(b.billNo||'?');}else set.push('Mob.Adv'+(l.serial?' '+l.serial:(p.serial?' '+p.serial:'')));});});
+  S.payments.filter(p=>!p.draft&&p.releaseId===rid&&p.contractId===cid).forEach(p=>{(p.lines||[]).forEach(l=>{if(l.billId){const b=S.bills.find(z=>z.id===l.billId)||{};set.push((b.billNo||'?')+' Payment '+billPayNo(p,l.billId));}else set.push('Mob.Adv'+(l.serial?' '+l.serial:(p.serial?' '+p.serial:''))+' Payment '+payInstNo(p));});});
   return set;
 }
 function rsSummaryTable(rels){
   let G=0;
   const body=rels.map(r=>{
     const arr=releaseConSummary(r);const eff=arr.reduce((a,x)=>a+x.eff,0);G+=eff;
-    const rhdr=`<tr class="comp-hdr"><td colspan="4">${esc(r.note||r.vno||'Release')} — ${esc(r.source||'')}${r.head?' ('+esc(r.head)+')':''} · ${dfmt(r.date)} · Amount ${fmt(r.amount)} · Unspent ${fmt(n(r.amount)-eff)}<span style="float:right;font-weight:400" onclick="event.stopPropagation()"><button class="btn2 btn-sm" onclick="exportRelease('${r.id}','pdf')" title="Save this release's expenditure as PDF">📄 PDF</button> <button class="btn2 btn-sm" onclick="exportRelease('${r.id}','png')" title="Save as image">🖼 PNG</button> <button class="btn2 btn-sm" onclick="exportRelease('${r.id}','csv')" title="Download CSV (Excel)">⬇ CSV</button> <button class="btn2 btn-sm" onclick="exportRelease('${r.id}','copy')" title="Copy — paste into Word/Excel/email">📋 Copy</button> <button class="btn2 btn-sm" onclick="exportRelease('${r.id}','report')" title="Add to combined multi-table report">➕ Report</button></span></td></tr>`;
+    const rhdr=`<tr class="comp-hdr"><td colspan="4">${esc(r.note||r.vno||'Release')} — ${esc(r.source||'')}${r.head?' ('+esc(r.head)+')':''} · ${dfmt(r.date)} · Amount ${fmt(r.amount)} · Unspent ${fmt(n(r.amount)-eff)}<span style="float:right;font-weight:400" onclick="event.stopPropagation()"><button class="btn2 btn-sm" onclick="exportRelease('${r.id}','view')" title="Preview &amp; edit before printing">👁 Preview</button> <button class="btn2 btn-sm" onclick="exportRelease('${r.id}','pdf')" title="Save this release's expenditure as PDF">📄 PDF</button> <button class="btn2 btn-sm" onclick="exportRelease('${r.id}','png')" title="Save as image">🖼 PNG</button> <button class="btn2 btn-sm" onclick="exportRelease('${r.id}','csv')" title="Download CSV (Excel)">⬇ CSV</button> <button class="btn2 btn-sm" onclick="exportRelease('${r.id}','copy')" title="Copy — paste into Word/Excel/email">📋 Copy</button> <button class="btn2 btn-sm" onclick="exportRelease('${r.id}','report')" title="Add to combined multi-table report">➕ Report</button></span></td></tr>`;
     const crows=arr.map(x=>{const cid=x.con.id||'';const key='sum|'+r.id+'|'+cid;const open=RSC.has(key);const bills=relConBillList(r.id,cid);
       let h=`<tr style="cursor:pointer" onclick="togRSC('${key}')"><td style="padding-left:22px"><b>${open?'▾':'▸'}</b> ${esc(x.con.no||'—')}</td><td>${esc(x.con.contractor||'—')}</td><td>${bills.map(b=>'<span class="tag b">'+esc(b)+'</span>').join(' ')||'—'}</td><td class="num"><b>${fmt(x.eff)}</b></td></tr>`;
       if(open)h+=`<tr><td colspan="4" style="background:#fff;padding:6px"><b class="mini">Payment details — ${esc(x.con.no||'')} (${esc(x.con.contractor||'')})</b>${relConDetailHTML(r.id,cid)}</td></tr>`;
@@ -4029,9 +4043,8 @@ function pgReleaseSpend(){
         <div style="margin-bottom:4px"><b>${dfmt(p.date)}</b> · ${esc(p.vno||'')} · <b>${esc(c.no||'—')}</b> <span class="mini">${esc(c.contractor||'')}</span> · ${p.kind==='adv'?'<span class="tag o">Advance</span>':'<span class="tag g">Bill Payment</span>'} · Gross ${fmt(payGross(p))} · Net ${fmt(payNet(p))} · <b>Effective ${fmt(payEff(p))}</b></div>
         ${payDetailHTML(p)}</div>`;}).join('')||'<div class="empty">No payments made from this release yet</div>';
     return `<tr style="cursor:pointer;background:#f1f5f9" onclick="togRS('${r.id}')"><td><b>${RSX.has(r.id)?'▾':'▸'} ${esc(r.note||r.vno||'Release')}</b><div class="mini">${esc(r.source)}${r.head?' · '+esc(r.head):''} · ${dfmt(r.date)}</div></td><td class="num">${fmt(r.amount)}</td><td class="num">${fmt(tr)}</td><td class="num"><b>${fmt(util)}</b></td><td class="num"><b style="color:${bal<-0.005?'#dc2626':'#16a34a'}">${fmt(bal)}</b></td><td class="num">${nL}</td></tr>
-    ${RSX.has(r.id)?`<tr><td colspan="6" style="background:#f8fafc;padding:8px"><div class="flex" style="gap:6px;margin-bottom:8px;align-items:center;flex-wrap:wrap"><b class="mini">Export this release (official / audit):</b><button class="btn2 btn-sm" onclick="exportRelease('${r.id}','pdf')">📄 PDF</button><button class="btn2 btn-sm" onclick="exportRelease('${r.id}','png')">🖼 PNG</button><button class="btn2 btn-sm" onclick="exportRelease('${r.id}','csv')">⬇ CSV (Excel)</button><button class="btn2 btn-sm" onclick="exportRelease('${r.id}','copy')">📋 Copy</button><button class="btn2 btn-sm" onclick="exportRelease('${r.id}','report')">➕ Report</button></div>
-      <h3 style="margin:4px 0">Contract-wise Expenditure of this Release</h3>${releaseConTableI(r)}
-      <h3 style="margin:10px 0 4px">Payment Details</h3>${payDetail}</td></tr>`:''}`;
+    ${RSX.has(r.id)?`<tr><td colspan="6" style="background:#f8fafc;padding:8px"><div class="flex" style="gap:6px;margin-bottom:8px;align-items:center;flex-wrap:wrap"><b class="mini">Export this release (official / audit):</b><button class="btn2 btn-sm" onclick="exportRelease('${r.id}','view')">👁 Preview</button><button class="btn2 btn-sm" onclick="exportRelease('${r.id}','pdf')">📄 PDF</button><button class="btn2 btn-sm" onclick="exportRelease('${r.id}','png')">🖼 PNG</button><button class="btn2 btn-sm" onclick="exportRelease('${r.id}','csv')">⬇ CSV (Excel)</button><button class="btn2 btn-sm" onclick="exportRelease('${r.id}','copy')">📋 Copy</button><button class="btn2 btn-sm" onclick="exportRelease('${r.id}','report')">➕ Report</button></div>
+      <h3 style="margin:4px 0">Contract-wise Expenditure of this Release</h3>${releaseConTableI(r)}</td></tr>`:''}`;
   }).join('');
   return head+`<div class="card"><div class="tbl-wrap"><table>
     <tr><th>Release (source · date)</th><th class="num">Amount</th><th class="num">Transferred</th><th class="num">Effective Spent</th><th class="num">Unspent</th><th class="num"># SPS/Bills/Adv</th></tr>
@@ -4067,7 +4080,7 @@ function mopStyle(){return `body{font-family:Arial,Helvetica,sans-serif;font-siz
   .sig2{margin-top:34px;display:flex;justify-content:space-around;text-align:center}
   .sig2 div{border-top:1px solid #333;padding-top:4px;width:38%;font-size:11px}
   .mop{page-break-after:always}.mop:last-child{page-break-after:auto}
-  @media print{@page{size:A4;margin:12mm}table,tr{page-break-inside:avoid}}`;}
+  @media print{@page{size:A4;margin:12mm}table{page-break-inside:auto}tr,td,th{page-break-inside:avoid;break-inside:avoid}thead{display:table-header-group}h3{page-break-after:avoid;break-after:avoid}}`;}
 function mopHTML(p,li){
   const l=(p.lines||[])[li]||{};
   const s=S.schemes.find(x=>x.id===p.schemeId)||{contracts:[]};
@@ -4075,36 +4088,33 @@ function mopHTML(p,li){
   const isAdv=!l.billId;
   const b=isAdv?{}:(S.bills.find(z=>z.id===l.billId)||{});
   const d=l.deds||{};
-  const gross=n(l.amt);
-  const it=n(d.itTds),cg=n(d.cgstTds),sg=n(d.sgstTds),ig=n(d.igstTds),gst=cg+sg+ig,cs=n(d.cess),ret=n(d.ret),oth=n(d.oth);
-  const advRec=payGross(p)>0?n(p.advRec)*(gross/payGross(p)):0;
-  // Payment-sequence running account (identical basis to the Previous/This/Cumulative statement).
-  // CPWA Form 26 note on item 6 (K): it MUST agree with items 7 + 8. We honour that by deriving K from
-  // what is actually paid, and showing any unpaid measured value (e.g. fund shortage) as item 5 withheld.
-  let value, withheldPrev=0, withheldThis=0, paidBefore=0;
-  if(isAdv){value=gross;}
-  else{
-    const order=[];
-    S.payments.filter(x=>!x.draft&&x.contractId===p.contractId).forEach(x=>{(x.lines||[]).forEach((ll,idx)=>{if(ll.billId)order.push({x:x,ll:ll,idx:idx});});});
-    order.sort((A,B)=>{const da=A.x.date||'',db=B.x.date||'';if(da!==db)return da<db?-1:1;const va=vnoNum(A.x.vno),vb=vnoNum(B.x.vno);if(va!==vb)return va-vb;return A.idx-B.idx;});
-    const thisPos=order.findIndex(o=>o.x.id===p.id&&o.idx===li);
-    const uptoL=thisPos<0?order:order.slice(0,thisPos+1);
-    const prevL=thisPos<=0?[]:order.slice(0,thisPos);
-    const stateOf=lines=>{let val=0,g=0;const seen=new Set();lines.forEach(o=>{const bb=S.bills.find(z=>z.id===o.ll.billId);if(bb&&bb.id&&!seen.has(bb.id)){seen.add(bb.id);val+=billGross(bb);}g+=n(o.ll.amt);});return {value:val,gross:g};};
-    const CUM=stateOf(uptoL),PRV=stateOf(prevL);
-    value=CUM.value;                                                     // item 1/4 — total value of work measured up to date
-    paidBefore=PRV.gross;                                                // item 7 — payments already made (= K of last bill)
-    const Know=paidBefore+gross;                                         // item 6 — K = item 7 + item 8 (guaranteed to tie)
-    const withheldTot=value-Know;                                        // item 5 — measured but not yet paid (withhold + any shortfall)
-    withheldPrev=PRV.value-PRV.gross;                                    // 5(a) — withheld carried from previous bill
-    withheldThis=withheldTot-withheldPrev;                               // 5(b) — withheld / (released) on this bill
-  }
-  const withheld=withheldPrev+withheldThis;                              // item 5 (a+b)
-  const balance=value-withheld;                                          // item 6 (K) = item 4 − 5
-  const passed=gross;                                                    // item 8 total = gross paid now (a+b+c)
-  const rec8a=advRec;                                                     // 8(a) recovery creditable to THIS work (advance recovery)
-  const rec8b=it+gst+cs+ret+oth;                                          // 8(b) = Income Tax + other recoveries
-  const cheque=passed-rec8a-rec8b;                                        // 8(c) By cheque = item8 − 8(a) − 8(b)
+  const abz=v=>Math.abs(n(v));                                           // source data may carry Excel minus-signs; the MOP always uses positive magnitudes
+  const gross=abz(l.amt);
+  const it=abz(d.itTds),cg=abz(d.cgstTds),sg=abz(d.sgstTds),ig=abz(d.igstTds),gst=cg+sg+ig,cs=abz(d.cess),ret=abz(d.ret),oth=abz(d.oth);
+  const advRec=payGross(p)>0?abz(p.advRec)*(gross/payGross(p)):0;
+  // Single contract-wise running account over the WHOLE payment sequence — mobilisation/other advances AND
+  // bill payments together (CPWA Form 26). Advances paid appear in item 2; their recovery shows in 8(a).
+  // K (item 6) = item 4 − item 5 and always equals item 7 + item 8.
+  const order=[];
+  S.payments.filter(x=>!x.draft&&x.contractId===p.contractId).forEach(x=>{(x.lines||[]).forEach((ll,idx)=>{order.push({x:x,ll:ll,idx:idx});});});
+  order.sort((A,B)=>{const da=A.x.date||'',db=B.x.date||'';if(da!==db)return da<db?-1:1;const va=vnoNum(A.x.vno),vb=vnoNum(B.x.vno);if(va!==vb)return va-vb;return A.idx-B.idx;});
+  const thisPos=order.findIndex(o=>o.x.id===p.id&&o.idx===li);
+  const uptoL=thisPos<0?order:order.slice(0,thisPos+1);
+  const prevL=thisPos<=0?[]:order.slice(0,thisPos);
+  const stateOf=lines=>{let mv=0,advp=0,bp=0;const seen=new Set();lines.forEach(o=>{if(o.ll.billId){const bb=S.bills.find(z=>z.id===o.ll.billId);if(bb&&bb.id&&!seen.has(bb.id)){seen.add(bb.id);mv+=billGross(bb);}bp+=abz(o.ll.amt);}else{advp+=abz(o.ll.amt);}});return {mv:mv,advp:advp,bp:bp};};
+  const CUM=stateOf(uptoL),PRV=stateOf(prevL);
+  const value=CUM.mv;                                                     // item 1 — value of work measured up to date
+  const advPaid=CUM.advp;                                                 // item 2 — up-to-date advance payments (mobilisation/other advances paid)
+  const item4=value+advPaid;                                              // item 4 — total (1+2+3)
+  const withheldPrev=PRV.mv-PRV.bp;                                       // 5(a) — measured-but-unpaid carried from previous bills
+  const withheld=CUM.mv-CUM.bp;                                           // item 5 — total withheld / measured-but-unpaid
+  const withheldThis=withheld-withheldPrev;                               // 5(b) — withheld / (released) on this payment
+  const balance=item4-withheld;                                           // item 6 (K) = item 4 − 5 = advances paid + bills passed (cum)
+  const paidBefore=PRV.advp+PRV.bp;                                       // item 7 — K of last bill (advances + bills passed so far)
+  const passed=balance-paidBefore;                                        // item 8 — payment now (gross of this bill, or the advance paid)
+  const rec8a=advRec;                                                     // 8(a) — mobilisation/secured advance recovered in this payment
+  const rec8b=it+gst+cs+ret+oth;                                          // 8(b) — IT/GST/cess/SD/other, creditable to other heads
+  const cheque=passed-rec8a-rec8b;                                        // 8(c) By cheque/NEFT = item 8 − 8(a) − 8(b)
   const G=withheldThis+rec8a;                                            // Total 5(b)+8(a) = (G)
   const H=rec8b+cheque;                                                   // Total 8(b)+(c) = (H)
   const inst=billPayNo(p,l.billId);
@@ -4120,10 +4130,10 @@ function mopHTML(p,li){
     <div class="ctr">Name of Payee:- <b>${esc(c.contractor||'—')}</b>${c.pkg?' ('+esc(c.pkg)+')':(c.no?' ('+esc(c.no)+')':'')}${c.pan?' &nbsp; PAN: '+esc(c.pan):''}</div>
     <table class="mt">
       <tr><th class="no">Item</th><th>Particulars</th><th class="d">Details (Rs.)<div style="font-weight:400;font-size:9px">break-up only — not separately accounted</div></th><th class="a">Amount (Rs.)<div style="font-weight:400;font-size:9px">(accounted)</div></th></tr>
-      ${R('1',isAdv?'Mobilisation / Other Advance sanctioned':'Total value of work done — all SPS submitted up to date',value,0,0,true)}
-      ${R('2','Total up-to-date Advance Payments for work not yet measured',0,0,0,true)}
+      ${R('1','Total value of work done — all SPS measured up to date',value,0,0,true)}
+      ${R('2','Total up-to-date Advance Payments (mobilisation / other advances paid)',advPaid,0,0,true)}
       ${R('3','Total up-to-date Secured Advances on security of materials',0,0,0,true)}
-      ${R('4','Total (items 1 + 2 + 3)',value,0,true,true)}
+      ${R('4','Total (items 1 + 2 + 3)',item4,0,true,true)}
       ${R('5','Deduct — Amount withheld:',withheld,0,true,true)}
       ${R('','(a) From previous bills',withheldPrev,18)}
       ${R('','(b) From this bill',withheldThis,18)}
@@ -4179,32 +4189,27 @@ function mopBreakupHTML(p,li){
   const s=S.schemes.find(x=>x.id===p.schemeId)||{contracts:[]};
   const c=(s.contracts||[]).find(x=>x.id===p.contractId)||{};
   const b=isAdv?{}:(S.bills.find(z=>z.id===l.billId)||{});
-  const d=l.deds||{};const gross=n(l.amt);
-  const it=n(d.itTds),cg=n(d.cgstTds),sg=n(d.sgstTds),ig=n(d.igstTds),gst=cg+sg+ig,cs=n(d.cess),ret=n(d.ret),oth=n(d.oth);
-  const advRec=payGross(p)>0?n(p.advRec)*(gross/payGross(p)):0;
-  const thisChq=gross-advRec-(it+gst+cs+ret+oth);
+  const abz=v=>Math.abs(n(v));                                           // positive magnitudes only — source may carry Excel minus-signs
+  const d=l.deds||{};const gross=abz(l.amt);
+  const it=abz(d.itTds),cg=abz(d.cgstTds),sg=abz(d.sgstTds),ig=abz(d.igstTds),gst=cg+sg+ig,cs=abz(d.cess),ret=abz(d.ret),oth=abz(d.oth);
   const wh=(x,asOf)=>Math.max(0,billWh(x)-S.whRel.filter(w=>!w.draft&&w.billId===x.id&&(w.date||'')<=(asOf||'')).reduce((a,w)=>a+n(w.amount),0)); // withheld still held as on a given date
-  // Payment-sequence running account: PRV = cumulative up to & incl. the PREVIOUS payment; CUM = up to & incl. THIS payment; This = CUM − PRV; so Cumulative = Previous + This on every row
-  let PRV,CUM;
-  if(isAdv){
-    PRV={value:0,withheld:0,gross:0,IT:0,GST:0,Cess:0,Ret:0,Oth:0,Adv:0,bal:0,chq:0};
-    CUM={value:gross,withheld:0,gross:gross,IT:it,GST:gst,Cess:cs,Ret:ret,Oth:oth,Adv:advRec,bal:gross,chq:thisChq};
-  }else{
-    const order=[];
-    S.payments.filter(x=>!x.draft&&x.contractId===p.contractId).forEach(x=>{(x.lines||[]).forEach((ll,idx)=>{if(ll.billId)order.push({x:x,ll:ll,idx:idx});});});
-    order.sort((A,B)=>{const da=A.x.date||'',db=B.x.date||'';if(da!==db)return da<db?-1:1;const va=vnoNum(A.x.vno),vb=vnoNum(B.x.vno);if(va!==vb)return va-vb;return A.idx-B.idx;});
-    const thisPos=order.findIndex(o=>o.x.id===p.id&&o.idx===li);
-    const uptoL=thisPos<0?order:order.slice(0,thisPos+1);
-    const prevL=thisPos<=0?[]:order.slice(0,thisPos);
-    const stateOf=(lines,asOf)=>{let value=0,withheld=0,g=0,IT=0,GST=0,Cess=0,Ret=0,Oth=0,Adv=0;const seen=new Set();
-      lines.forEach(o=>{const bb=S.bills.find(z=>z.id===o.ll.billId)||null;const dd=o.ll.deds||{};const pg=payGross(o.x);
-        if(bb&&bb.id&&!seen.has(bb.id)){seen.add(bb.id);value+=billGross(bb);}
-        g+=n(o.ll.amt);IT+=n(dd.itTds);GST+=n(dd.cgstTds)+n(dd.sgstTds)+n(dd.igstTds);Cess+=n(dd.cess);Ret+=n(dd.ret);Oth+=n(dd.oth);Adv+=pg>0?n(o.x.advRec)*(n(o.ll.amt)/pg):0;});
-      seen.forEach(id=>{const bb=S.bills.find(z=>z.id===id);if(bb)withheld+=wh(bb,asOf);});
-      return {value:value,withheld:withheld,gross:g,IT:IT,GST:GST,Cess:Cess,Ret:Ret,Oth:Oth,Adv:Adv,bal:value-withheld,chq:g-Adv-(IT+GST+Cess+Ret+Oth)};};
-    const prevDate=prevL.length?prevL[prevL.length-1].x.date:p.date;
-    CUM=stateOf(uptoL,p.date);PRV=stateOf(prevL,prevDate);
-  }
+  // One contract-wise running account over ALL payments (advances + bill payments) in sequence.
+  // PRV = cumulative up to & incl. the PREVIOUS payment; CUM = up to & incl. THIS payment; This = CUM − PRV; Cumulative = Previous + This on every row.
+  const order=[];
+  S.payments.filter(x=>!x.draft&&x.contractId===p.contractId).forEach(x=>{(x.lines||[]).forEach((ll,idx)=>{order.push({x:x,ll:ll,idx:idx});});});
+  order.sort((A,B)=>{const da=A.x.date||'',db=B.x.date||'';if(da!==db)return da<db?-1:1;const va=vnoNum(A.x.vno),vb=vnoNum(B.x.vno);if(va!==vb)return va-vb;return A.idx-B.idx;});
+  const thisPos=order.findIndex(o=>o.x.id===p.id&&o.idx===li);
+  const uptoL=thisPos<0?order:order.slice(0,thisPos+1);
+  const prevL=thisPos<=0?[]:order.slice(0,thisPos);
+  const stateOf=(lines,asOf)=>{let value=0,advPaid=0,withheld=0,g=0,IT=0,GST=0,Cess=0,Ret=0,Oth=0,Adv=0;const seen=new Set();
+    lines.forEach(o=>{const dd=o.ll.deds||{};const pg=payGross(o.x);const amt=abz(o.ll.amt);
+      if(o.ll.billId){const bb=S.bills.find(z=>z.id===o.ll.billId)||null;if(bb&&bb.id&&!seen.has(bb.id)){seen.add(bb.id);value+=billGross(bb);}}
+      else{advPaid+=amt;}
+      g+=amt;IT+=abz(dd.itTds);GST+=abz(dd.cgstTds)+abz(dd.sgstTds)+abz(dd.igstTds);Cess+=abz(dd.cess);Ret+=abz(dd.ret);Oth+=abz(dd.oth);Adv+=pg>0?abz(o.x.advRec)*(amt/pg):0;});
+    seen.forEach(id=>{const bb=S.bills.find(z=>z.id===id);if(bb)withheld+=wh(bb,asOf);});
+    return {value:value,advPaid:advPaid,item4:value+advPaid,withheld:withheld,gross:g,IT:IT,GST:GST,Cess:Cess,Ret:Ret,Oth:Oth,Adv:Adv,bal:value+advPaid-withheld,chq:g-Adv-(IT+GST+Cess+Ret+Oth)};};
+  const prevDate=prevL.length?prevL[prevL.length-1].x.date:p.date;
+  const CUM=stateOf(uptoL,p.date),PRV=stateOf(prevL,prevDate);
   const TH=k=>n(CUM[k])-n(PRV[k]); // "This Bill / payment" increment
   const R3=(no,label,pv,tv,ind,bold)=>`<tr><td class="no">${no||''}</td><td style="padding-left:${ind||0}px${bold?';font-weight:bold':''}">${label}</td><td class="r">${pv!=null?fmt(pv):''}</td><td class="r">${tv!=null?fmt(tv):''}</td><td class="r"${bold?' style="font-weight:bold"':''}>${(pv!=null||tv!=null)?fmt(n(pv)+n(tv)):''}</td></tr>`;
   const Hd3=(no,label,ind)=>`<tr><td class="no">${no||''}</td><td colspan="4" style="padding-left:${ind||0}px;font-weight:${ind?'400':'bold'}">${label}</td></tr>`;
@@ -4217,13 +4222,13 @@ function mopBreakupHTML(p,li){
     <div class="ctr">Name of Payee:- <b>${esc(c.contractor||'—')}</b>${c.no?' ('+esc(c.no)+')':''}${c.pkg?' — '+esc(c.pkg):''}</div>
     <table>
       <tr><th class="no">Item</th><th>Particulars</th><th class="r">Up to Previous Bill</th><th class="r">This Bill</th><th class="r">Cumulative</th></tr>
-      ${R3('1',isAdv?'Mobilisation / Other Advance sanctioned':'Total value of work done — all SPS submitted',PRV.value,TH('value'))}
-      ${R3('2','Total up-to-date Advance Payments for work not yet measured',0,0)}
+      ${R3('1','Total value of work done — all SPS measured',PRV.value,TH('value'))}
+      ${R3('2','Total up-to-date Advance Payments (mobilisation / other advances paid)',PRV.advPaid,TH('advPaid'))}
       ${R3('3','Total up-to-date Secured Advances on security of materials',0,0)}
-      ${R3('4','Total (items 1 + 2 + 3)',PRV.value,TH('value'),0,true)}
+      ${R3('4','Total (items 1 + 2 + 3)',PRV.item4,TH('item4'),0,true)}
       ${R3('5','Deduct — Amount withheld  [(a) previous · (b) this payment]',PRV.withheld,TH('withheld'),0,true)}
       ${R3('6','Balance, i.e. up-to-date payment (item 4 − 5) (K)',PRV.bal,TH('bal'),0,true)}
-      ${R3('7','Bills passed / paid (gross)',PRV.gross,TH('gross'),0,true)}
+      ${R3('7','Bills / advances passed (gross)',PRV.gross,TH('gross'),0,true)}
       ${Hd3('8','Less — recoveries from the amount passed:')}
       ${R3('','(a) Mobilisation / Secured Advance recovered',PRV.Adv,TH('Adv'),18)}
       ${Hd3('','(b) By recovery creditable to other Works / Heads:',18)}
@@ -4290,16 +4295,17 @@ function noteSheetHTML(ids){
   S.payments.filter(x=>!x.draft&&x.contractId===cid).forEach(x=>{(x.lines||[]).forEach((l,idx)=>{order.push({q:x,l:l,idx:idx});});});
   order.sort((A,B)=>{const da=A.q.date||'',db=B.q.date||'';if(da!==db)return da<db?-1:1;const va=vnoNum(A.q.vno),vb=vnoNum(B.q.vno);if(va!==vb)return va-vb;return A.idx-B.idx;});
   const inGroup=o=>idset.includes(o.q.id);
-  const KEYS=['val','adhoc','csc','whRel','passed','it','gst','cess','ret','oth','adv','mobAdv'];
+  const abz=v=>Math.abs(n(v));                                            // positive magnitudes only — source may carry Excel minus-signs
+  const KEYS=['val','adhoc','csc','whRel','passed','billPassed','it','gst','cess','ret','oth','adv','mobAdv'];
   const zero=()=>{const o={};KEYS.forEach(k=>o[k]=0);return o;};
   const addTo=(acc,i)=>{KEYS.forEach(k=>acc[k]+=n(i[k]));return acc;};
   const firstSeen=new Set();
   const inc=o=>{const l=o.l,q=o.q,isAdv=!l.billId,b=isAdv?{}:(S.bills.find(z=>z.id===l.billId)||{});
     const first=!isAdv&&!firstSeen.has(l.billId);if(first)firstSeen.add(l.billId);
-    const d=l.deds||{},passed=n(l.amt);
-    return {val:isAdv?0:(first?billGross(b):0),adhoc:isAdv?0:(first?n(b.adhoc):0),csc:isAdv?0:(first?n(b.cscWh):0),whRel:isAdv?0:(first?billWhRel(b):0),passed:passed,
-      it:n(d.itTds),gst:n(d.cgstTds)+n(d.sgstTds)+n(d.igstTds),cess:n(d.cess),ret:n(d.ret),oth:n(d.oth),
-      adv:payGross(q)>0?n(q.advRec)*(passed/payGross(q)):0,mobAdv:isAdv?passed:0,
+    const d=l.deds||{},passed=abz(l.amt);
+    return {val:isAdv?0:(first?billGross(b):0),adhoc:isAdv?0:(first?n(b.adhoc):0),csc:isAdv?0:(first?n(b.cscWh):0),whRel:isAdv?0:(first?billWhRel(b):0),passed:passed,billPassed:isAdv?0:passed,
+      it:abz(d.itTds),gst:abz(d.cgstTds)+abz(d.sgstTds)+abz(d.igstTds),cess:abz(d.cess),ret:abz(d.ret),oth:abz(d.oth),
+      adv:payGross(q)>0?abz(q.advRec)*(passed/payGross(q)):0,mobAdv:isAdv?passed:0,
       isAdv:isAdv,billNo:b.billNo||'',instNo:isAdv?'':billPayNo(q,l.billId),serial:l.serial||q.serial||''};};
   const before=zero(),cols=[];let started=false;
   order.forEach(o=>{if(inGroup(o)){started=true;cols.push({o:o,i:inc(o)});}else if(!started){addTo(before,inc(o));}});
@@ -4307,59 +4313,98 @@ function noteSheetHTML(ids){
   const after=addTo(Object.assign(zero(),before),grpTot);
   const money=v=>Math.abs(v)>0.005?fmt(v):(v<-0.005?'('+fmt(-v)+')':'');
   const colLbl=i=>i.isAdv?('This Payment<br>Mob. Adv'+(i.serial?' '+esc(i.serial):'')):('This Payment<br>'+esc(i.billNo||'—')+'<br><span class="mini">Payment '+i.instNo+'</span>');
-  const cellBg=ix=>ix===0?'background:#eff6ff':(ix===cols.length+1?'background:#fef9c3;font-weight:bold':(ix===cols.length+2?'background:#f0fdf4;font-weight:bold':''));
-  const R=(no,label,fn,bold,ind)=>{const cells=[fn(before)].concat(cols.map(c=>fn(c.i))).concat([fn(grpTot),fn(after)]);
-    return `<tr${bold?' class="ntot"':''}><td class="no">${no||''}</td><td style="padding-left:${ind||0}px${bold?';font-weight:bold':''}">${label}</td>`+cells.map((v,ix)=>`<td class="r" style="${cellBg(ix)}${bold?';font-weight:bold':''}">${money(v)}</td>`).join('')+`</tr>`;};
+  const cellBg=ix=>(ix===cols.length+1||ix===cols.length+2)?'font-weight:bold':'';
+  const R=(no,label,fn,bold,ind,txt)=>{const cells=[fn(before)].concat(cols.map(c=>fn(c.i))).concat([fn(grpTot),fn(after)]);
+    return `<tr${bold?' class="ntot"':''}${txt?' style="color:'+txt+'"':''}><td class="no">${no||''}</td><td style="padding-left:${ind||0}px${bold?';font-weight:bold':''}">${label}</td>`+cells.map((v,ix)=>`<td class="r" style="${cellBg(ix)}${bold?';font-weight:bold':''}">${money(v)}</td>`).join('')+`</tr>`;};
+  // snapshot row: a running BALANCE (not a flow) — show only Cumulative Before & After, blank the per-payment columns (fund shortage / outstanding must NOT be clubbed as a "this bill" figure)
+  const Rsnap=(no,label,fn,bold,ind,txt)=>{const cells=[fn(before)].concat(cols.map(()=>null)).concat([null,fn(after)]);
+    return `<tr${bold?' class="ntot"':''}${txt?' style="color:'+txt+'"':''}><td class="no">${no||''}</td><td style="padding-left:${ind||0}px${bold?';font-weight:bold':''}">${label}</td>`+cells.map((v,ix)=>`<td class="r" style="${cellBg(ix)}${bold?';font-weight:bold':''}">${v==null?'':money(v)}</td>`).join('')+`</tr>`;};
   const nCol=cols.length+3;
+  const SEC=(label,bg,fg)=>`<tr class="sec"><td${bg?' style="background:'+bg+'"':''}></td><td colspan="${nCol+1}" style="${bg?'background:'+bg+';':''}${fg?'color:'+fg+';':''}"><b>${label}</b></td></tr>`;
+  const RED='#991b1b',GRN='#166534';
+  // ---- per-bill running position (unique bills: gross/withheld/released/cleared/paid/balance) + this-payment deductions summed over lines ----
+  const stock=lines=>{const seen={};let gross=0,adhoc=0,csc=0,rel=0,paid=0,ret=0,oth=0,it=0,cg=0,sg=0,ig=0,cess=0,adv=0,mob=0;
+    lines.forEach(o=>{const q=o.q,l=o.l,d=l.deds||{},amt=abz(l.amt);
+      if(l.billId){paid+=amt;ret+=abz(d.ret);oth+=abz(d.oth);it+=abz(d.itTds);cg+=abz(d.cgstTds);sg+=abz(d.sgstTds);ig+=abz(d.igstTds);cess+=abz(d.cess);adv+=payGross(q)>0?abz(q.advRec)*(amt/payGross(q)):0;
+        if(!seen[l.billId]){seen[l.billId]=1;const b=S.bills.find(x=>x.id===l.billId);if(b){gross+=billGross(b);adhoc+=n(b.adhoc);csc+=n(b.cscWh);rel+=billWhRel(b);}}}
+      else{mob+=amt;}});
+    const withheld=adhoc+csc,netLiab=gross-withheld,cleared=netLiab+rel;
+    return {gross:gross,withheld:withheld,adhoc:adhoc,csc:csc,rel:rel,balWithheld:withheld-rel,netLiab:netLiab,cleared:cleared,paid:paid,bal:cleared-paid,ret:ret,oth:oth,it:it,cg:cg,sg:sg,ig:ig,gst:cg+sg+ig,cess:cess,adv:adv,mob:mob};};
+  const beforeLines=[];{let st=false;order.forEach(o=>{if(inGroup(o))st=true;else if(!st)beforeLines.push(o);});}
+  const uptoLines=beforeLines.concat(cols.map(c=>c.o));
+  const SB=stock(beforeLines),SA=stock(uptoLines);
+  const ctx=o=>{if(!o.l.billId)return {isAdv:true,payingNow:abz(o.l.amt),mob:abz(o.l.amt)};
+    const b=S.bills.find(x=>x.id===o.l.billId)||{},d=o.l.deds||{};
+    const gross=billGross(b),adhoc=n(b.adhoc),csc=n(b.cscWh),rel=billWhRel(b),netLiab=gross-adhoc-csc,cleared=netLiab+rel;
+    const pos=order.indexOf(o);let paidBefore=0,seenBefore=false,firstEver=true;for(let k=0;k<pos;k++){if(order[k].l.billId===o.l.billId){firstEver=false;paidBefore+=abz(order[k].l.amt);if(!inGroup(order[k]))seenBefore=true;}}
+    const payingNow=abz(o.l.amt),prevOut=seenBefore?Math.max(0,cleared-paidBefore):0,fromShortage=Math.min(payingNow,prevOut),fromCurrent=payingNow-fromShortage;
+    const ret=abz(d.ret),oth=abz(d.oth),it=abz(d.itTds),cg=abz(d.cgstTds),sg=abz(d.sgstTds),ig=abz(d.igstTds),gst=cg+sg+ig,cess=abz(d.cess),adv=payGross(o.q)>0?abz(o.q.advRec)*(payingNow/payGross(o.q)):0;
+    const bal=cleared-paidBefore-payingNow,releaseComp=firstEver?0:Math.min(payingNow,rel),fromPrevShort=fromShortage-releaseComp,newHeld=firstEver?Math.max(0,bal):0;
+    return {isAdv:false,firstEver:firstEver,gross:gross,withheld:adhoc+csc,adhoc:adhoc,csc:csc,rel:rel,netLiab:netLiab,cleared:cleared,paidBefore:paidBefore,payingNow:payingNow,bal:bal,bf:cleared-paidBefore,fromShortage:fromShortage,fromCurrent:fromCurrent,releaseComp:releaseComp,fromPrevShort:fromPrevShort,newHeld:newHeld,shortageChange:prevOut-bal,ret:ret,oth:oth,it:it,cg:cg,sg:sg,ig:ig,gst:gst,cess:cess,adv:adv};};
+  const CTX=cols.map(c=>ctx(c.o));
+  // liability-row renderer: Before=fB(SB) snapshot · each SPS=fC(ctx) · This-total=Σ SPS cells · After=fA(SA) snapshot; pass null to blank a cell group
+  const RL=(no,label,fB,fC,fA,bold,ind,txt,zero,big)=>{
+    const cc=CTX.map(x=>(fC&&!x.isAdv)?fC(x):null);
+    const tot=cc.reduce((a,v)=>a+(v||0),0);
+    const cells=[fB?fB(SB):null].concat(cc).concat([fC?tot:null,fA?fA(SA):null]);
+    const bz=big?';font-size:12px':'';
+    return `<tr${bold?' class="ntot"':''}${txt?' style="color:'+txt+'"':''}><td class="no">${no||''}</td><td style="padding-left:${ind||0}px${bold?';font-weight:bold':''}${bz}">${label}</td>`+cells.map((v,ix)=>`<td class="r" style="${cellBg(ix)}${bold?';font-weight:bold':''}${bz}">${v==null?'':(zero&&Math.abs(v)<0.005?'0.00':money(v))}</td>`).join('')+`</tr>`;};
   const chqNo=k=>{const cs=[...new Set(ps.map(q=>(q.dedChq&&q.dedChq[k])||'').filter(Boolean))];return cs.join(', ');};
   const contractorNet=grpTot.passed-grpTot.adv-grpTot.ret-grpTot.oth-grpTot.it-grpTot.gst-grpTot.cess;
   const chqRows=[['1',esc(c.contractor||'—'),esc(p0.chqNo||'—'),contractorNet],
-    ['2','SBI for TDS GST @ 2%',esc(chqNo('cgstTds')||chqNo('sgstTds')||'—'),grpTot.gst],
-    ['3','SBI for TDS Income Tax @ 2%',esc(chqNo('itTds')||'—'),grpTot.it],
-    ['4','Manipur Building &amp; Other Const. Workers Board — Labour Cess @ 1%',esc(chqNo('cess')||'—'),grpTot.cess]]
+    ['2','Yourself for GST TDS @ 2%',esc(chqNo('cgstTds')||chqNo('sgstTds')||'—'),grpTot.gst],
+    ['3','Yourself for TDS I/T @ 2%',esc(chqNo('itTds')||'—'),grpTot.it],
+    ['4','Manipur Building &amp; Other Const. Workers\' Welfare Board for Labour Cess @ 1%',esc(chqNo('cess')||'—'),grpTot.cess]]
     .filter(r=>r[0]==='1'||n(r[3])>0.005);
   const chqTot=chqRows.reduce((a,r)=>a+n(r[3]),0);
   const dtxt=dfmt(p0.date);
   return `<div class="mop">
+    <style>@page{size:legal landscape;margin:8mm}.mop table.nt{width:100%;table-layout:auto}.mop table.nt td,.mop table.nt th{font-size:10px;padding:2px 7px;line-height:1.25}.mop table.nt td:nth-child(2){width:34%}.mop table.nt tr.sec td{padding:3px 7px}.mop h3{margin:4px 0}</style>
     <div class="ctr" style="font-weight:bold">${esc(s.name||'')}</div>
-    <div class="ctr" style="font-size:11px">The proposal is settlement of the running account bill(s) noted below.</div>
-    <h3>PAYMENT NOTE-SHEET</h3>
+    <div class="ctr" style="font-size:10px">The proposal is settlement of the running account bill(s) noted below.</div>
     <div class="ctr"><b>${esc(c.contractor||'—')}${c.pkg?' ('+esc(c.pkg)+')':(c.no?' ('+esc(c.no)+')':'')}</b></div>
-    <div class="ctr mini">Cheque/NEFT: ${esc(p0.chqNo||'—')} &nbsp;·&nbsp; Dated ${dtxt} &nbsp;·&nbsp; Covers ${cols.length} item(s) in this payment</div>
     <table class="mt nt">
       <tr><th class="no">SL</th><th>Description</th>
-        <th class="r" style="background:#dbeafe">Cumulative<br>(Before)</th>
+        <th class="r">Cumulative<br>(Before)</th>
         ${cols.map(c=>'<th class="r">'+colLbl(c.i)+'</th>').join('')}
-        <th class="r" style="background:#fde68a">Total of<br>THIS PAYMENT</th>
-        <th class="r" style="background:#bbf7d0">Cumulative<br>(After)</th></tr>
-      <tr class="sec"><td></td><td colspan="${nCol+1}"><b>A. VALUE OF WORK / SPS</b></td></tr>
-      ${R('A.1','Total SPS submitted — gross value of work (incl. GST &amp; cess)',i=>i.val)}
-      ${R('A.2','Less: Adhoc Withheld (pre-clearing)',i=>i.adhoc,false,10)}
-      ${R('A.3','Less: CSC / Additional Withheld',i=>i.csc,false,10)}
-      ${R('A.4','Add: Withheld Released',i=>i.whRel,false,10)}
-      ${R('A.5','Cleared Liability (A.1 − A.2 − A.3 + A.4)',i=>i.val-i.adhoc-i.csc+i.whRel,true)}
-      ${R('A.6','Bill Passed (amount paid this time)',i=>i.passed,true)}
-      ${R('A.7','Pending / Unpaid balance (A.5 − A.6)',i=>(i.val-i.adhoc-i.csc+i.whRel)-i.passed)}
-      <tr class="sec"><td></td><td colspan="${nCol+1}"><b>B. ADVANCES PAID</b></td></tr>
-      ${R('B.1','Mobilisation Advance',i=>i.mobAdv)}
-      ${R('B.2','Material / Secured Advance',i=>0)}
-      <tr class="sec"><td></td><td colspan="${nCol+1}"><b>C. RECOVERIES</b></td></tr>
-      ${R('C.1','Recovery of Mobilisation Advance',i=>i.adv)}
-      ${R('C.2','Recovery of Material / Secured Advance',i=>0)}
-      ${R('C.3','Royalty',i=>0)}
-      ${R('C.4','Cost of Departmental Material issued',i=>0)}
-      ${R('C.5','Liquidated Damages / Penalty',i=>0)}
-      ${R('C.6','Other / CSC Adjustment recovery',i=>i.oth)}
-      ${R('','Total Recoveries',i=>i.adv+i.oth,true)}
-      <tr class="sec"><td></td><td colspan="${nCol+1}"><b>D. RETENTION / SECURITY DEPOSIT</b></td></tr>
-      ${R('D.1','Retention Money / Security Deposit',i=>i.ret)}
-      ${R('','EFFECTIVE / REAL EXPENDITURE (Bill Passed − Retention − Other adj.)',i=>i.passed-i.ret-i.oth,true)}
-      <tr class="sec"><td></td><td colspan="${nCol+1}"><b>E. TAXES / TDS (deducted at source)</b></td></tr>
-      ${R('E.1','Income Tax @ 2%',i=>i.it)}
-      ${R('E.2','GST TDS @ 2% (CGST + SGST / IGST)',i=>i.gst)}
-      ${R('E.3','Labour Cess @ 1%',i=>i.cess)}
-      ${R('','Total TDS',i=>i.it+i.gst+i.cess,true)}
-      ${R('','NET PAYMENT BY CHEQUE (to contractor)',i=>i.passed-i.ret-i.oth-i.it-i.gst-i.cess-i.adv,true)}
+        <th class="r">Total of<br>THIS PAYMENT</th>
+        <th class="r">Cumulative<br>(After)</th></tr>
+      ${SEC('VALUE OF WORK &amp; LIABILITY  (each SPS / bill)')}
+      ${RL('A.1','Work Done against BOQ Items',s=>s.gross,x=>x.firstEver?x.gross:null,s=>s.gross)}
+      ${RL('A.2','Variation based on BOQ Items',s=>0,x=>x.firstEver?0:null,s=>0,false,12)}
+      ${RL('A.3','Work Done against Non-BOQ Items',s=>0,x=>x.firstEver?0:null,s=>0,false,12)}
+      ${RL('A.4','Variation based on Non-BOQ Items',s=>0,x=>x.firstEver?0:null,s=>0,false,12)}
+      ${RL('A.5','Price Adjustment',s=>0,x=>x.firstEver?0:null,s=>0,false,12)}
+      ${RL('A.6','Less: Adhoc Withheld',s=>-s.adhoc,x=>x.firstEver?-x.adhoc:null,s=>-s.adhoc,false,12,RED)}
+      ${RL('A.7','Less: Withheld by CSC',s=>-s.csc,x=>x.firstEver?-x.csc:null,s=>-s.csc,false,12,RED)}
+      ${RL('','Net Bill Payable / Cleared for Payment',s=>s.cleared,x=>x.firstEver?x.netLiab:null,s=>s.cleared,true)}
+      ${RL('A.8','Balance Liability b/f — already-processed bill now paid',null,x=>x.firstEver?null:x.bf,null,true)}
+      ${RL('A.9','Total Liability for this Payment',null,x=>x.bf,null,true,0,null,false,true)}
+      ${RL('A.10','Add: Withheld Released (already-processed bill)',s=>s.rel,x=>x.firstEver?null:x.rel,s=>s.rel,false,12,GRN)}
+      ${R('A.11','Mobilisation / Other Advance paid this time',i=>i.mobAdv,false,12)}
+      ${SEC('SHORTAGE-OF-FUND ACCOUNT')}
+      ${RL('','Withheld for Shortage of Fund — opening (b/f)',s=>-s.bal,null,null,true,0,RED)}
+      ${RL('','Add: Funded / cleared in this payment',null,x=>x.fromShortage,null,false,12,GRN)}
+      ${RL('','Less: Newly withheld — fund short this bill',null,x=>-x.newHeld,null,false,12,RED)}
+      ${RL('','Withheld for Shortage of Fund — closing (c/f)',null,null,s=>-s.bal,true,0,RED,true)}
+
+      ${SEC('BILL PASSED, DEDUCTIONS &amp; NET PAYMENT','#0b3d91','#ffffff')}
+      ${RL('B.1','Bill Passed — sourced from the liability above:',null,null,null,true)}
+      ${RL('','— against New SPS / Bill',null,x=>x.fromCurrent,null,false,18)}
+      ${RL('','— against Withheld Released',null,x=>x.releaseComp,null,false,18)}
+      ${RL('','— against earlier Shortage of Fund (b/f)',null,x=>x.fromPrevShort,null,false,18)}
+      ${RL('B.2','Bill Passed for this Payment',s=>s.paid,x=>x.payingNow,s=>s.paid,true,0,GRN)}
+      ${RL('B.3','Less: Recovery of Mobilisation Advance',s=>-s.adv,x=>-x.adv,s=>-s.adv,false,12,RED)}
+      ${RL('','= Payment Now to be made (Bill Passed − Advance Recovery)',s=>s.paid-s.adv,x=>x.payingNow-x.adv,s=>s.paid-s.adv,true)}
+      ${RL('B.4','Less: Retention',s=>-s.ret,x=>-x.ret,s=>-s.ret,false,12,RED)}
+      ${RL('B.5','Less: CSC Adjustment',s=>-s.oth,x=>-x.oth,s=>-s.oth,false,12,RED)}
+      ${RL('','= Effective / Real Expenditure (Payment Now − Retention − CSC Adj.)',s=>s.paid-s.adv-s.ret-s.oth,x=>x.payingNow-x.adv-x.ret-x.oth,s=>s.paid-s.adv-s.ret-s.oth,true)}
+      ${RL('B.6','Less: Income Tax @ 2%',s=>-s.it,x=>-x.it,s=>-s.it,false,12,RED)}
+      ${RL('B.7','Less: CGST TDS @ 1%',s=>-s.cg,x=>-x.cg,s=>-s.cg,false,12,RED)}
+      ${RL('B.8','Less: SGST TDS @ 1%',s=>-s.sg,x=>-x.sg,s=>-s.sg,false,12,RED)}
+      ${RL('B.9','Less: IGST TDS @ 2%',s=>-s.ig,x=>-x.ig,s=>-s.ig,false,12,RED)}
+      ${RL('B.10','Less: Labour Cess @ 1%',s=>-s.cess,x=>-x.cess,s=>-s.cess,false,12,RED)}
+      ${R('','= NET PAYMENT BY CHEQUE to '+esc(c.contractor||'the contractor'),i=>i.passed-i.adv-i.ret-i.oth-i.it-i.gst-i.cess,true,0,GRN)}
     </table>
     <div style="margin-top:8px;font-weight:bold">The details of the Cheque(s) are as follows:</div>
     <table class="mt" style="margin-top:4px">
@@ -4367,12 +4412,6 @@ function noteSheetHTML(ids){
       ${chqRows.map(r=>`<tr><td class="no">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${dtxt}</td><td class="r">${fmt(r[3])}</td></tr>`).join('')}
       <tr class="ntot"><td></td><td colspan="3"><b>TOTAL</b></td><td class="r"><b>${fmt(chqTot)}</b></td></tr>
     </table>
-    <div style="margin-top:6px"><b>Pay ${fmt(contractorNet)}</b> (${esc(inWords(contractorNet))}) to ${esc(c.contractor||'the contractor')} by cheque; statutory deductions by separate cheques as above.</div>
-    <div style="margin-top:8px">Put up for kind signature, please.</div>
-    <div style="margin-top:80px;display:flex;justify-content:space-between">
-      <div style="width:44%;border-top:1px solid #333;padding-top:5px">Prepared / Verified by:</div>
-      <div style="width:44%;border-top:1px solid #333;padding-top:5px;text-align:right">Divisional Officer / DDO</div>
-    </div>
   </div>`;
 }
 function noteView(ids){
@@ -5131,7 +5170,7 @@ function printCashBook(){
     td.gt{background:#dcfce7;color:#14532d;font-weight:bold}
     td.rt{background:#fee2e2;color:#7f1d1d;font-weight:bold}
     .mini{color:#555;font-size:10px}
-    @media print{@page{size:A4 landscape;margin:10mm}}
+    @media print{@page{size:A4 landscape;margin:10mm}table{page-break-inside:auto}tr,td,th{page-break-inside:avoid;break-inside:avoid}thead{display:table-header-group}}
   </style></head><body>
   <h2>${esc((selSchemes()[0]||{}).name||'Cash Book')}</h2>
   <h3 style="font-weight:400">${esc(periodLabel())} — Receipts (left) &amp; Payments (right)</h3>
@@ -5950,8 +5989,8 @@ function rcCSS(){
    +'.rc-sig div{width:30%;border-top:1px solid #000;padding-top:5px}'
    +'.rc-sig-role{font-weight:normal;font-size:10.5px}'
    +'.rc-foot{margin-top:14px;font-size:9.5px;color:#555;border-top:1px solid #999;padding-top:4px}'
-   +'thead{display:table-header-group}tr{page-break-inside:avoid}'
-   +'@media print{@page{size:A4;margin:12mm}}';
+   +'thead{display:table-header-group}tr,td,th{page-break-inside:avoid;break-inside:avoid}'
+   +'@media print{@page{size:A4;margin:12mm}table{page-break-inside:auto}tr,td,th{page-break-inside:avoid;break-inside:avoid}thead{display:table-header-group}h1,h2,h3,h4{page-break-after:avoid;break-after:avoid}}';
 }
 function rcDoc(title,body,opts){
   opts=opts||{};
