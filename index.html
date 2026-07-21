@@ -520,6 +520,21 @@ body.filters-collapsed .topbar{padding-top:6px;padding-bottom:6px;gap:8px}
 .topscroll::-webkit-scrollbar-track{background:#eef2f7;border-radius:6px}
 .topscroll::-webkit-scrollbar-thumb{background:#9aa7bd;border-radius:6px}
 .topscroll::-webkit-scrollbar-thumb:hover{background:#7e8ca6}
+/* ===== Frozen (sticky) leftmost columns ===== */
+.tbl-wrap table td.frzcol,.tbl-wrap table th.frzcol{position:sticky;z-index:2}
+.tbl-wrap table th.frzcol{z-index:5}
+.tbl-wrap table td.frzlast,.tbl-wrap table th.frzlast{box-shadow:2px 0 4px -1px rgba(0,0,0,.18)}
+.frz-ctrl{display:inline-flex;gap:6px}
+div.frz-ctrl{justify-content:flex-end;margin:0 0 4px 0}
+/* Freeze-column picker popup */
+.frz-pop{position:fixed;z-index:320;background:#fff;border:1px solid var(--bd2,#cbd5e1);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.18);min-width:200px;max-height:320px;overflow:auto;padding:6px;font-size:12.5px}
+.frz-pop .fh{display:flex;justify-content:space-between;align-items:center;gap:10px;font-weight:700;color:var(--tx);padding:2px 6px 6px;border-bottom:1px solid #eef2f7;position:sticky;top:0;background:#fff}
+.frz-pop label{display:flex;align-items:center;gap:8px;padding:4px 6px;cursor:pointer;border-radius:5px}
+.frz-pop label:hover{background:#f1f5f9}
+.frz-pop label span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.frz-pop .fq{display:flex;gap:4px;flex-wrap:wrap;padding:6px 4px 2px;border-top:1px solid #eef2f7;margin-top:4px;position:sticky;bottom:0;background:#fff}
+.frz-pop .fq button{font-size:11px;padding:3px 8px;border:1px solid var(--bd);background:#f8fafc;border-radius:5px;cursor:pointer;color:var(--tx)}
+.frz-pop .fq button:hover{background:#eef3fb}
 </style>
 <style>.cl-pill{position:fixed;right:14px;top:calc(var(--tbh,56px) + 8px);z-index:99998;background:#64748b;color:#fff;padding:8px 13px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.3);user-select:none}.cl-pill.ok{background:#16a34a}.cl-pill.busy{background:#d97706}.cl-pill.err{background:#dc2626}.cl-modal{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:99999;display:none;align-items:flex-start;justify-content:center;padding:24px;overflow:auto}.cl-modal.open{display:flex}.cl-box{background:#fff;color:#1a2333;max-width:580px;width:100%;border-radius:12px;padding:22px;box-shadow:0 12px 40px rgba(0,0,0,.3)}.cl-box h3{margin:0 0 4px;font-size:18px}.cl-box p.sub{color:#5b6678;font-size:12.5px;margin:0 0 6px}.cl-box label{display:block;font-weight:700;margin:12px 0 3px;font-size:12.5px}.cl-box input,.cl-box textarea{width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;background:#fff;color:#1a2333}.cl-box textarea{height:120px;font-family:Consolas,monospace;font-size:11px;white-space:pre}.cl-help{background:#f1f5f9;border-radius:8px;padding:10px 12px;font-size:12px;line-height:1.55;margin-top:6px}.cl-help b{color:#0f172a}.cl-help a{color:#2563eb}.cl-row{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}.cl-row button{flex:1;min-width:120px;padding:10px;border:none;border-radius:7px;font-weight:700;cursor:pointer;font-size:13px}.cl-ok{background:#2563eb;color:#fff}.cl-warn{background:#fee2e2;color:#b91c1c}.cl-cancel{background:#e2e8f0;color:#1a2333}</style><style>.cl-pill{position:fixed;right:14px;top:calc(var(--tbh,56px) + 8px);z-index:99998;background:#64748b;color:#fff;padding:8px 13px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.3);user-select:none}.cl-pill.ok{background:#16a34a}.cl-pill.busy{background:#d97706}.cl-pill.err{background:#dc2626}.cl-modal{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:99999;display:none;align-items:flex-start;justify-content:center;padding:24px;overflow:auto}.cl-modal.open{display:flex}.cl-box{background:#fff;color:#1a2333;max-width:580px;width:100%;border-radius:12px;padding:22px;box-shadow:0 12px 40px rgba(0,0,0,.3)}.cl-box h3{margin:0 0 4px;font-size:18px}.cl-box p.sub{color:#5b6678;font-size:12.5px;margin:0 0 6px}.cl-box label{display:block;font-weight:700;margin:12px 0 3px;font-size:12.5px}.cl-box input,.cl-box textarea{width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;background:#fff;color:#1a2333}.cl-box textarea{height:120px;font-family:Consolas,monospace;font-size:11px;white-space:pre}.cl-help{background:#f1f5f9;border-radius:8px;padding:10px 12px;font-size:12px;line-height:1.55;margin-top:6px}.cl-help b{color:#0f172a}.cl-help a{color:#2563eb}.cl-row{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}.cl-row button{flex:1;min-width:120px;padding:10px;border:none;border-radius:7px;font-weight:700;cursor:pointer;font-size:13px}.cl-ok{background:#2563eb;color:#fff}.cl-warn{background:#fee2e2;color:#b91c1c}.cl-cancel{background:#e2e8f0;color:#1a2333}</style></head>
 <body class="locked lk-both pw-on">
@@ -551,8 +566,7 @@ body.filters-collapsed .topbar{padding-top:6px;padding-bottom:6px;gap:8px}
     <div class="nav-i" data-pg="withheld" onclick="go('withheld')">⏸️ <span class="txt">Withheld Tracker</span></div>
     <div class="nav-i" data-pg="retention" onclick="go('retention')">🔒 <span class="txt">Retention Ledger</span></div>
     <div class="nav-h">4 · PARTIES &amp; SECURITIES</div>
-    <div class="nav-i" data-pg="contractors" onclick="go('contractors')">👷 <span class="txt">Contractor Ledger</span></div>
-    <div class="nav-i" data-pg="constmt" onclick="go('constmt')">📑 <span class="txt">Contractor Statement</span></div>
+    <div class="nav-i" data-pg="conhub" onclick="go('conhub')">👷 <span class="txt">Contractor Ledger / Statement</span></div>
     <div class="nav-i" data-pg="bg" onclick="go('bg')">🛡️ <span class="txt">Bank Guarantees</span></div>
     <div class="nav-h">5 · BOOKS &amp; ACCOUNTS</div>
     <div class="nav-i" data-pg="cashbook" onclick="go('cashbook')">📒 <span class="txt">Cash Book</span></div>
@@ -560,9 +574,7 @@ body.filters-collapsed .topbar{padding-top:6px;padding-bottom:6px;gap:8px}
     <div class="nav-i" data-pg="balsheet" onclick="go('balsheet')">⚖️ <span class="txt">Fund Balance Sheet</span></div>
     <div class="nav-i" data-pg="ageing" onclick="go('ageing')">⏳ <span class="txt">Outstanding &amp; Ageing</span></div>
     <div class="nav-h">6 · BANK</div>
-    <div class="nav-i" data-pg="cheques" onclick="go('cheques')">💳 <span class="txt">Cheque Register</span></div>
-    <div class="nav-i" data-pg="bankstmt" onclick="go('bankstmt')">📘 <span class="txt">Bank A/c Statement</span></div>
-    <div class="nav-i" data-pg="brs" onclick="go('brs')">🏦 <span class="txt">Bank Reconciliation</span></div>
+    <div class="nav-i" data-pg="bankhub" onclick="go('bankhub')">💳 <span class="txt">Cheque / Bank A/c / Recon</span></div>
     <div class="nav-h">7 · REPORTING</div>
     <div class="nav-i" data-pg="reports" onclick="go('reports')">📑 <span class="txt">Reports Centre</span></div>
     <div class="nav-i" data-pg="wa" onclick="go('wa')">🏦 <span class="txt">AIIB Withdrawal (WA)</span></div>
@@ -1201,7 +1213,24 @@ function pgPayHub(){
   else body=pgPayments();
   return tabs+body;
 }
-function go(p){if(p==='bills'){BILLTAB='book';p='billhub';}else if(p==='spsmgmt'){BILLTAB='manage';p='billhub';}else if(p==='payments'){PAYTAB='pay';p='payhub';}else if(p==='mop'){PAYTAB='mop';p='payhub';}if(p!==S.ui.page)ED={};if(p!=='schemes')SCEDIT=false;S.ui.page=p;save();render();}
+let CONTAB='ledger';
+function conTab(t){CONTAB=t;go('conhub');}
+function pgConHub(){
+  const tabs=`<div class="card" style="padding:8px 12px;margin-bottom:10px"><div class="flex" style="gap:8px;align-items:center"><b class="mini">CONTRACTOR:</b>
+    <span class="chip ${CONTAB==='ledger'?'on':''}" onclick="conTab('ledger')">👷 Contractor Ledger</span>
+    <span class="chip ${CONTAB==='stmt'?'on':''}" onclick="conTab('stmt')">📑 Contractor Statement</span></div></div>`;
+  return tabs+(CONTAB==='stmt'?pgContractorStmt():pgContractors());
+}
+let BANKTAB='cheques';
+function bankTab(t){BANKTAB=t;go('bankhub');}
+function pgBankHub(){
+  const tabs=`<div class="card" style="padding:8px 12px;margin-bottom:10px"><div class="flex" style="gap:8px;align-items:center"><b class="mini">BANK:</b>
+    <span class="chip ${BANKTAB==='cheques'?'on':''}" onclick="bankTab('cheques')">💳 Cheque Register</span>
+    <span class="chip ${BANKTAB==='bankstmt'?'on':''}" onclick="bankTab('bankstmt')">📘 Bank A/c Statement</span>
+    <span class="chip ${BANKTAB==='brs'?'on':''}" onclick="bankTab('brs')">🏦 Bank Reconciliation</span></div></div>`;
+  return tabs+(BANKTAB==='bankstmt'?pgBankStmt():BANKTAB==='brs'?pgBRS():pgCheques());
+}
+function go(p){if(p==='bills'){BILLTAB='book';p='billhub';}else if(p==='spsmgmt'){BILLTAB='manage';p='billhub';}else if(p==='payments'){PAYTAB='pay';p='payhub';}else if(p==='mop'){PAYTAB='mop';p='payhub';}else if(p==='contractors'){CONTAB='ledger';p='conhub';}else if(p==='constmt'){CONTAB='stmt';p='conhub';}else if(p==='cheques'){BANKTAB='cheques';p='bankhub';}else if(p==='bankstmt'){BANKTAB='bankstmt';p='bankhub';}else if(p==='brs'){BANKTAB='brs';p='bankhub';}if(p!==S.ui.page)ED={};if(p!=='schemes')SCEDIT=false;S.ui.page=p;save();render();}
 function render(){
   renderTopbar();
   const hasSchemes=S.schemes.length>0;
@@ -1213,8 +1242,10 @@ function render(){
   if(!hasSchemes&&!['schemes','backup'].includes(S.ui.page))S.ui.page='schemes';
   if(S.ui.page==='bills'){BILLTAB='book';S.ui.page='billhub';}else if(S.ui.page==='spsmgmt'){BILLTAB='manage';S.ui.page='billhub';}
   else if(S.ui.page==='payments'){PAYTAB='pay';S.ui.page='payhub';}else if(S.ui.page==='mop'){PAYTAB='mop';S.ui.page='payhub';}
+  else if(S.ui.page==='contractors'){CONTAB='ledger';S.ui.page='conhub';}else if(S.ui.page==='constmt'){CONTAB='stmt';S.ui.page='conhub';}
+  else if(S.ui.page==='cheques'){BANKTAB='cheques';S.ui.page='bankhub';}else if(S.ui.page==='bankstmt'){BANKTAB='bankstmt';S.ui.page='bankhub';}else if(S.ui.page==='brs'){BANKTAB='brs';S.ui.page='bankhub';}
   const c=document.getElementById('content');
-  const pages={dashboard:pgDash,ask:pgAsk,daybook:pgDaybook,schemes:pgSchemes,fund:pgFund,transfers:pgTransfers,billhub:pgBillHub,bills:pgBills,mobadv:pgMobAdv,spsmgmt:pgSpsMgmt,withheld:pgWithheld,payhub:pgPayHub,contractors:pgContractors,retention:pgRetention,bg:pgBG,constmt:pgContractorStmt,balsheet:pgBalSheet,ageing:pgAgeing,cheques:pgCheques,brs:pgBRS,bankstmt:pgBankStmt,audit:pgAudit,import:pgImport,payments:pgPayments,release:pgReleaseSpend,mop:pgMOP,others:pgOthers,remit:pgRemit,rnp:pgRnp,cashbook:pgCash,export:pgExport,backup:pgBackup,reports:pgReports,health:pgHealth,wa:pgWA};
+  const pages={dashboard:pgDash,ask:pgAsk,daybook:pgDaybook,schemes:pgSchemes,fund:pgFund,transfers:pgTransfers,conhub:pgConHub,bankhub:pgBankHub,billhub:pgBillHub,bills:pgBills,mobadv:pgMobAdv,spsmgmt:pgSpsMgmt,withheld:pgWithheld,payhub:pgPayHub,contractors:pgContractors,retention:pgRetention,bg:pgBG,constmt:pgContractorStmt,balsheet:pgBalSheet,ageing:pgAgeing,cheques:pgCheques,brs:pgBRS,bankstmt:pgBankStmt,audit:pgAudit,import:pgImport,payments:pgPayments,release:pgReleaseSpend,mop:pgMOP,others:pgOthers,remit:pgRemit,rnp:pgRnp,cashbook:pgCash,export:pgExport,backup:pgBackup,reports:pgReports,health:pgHealth,wa:pgWA};
   c.innerHTML=(pages[S.ui.page]||pgDash)();
   if(window['after_'+S.ui.page])window['after_'+S.ui.page]();
   applyWorkMode();
@@ -1225,8 +1256,91 @@ function render(){
   enhanceTableControls();
   hoistFilters();
   syncTopbarH();
+  enhanceColumnFreeze();
   addTopScrollbars();
 }
+/* Freeze ANY set of columns (not just the leftmost) so they stay visible while
+   scrolling right. A "❄ Freeze columns" picker lets you tick exactly the columns
+   you want — even non-adjacent ones, and as many as you like. Saved per table. */
+let FRZOPEN='';
+function _frzSel(key){
+  let s=((S.ui.freeze||{})[key]);
+  if(typeof s==='number') s=Array.from({length:s},(_,i)=>i); // migrate old "first N" value
+  return Array.isArray(s)?s.slice():[];
+}
+function togFreezePop(key){FRZOPEN=(FRZOPEN===key?'':key);render();}
+function toggleFreezeCol(key,idx){
+  const cur=_frzSel(key); idx=+idx;
+  const next=cur.includes(idx)?cur.filter(x=>x!==idx):cur.concat(idx);
+  S.ui.freeze=S.ui.freeze||{}; S.ui.freeze[key]=next; save(); render();
+}
+function setFreezeFirst(key,n){
+  S.ui.freeze=S.ui.freeze||{}; S.ui.freeze[key]=Array.from({length:n},(_,i)=>i); save(); render();
+}
+function clearFreeze(key){S.ui.freeze=S.ui.freeze||{}; S.ui.freeze[key]=[]; save(); render();}
+function enhanceColumnFreeze(){
+  const root=document.getElementById('content'); if(!root) return;
+  S.ui.freeze=S.ui.freeze||{};
+  // clear any prior freeze UI/state (needed when re-running on resize)
+  root.querySelectorAll('.frz-ctrl').forEach(el=>el.remove());
+  document.querySelectorAll('.frz-pop').forEach(el=>el.remove());
+  root.querySelectorAll('.frzcol').forEach(c=>{c.classList.remove('frzcol','frzlast');c.style.left='';c.style.background='';});
+  let idx=0;
+  root.querySelectorAll('.tbl-wrap').forEach(wrap=>{
+    const t=wrap.querySelector(':scope > table'); if(!t) return;
+    // skip live entry/form tables (but allow row-select checkbox tables)
+    if([...t.querySelectorAll('input,select,textarea')].some(el=>!el.closest('.dsel-col'))) return;
+    const key=S.ui.page+'|f'+(idx++);
+    const headRow=(t.tHead && [...t.tHead.rows].find(r=>!r.classList.contains('tot-top'))) || [...t.rows].find(r=>r.children.length);
+    if(!headRow) return;
+    const colCount=headRow.children.length;
+    const sel=_frzSel(key).filter(i=>i>=0&&i<colCount).sort((a,b)=>a-b);
+    const scrollable=wrap.scrollWidth>wrap.clientWidth+2;
+    if(!scrollable && !sel.length) return; // only offer freeze on tables wide enough to scroll
+    // ---- control button ----
+    const cnt=sel.length;
+    const btnHtml='<button class="btn2 frz-toggle '+(cnt?'on':'')+'" data-key="'+key+'" onclick="togFreezePop(\''+key+'\')" title="Choose which columns stay locked while you scroll right. Tick any columns — they need not be next to each other.">❄ Freeze'+(cnt?': '+cnt:'')+' ▾</button>';
+    const prev=wrap.previousElementSibling;
+    if(prev&&prev.classList&&prev.classList.contains('tbl-ctrl')){
+      const span=document.createElement('span'); span.className='frz-ctrl'; span.innerHTML=btnHtml; prev.appendChild(span);
+    }else{
+      const bar=document.createElement('div'); bar.className='tbl-ctrl frz-ctrl noprint'; bar.innerHTML=btnHtml; wrap.parentNode.insertBefore(bar,wrap);
+    }
+    // ---- picker popup ----
+    if(FRZOPEN===key){
+      const labels=[...headRow.children].map((th,i)=>{let tx=(th.textContent||'').replace(/\s+/g,' ').trim();if(tx.length>30)tx=tx.slice(0,29)+'…';return tx||('Column '+(i+1));});
+      const pop=document.createElement('div'); pop.className='frz-pop noprint';
+      pop.innerHTML='<div class="fh"><span>❄ Freeze columns</span><span style="cursor:pointer;color:var(--mut)" onclick="togFreezePop(\''+key+'\')">✕</span></div>'+
+        labels.map((l,i)=>'<label><input type="checkbox" '+(sel.includes(i)?'checked':'')+' onchange="toggleFreezeCol(\''+key+'\','+i+')"><span>'+esc(l)+'</span></label>').join('')+
+        '<div class="fq"><button onclick="setFreezeFirst(\''+key+'\',1)">First 1</button><button onclick="setFreezeFirst(\''+key+'\',2)">First 2</button><button onclick="setFreezeFirst(\''+key+'\',3)">First 3</button><button onclick="clearFreeze(\''+key+'\')">Clear</button></div>';
+      document.body.appendChild(pop);
+      const btnEl=document.querySelector('.frz-toggle[data-key="'+key+'"]');
+      if(btnEl){const r=btnEl.getBoundingClientRect();pop.style.top=(r.bottom+4)+'px';let left=r.right-Math.max(pop.offsetWidth,200);if(left<8)left=8;pop.style.left=left+'px';}
+    }
+    // ---- apply freezing ----
+    if(!sel.length) return;
+    const lefts={}; let acc=0;
+    sel.forEach(i=>{ lefts[i]=acc; acc+=headRow.children[i].getBoundingClientRect().width; });
+    const lastSel=sel[sel.length-1];
+    [...t.rows].forEach(r=>{
+      if(r.children.length!==colCount) return; // skip colspan/total rows to avoid misalignment
+      sel.forEach(i=>{
+        const cell=r.children[i]; if(!cell) return;
+        cell.classList.add('frzcol');
+        if(i===lastSel) cell.classList.add('frzlast');
+        cell.style.left=lefts[i]+'px';
+        let bg=getComputedStyle(cell).backgroundColor;
+        if(!bg||bg==='rgba(0, 0, 0, 0)'||bg==='transparent') bg=getComputedStyle(r).backgroundColor;
+        if(!bg||bg==='rgba(0, 0, 0, 0)'||bg==='transparent') bg='#ffffff';
+        cell.style.background=bg;
+      });
+    });
+  });
+}
+// close the freeze picker when clicking elsewhere
+document.addEventListener('click',function(e){
+  if(FRZOPEN && !e.target.closest('.frz-pop') && !e.target.closest('.frz-toggle')){FRZOPEN='';enhanceColumnFreeze();}
+});
 /* Add a synced horizontal scrollbar at the TOP of every wide table, so you can
    scroll left/right without first scrolling down to the bottom scrollbar. */
 function addTopScrollbars(){
@@ -1250,7 +1364,7 @@ function addTopScrollbars(){
 let _tsbRz;
 window.addEventListener('resize',function(){
   clearTimeout(_tsbRz);
-  _tsbRz=setTimeout(function(){ try{addTopScrollbars();}catch(_){} },200);
+  _tsbRz=setTimeout(function(){ try{enhanceColumnFreeze();addTopScrollbars();}catch(_){} },200);
 });
 // Move each page's own filter bar to the very top of the content, so it sits right under the
 // universal top filter and both stay fixed together (they are already sticky just below the top bar).
