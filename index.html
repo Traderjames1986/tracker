@@ -1817,7 +1817,7 @@ function pgMobAdv(){
     ${rows?`<tr class="tot-pay"><td><b>TOTAL</b></td><td class="num"><b>${fmt(T.perm)}</b></td><td class="num">${fmt(T.paid)}</td><td class="num">${fmt(T.rec)}</td><td class="num">${fmt(T.out)}</td><td class="num"><b>${fmt(T.pend)}</b></td><td></td></tr>`:''}
   </table></div></div>`;
 }
-var XPCSS="*{font-family:Arial,Helvetica,sans-serif;box-sizing:border-box;-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}body{padding:6px;color:#111}h1{font-size:12px;margin:0 0 1px}h2{font-size:10.5px;margin:4px 0 1px;color:#1a56a8}h3{font-size:10px;margin:4px 0 1px;color:#1a56a8}.xp-meta{font-size:8.5px;color:#666;margin-bottom:3px}table{border-collapse:collapse;font-size:9.5px;width:100%;margin-bottom:3px;background:#fff;color:#111}th,td{border:1px solid #cbd5e1;padding:1px 4px;text-align:left;line-height:1.2;overflow-wrap:break-word;word-break:normal}th{background:#1a56a8;color:#fff;white-space:normal;vertical-align:bottom}td.num,th.num{text-align:right}.tot,.tot-bal,.tot-pay{font-weight:bold;background:#eef2f7}.mini{font-size:9px;color:#555}.tag{padding:0 4px;border-radius:3px;font-size:9px;border:1px solid #ccc}.empty{color:#999}thead{display:table-header-group}thead th{background:#1a56a8;color:#fff}@media print{@page{size:A4 landscape;margin:8mm}table{page-break-inside:auto}tr,td,th{page-break-inside:avoid;break-inside:avoid}thead{display:table-header-group}tfoot{display:table-footer-group}h1,h2,h3{page-break-after:avoid;break-after:avoid}.xp-sec{page-break-inside:avoid;break-inside:avoid}}";
+var XPCSS="*{font-family:Arial,Helvetica,sans-serif;box-sizing:border-box;-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}body{padding:6px;color:#111}h1{font-size:12px;margin:0 0 1px}h2{font-size:10.5px;margin:4px 0 1px;color:#1a56a8}h3{font-size:10px;margin:4px 0 1px;color:#1a56a8}.xp-meta{font-size:8.5px;color:#666;margin-bottom:3px}table{border-collapse:collapse;font-size:9.5px;width:100%;margin-bottom:3px;background:#fff;color:#111}th,td{border:1px solid #cbd5e1;padding:1px 4px;text-align:left;line-height:1.2;overflow-wrap:break-word;word-break:normal}th{background:#1a56a8;color:#fff;white-space:normal;vertical-align:bottom}td.num,th.num{text-align:right}.tot,.tot-bal,.tot-pay{font-weight:bold;background:#eef2f7}.mini{font-size:9px;color:#555}.tag{padding:0 4px;border-radius:3px;font-size:9px;border:1px solid #ccc}.empty{color:#999}thead{display:table-header-group}thead th{background:#1a56a8;color:#fff}@media print{@page{size:A4 landscape;margin:8mm}table{page-break-inside:auto}tr,td,th{page-break-inside:avoid;break-inside:avoid}thead{display:table-header-group}tfoot{display:table-footer-group}h1,h2,h3{page-break-after:avoid;break-after:avoid}.xp-sec{page-break-inside:auto;break-inside:auto}}";
 function xpDate(){try{return new Date().toLocaleString("en-IN");}catch(e){return ""+new Date();}}
 function xpPeriod(){try{return typeof periodLabel==="function"?periodLabel():"";}catch(e){return "";}}
 function xpNoGlyph(s){return (""+s).replace(/[←-⇿⌀-⏿■-◿☀-➿⬀-⯿️]/g,'').replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g,'');}
@@ -1897,7 +1897,7 @@ function xpPvPaginate(){var d=xpPvDoc();if(!d)return;var b=d.body;b.style.positi
     if(el.classList&&(el.classList.contains('xp-spacer')||el.classList.contains('xp-spacer-row')||el.classList.contains('pgline')))return;
     var tag=el.tagName;
     if(tag==='TABLE'){var thH=headH(el);Array.prototype.slice.call(el.rows).forEach(function(r){if(r.parentNode&&r.parentNode.tagName==='THEAD')return;boxes.push({el:r,table:el,thead:thH});});return;}
-    if(el.classList&&el.classList.contains('xp-sec')){boxes.push({el:el,table:null,thead:0});return;}
+    if(el.classList&&el.classList.contains('xp-sec')){if(el.querySelector&&el.querySelector('table')){Array.prototype.slice.call(el.children).forEach(collect);return;}boxes.push({el:el,table:null,thead:0});return;}
     if(el.querySelector&&el.querySelector('table')){Array.prototype.slice.call(el.children).forEach(collect);return;}
     boxes.push({el:el,table:null,thead:0});
   };
@@ -1922,12 +1922,12 @@ function xpPvPaginate(){var d=xpPvDoc();if(!d)return;var b=d.body;b.style.positi
   var pageNoAt=function(y){var pn=2;for(var k=0;k<allYs.length;k++){if(allYs[k]<y-1)pn++;}return pn;};
   // Page-boundary lines — draggable. Drag one to move the break; it snaps to a row and (thanks to the
   // clamp above) can't be pushed past one page, so it never leaves a stray line at the old position.
-  autoBreaks.forEach(function(y){var yy=Math.round(y);var ln=d.createElement('div');ln.className='pgline';ln.style.cssText='position:absolute;left:0;right:0;top:'+yy+'px;border-top:2px dashed #d33;z-index:5;cursor:grab';var lb=d.createElement('div');lb.className='pgline';lb.style.cssText='position:absolute;right:8px;top:'+(yy+2)+'px;background:#d33;color:#fff;font-size:9px;padding:1px 6px;border-radius:3px;pointer-events:none;z-index:6';lb.textContent='▸ Page '+pageNoAt(y)+' — drag to move';b.appendChild(ln);b.appendChild(lb);xpLineDrag(ln,d,b,null);});
+  autoBreaks.forEach(function(y){var yy=Math.round(y);var ln=d.createElement('div');ln.className='pgline';ln.style.cssText='position:absolute;left:0;right:0;top:'+yy+'px;height:14px;border-top:2px dashed #d33;z-index:40;cursor:grab';ln.title='Drag to move this page break';var lb=d.createElement('div');lb.className='pgline';lb.style.cssText='position:absolute;right:8px;top:'+(yy+2)+'px;background:#d33;color:#fff;font-size:9px;padding:1px 6px;border-radius:3px;pointer-events:none;z-index:6';lb.textContent='▸ Page '+pageNoAt(y)+' — drag to move';b.appendChild(ln);b.appendChild(lb);xpLineDrag(ln,d,b,null);});
   // Locked manual breaks — solid line + ▲/▼ nudge + remove. Click to select, then use ↑/↓ keys.
-  Array.prototype.slice.call(d.querySelectorAll('.xpmb')).forEach(function(el){var sel=(el===xpSelBreak);var top=Math.round(xpAbsTop(el,b));var ln=d.createElement('div');ln.className='pgline';ln.style.cssText='position:absolute;left:0;right:0;top:'+top+'px;border-top:3px solid '+(sel?'#7f1d1d':'#d33')+';z-index:7;cursor:grab'+(sel?';box-shadow:0 0 0 2px rgba(220,51,51,.35)':'');
+  Array.prototype.slice.call(d.querySelectorAll('.xpmb')).forEach(function(el){var sel=(el===xpSelBreak);var top=Math.round(xpAbsTop(el,b));var ln=d.createElement('div');ln.className='pgline';ln.style.cssText='position:absolute;left:0;right:0;top:'+top+'px;height:14px;border-top:3px solid '+(sel?'#7f1d1d':'#d33')+';z-index:45;cursor:grab'+(sel?';box-shadow:0 0 0 2px rgba(220,51,51,.35)':'');
     var selFn=function(ev){ev.stopPropagation();xpSelBreak=el;xpPvPaginate();try{d.defaultView.focus();}catch(_){}};
     ln.addEventListener('click',selFn);
-    var ctl=d.createElement('div');ctl.className='pgline';ctl.style.cssText='position:absolute;left:8px;top:'+(top-11)+'px;background:'+(sel?'#7f1d1d':'#d33')+';color:#fff;font-size:11px;line-height:18px;height:18px;padding:0 4px;border-radius:9px;z-index:8;white-space:nowrap;user-select:none;box-shadow:0 1px 3px rgba(0,0,0,.3)';
+    var ctl=d.createElement('div');ctl.className='pgline';ctl.style.cssText='position:absolute;left:8px;top:'+(top-11)+'px;background:'+(sel?'#7f1d1d':'#d33')+';color:#fff;font-size:11px;line-height:18px;height:18px;padding:0 4px;border-radius:9px;z-index:46;white-space:nowrap;user-select:none;box-shadow:0 1px 3px rgba(0,0,0,.3)';
     var up=d.createElement('span');up.textContent='▲';up.title='Move this page break up one row / line';up.style.cssText='cursor:pointer;padding:0 5px';up.onclick=function(ev){ev.stopPropagation();xpPvMoveBreak(el,-1);};
     var tx=d.createElement('span');tx.textContent=sel?('Page '+pageNoAt(topOf(el))+' break — use ↑/↓ keys'):('Page '+pageNoAt(topOf(el))+' break');tx.style.cssText='padding:0 3px;font-size:10px;cursor:pointer';tx.onclick=selFn;
     var dn=d.createElement('span');dn.textContent='▼';dn.title='Move this page break down one row / line';dn.style.cssText='cursor:pointer;padding:0 5px';dn.onclick=function(ev){ev.stopPropagation();xpPvMoveBreak(el,1);};
@@ -4426,7 +4426,7 @@ function payDetailHTML(p,opts){opts=opts||{};var rel=!!opts.release;
   const taxb=rel?'':(function(){var tc=payTaxCompHtml(p);return tc?'<b class="mini">TAXABLE VALUE OF BILL PASSED <span style="font-weight:400">(Gross = Taxable + GST + Cess; statutory TDS is computed on Taxable value)</span></b><div class="tbl-wrap">'+tc+'</div>':'';})();
   const chqTitle=rel?'CHEQUE(S) ISSUED — for this payment (covers the bill(s) / SPS / mob. advance listed above)':'CHEQUES / CHALLANS ISSUED';
   const chqCol=rel?'Cheque No.':'Cheque / Challan No.';
-  const challan=`<b class="mini">${chqTitle}</b><table><tr><th>Paid to</th><th class="num">Amount</th><th>${chqCol}</th></tr><tr><td><b>Contractor (net)</b></td><td class="num"><b>${fmt(payNet(p))}</b></td><td><b>${esc(p.chqNo||'—')}</b></td></tr>${dedRows}${chqTotRow}</table>`;
+  const challan=`<b class="mini">${chqTitle}</b><table style="width:auto;min-width:300px;max-width:520px"><tr><th style="text-align:left">Paid to</th><th class="num" style="white-space:nowrap">Amount</th><th style="white-space:nowrap">${chqCol}</th></tr><tr><td><b>Contractor (net)</b></td><td class="num" style="white-space:nowrap"><b>${fmt(payNet(p))}</b></td><td style="white-space:nowrap"><b>${esc(p.chqNo||'—')}</b></td></tr>${dedRows}${chqTotRow}</table>`;
   return `<div class="tbl-wrap"><table><tr><th>SPS / Bill</th><th>Serial</th><th class="num">Bill Passed</th><th class="num">Retention</th><th class="num">Adj. by CSC</th><th class="num">Effective Exp.</th>${DED_STAT.map(([k,l])=>`<th class="num">${esc(l)}</th>`).join('')}<th class="num">Adv. Rec.</th><th class="num">Net</th></tr>${lines||`<tr><td colspan="${8+DED_STAT.length}" class="mini">no lines</td></tr>`}${lines?totRow:''}</table></div>
     ${taxb}
     ${challan}
@@ -4710,17 +4710,16 @@ function mopHTML(p,li){
       ${R('','Mobilisation / Secured Advance recovered',rec8a,22)}
       ${R('','Total 5(b) + 8(a) …… (G)',G,0,true,true)}
       ${Hd('','(b) By recovery of amounts creditable to other Works / Heads of Account:')}
+      ${ret>0.005?R('','Security Deposit / Retention',ret,22):''}
+      ${oth>0.005?R('','Adjustment by CSC / Other recovery',oth,22):''}
       ${it>0.005?R('','Income Tax @ 2%',it,22):''}
       ${gst>0.005?R('','GST TDS @ 2% (CGST '+fmt(cg)+' + SGST '+fmt(sg)+(ig>0.005?' + IGST '+fmt(ig):'')+')',gst,22):''}
-      ${ret>0.005?R('','Security Deposit / Retention',ret,22):''}
       ${cs>0.005?R('','Labour Cess @ 1%',cs,22):''}
-      ${oth>0.005?R('','Adjustment by CSC / Other recovery',oth,22):''}
       ${(it+gst+cs+ret+oth)<=0.005?R('','— Nil —',0,22):''}
       ${R('','Total 8(b)',rec8b,0,true,true)}
       ${R('','(c) By Cheque / NEFT',cheque,0,true,true)}
       ${R('','Total 8(b) + (c) …… (H)',H,0,true,true)}
     </table>
-    ${(!isAdv&&gross>0.005)?(function(){var t=lineTaxComp(l);return '<div style="margin-top:6px;font-size:11px"><b>Taxable-value break-up of this bill passed:</b> Gross '+fmt(t.gross)+' = Taxable '+fmt(t.taxable)+' + '+(t.ig?('IGST '+fmt(t.igst)):('CGST '+fmt(t.cgst)+' + SGST '+fmt(t.sgst)))+' + Labour Cess '+fmt(t.cess)+' <span style="color:#555">(statutory TDS computed on Taxable value; Retention on Gross)</span></div>';})():''}
     <div style="margin-top:6px"><b>Pay ${fmt(cheque)}</b> (${esc(inWords(cheque))}) — by cheque.</div>
     <div style="margin-top:5px"><b>Cheque / NEFT No.:</b> ${esc(p.chqNo||'—')} &nbsp;&nbsp;&nbsp; <b>Dated:</b> ${dfmt(p.date)}</div>
     <div style="margin-top:110px;display:flex;justify-content:space-between">
@@ -5020,16 +5019,17 @@ function pgNoteSheets(){
   const head=`<h2 class="pg">Payment Note-sheet</h2>`+`
   <div class="sub">${esc(periodLabel())} — one note per cheque covering the SPS/bills &amp; mobilisation advances in that payment: value before, this payment, cumulative after, and the cheque break-up.</div>`;
   if(!cons.length)return head+'<div class="card empty">No payments in this selection.</div>';
-  let sel=MOF.con;if(!sel||!cons.some(x=>x.cid===sel))sel=cons[0].cid;
-  const g=cons.find(x=>x.cid===sel)||cons[0];
-  const tabs=`<div class="card"><div class="chips"><b class="mini" style="margin-right:4px">CONTRACT:</b>${cons.map(x=>`<span class="chip ${x.cid===sel?'on':''}" onclick="mofSetCon('${x.cid}')">${esc(x.con.no||'—')} · ${esc(x.con.contractor||'')} <span class="mini">(${x.groups.length})</span></span>`).join('')}</div></div>`;
+  let sel=MOF.con;if(sel&&!cons.some(x=>x.cid===sel))sel='';
+  const shown=sel?cons.filter(x=>x.cid===sel):cons;
+  const tabs=`<div class="card"><div class="chips"><b class="mini" style="margin-right:4px">CONTRACT:</b><span class="chip ${sel===''?'on':''}" onclick="mofSetCon('')">All Contractors <span class="mini">(${groups.length})</span></span>${cons.map(x=>`<span class="chip ${x.cid===sel?'on':''}" onclick="mofSetCon('${x.cid}')">${esc(x.con.no||'—')} · ${esc(x.con.contractor||'')} <span class="mini">(${x.groups.length})</span></span>`).join('')}</div></div>`;
+  const table=shown.map(g=>{
   const rows=g.groups.slice().sort((a,b)=>(a.date<b.date?1:-1)).map(u=>{
     const ps=u.ps;const gross=ps.reduce((a,q)=>a+payGross(q),0),net=ps.reduce((a,q)=>a+payNet(q),0),adv=ps.reduce((a,q)=>a+n(q.advRec),0);
     const sps=[];ps.forEach(q=>(q.lines||[]).forEach(l=>{if(l.billId){const b=S.bills.find(z=>z.id===l.billId)||{};sps.push(b.billNo||'?');}else sps.push('Adv'+(l.serial||q.serial?' '+(l.serial||q.serial):''));}));
     return `<tr><td>${dfmt(u.date)}</td><td>${sps.map(x=>'<span class="tag b">'+esc(x)+'</span>').join(' ')||'—'}</td><td>${esc(u.chqNo||'—')}</td><td class="num">${fmt(gross)}</td><td class="num">${adv>0?fmt(adv):'—'}</td><td class="num"><b>${fmt(net)}</b></td>
     <td style="white-space:nowrap"><button class="btn2 btn-sm" onclick="noteView('${u.ids.join(',')}')" title="View note-sheet">👁 View</button> <button class="btn2 btn-sm" onclick="notePrint('${u.ids.join(',')}')" title="Print / PDF">📄</button> <button class="btn2 btn-sm" onclick="notePNG('${u.ids.join(',')}')" title="PNG">🖼</button></td></tr>`;}).join('');
-  const table=`<div class="card"><h3>👷 ${esc(g.con.contractor||'—')} <span class="mini">— ${esc(g.con.no||'')}</span></h3>
-    <div class="tbl-wrap"><table><tr><th>Date</th><th>SPS / Advances in this payment</th><th>Cheque</th><th class="num">Bill Passed</th><th class="num">Adv. Rec.</th><th class="num">Net by Cheque</th><th>Note-sheet</th></tr>${rows||'<tr><td colspan="7" class="empty">No payments</td></tr>'}</table></div></div>`;
+  return `<div class="card"><h3>👷 ${esc(g.con.contractor||'—')} <span class="mini">— ${esc(g.con.no||'')}</span></h3>
+    <div class="tbl-wrap"><table><tr><th>Date</th><th>SPS / Advances in this payment</th><th>Cheque</th><th class="num">Bill Passed</th><th class="num">Adv. Rec.</th><th class="num">Net by Cheque</th><th>Note-sheet</th></tr>${rows||'<tr><td colspan="7" class="empty">No payments</td></tr>'}</table></div></div>`;}).join('');
   return head+tabs+table;
 }
 function pgMOP(){
@@ -5040,13 +5040,14 @@ function pgMOP(){
   const head=`<h2 class="pg">Memoranda of Payment (MOP) — CPWD format</h2>`+`
   <div class="sub">${esc(periodLabel())} — one MOP per bill passed / mobilisation advance. Pick a contract, then filter by SPS / advance. When several bills share one cheque, each still gets its own MOP.</div>`;
   if(!cons.length)return head+'<div class="card empty">No payments in this selection. A MOP is generated for every bill passed and every mobilisation advance paid.</div>';
-  let sel=MOF.con;if(!sel||!cons.some(g=>g.cid===sel))sel=cons[0].cid;
-  const g=cons.find(x=>x.cid===sel)||cons[0];
-  const tabs=`<div class="card"><div class="chips"><b class="mini" style="margin-right:4px">CONTRACT:</b>${cons.map(x=>`<span class="chip ${x.cid===sel?'on':''}" onclick="mofSetCon('${x.cid}')">${esc(x.con.no||'—')} · ${esc(x.con.contractor||'')} <span class="mini">(${x.units.length})</span></span>`).join('')}</div></div>`;
+  let sel=MOF.con;if(sel&&!cons.some(g=>g.cid===sel))sel='';
+  const shown=sel?cons.filter(x=>x.cid===sel):cons;
+  const tabs=`<div class="card"><div class="chips"><b class="mini" style="margin-right:4px">CONTRACT:</b><span class="chip ${sel===''?'on':''}" onclick="mofSetCon('')">All Contractors <span class="mini">(${units.length})</span></span>${cons.map(x=>`<span class="chip ${x.cid===sel?'on':''}" onclick="mofSetCon('${x.cid}')">${esc(x.con.no||'—')} · ${esc(x.con.contractor||'')} <span class="mini">(${x.units.length})</span></span>`).join('')}</div></div>`;
   const filt=`<div class="card filtbar"><h3>🔎 Filter${MOF.q?' <span class="mini" style="color:var(--acc)">— active</span>':''}<span style="float:right"><button class="btn2 btn-sm" onclick="MOF.q='';render()">✕ Clear</button></span></h3>
     <div class="msdd-bar"><input value="${esc(MOF.q||'')}" placeholder="🔍 SPS / Mob. Adv. / Voucher No." onchange="mofQ(this.value)" style="width:230px;padding:4px 11px;border:1px solid var(--bd);border-radius:14px;font-size:12px"></div>
     <div class="note" style="margin-top:4px">Search e.g. an SPS no., a mobilisation-advance serial, or a voucher no.</div></div>`;
   const q=(MOF.q||'').toLowerCase();
+  const table=shown.map(g=>{
   const fUnits=g.units.slice().sort((a,b)=>-relPaySort(a.p,b.p)).filter(u=>{
     if(!q)return true;const l=u.l,p=u.p,b=l.billId?(S.bills.find(z=>z.id===l.billId)||{}):{};
     const hay=((b.billNo||'')+' '+(l.serial||p.serial||'')+' '+(p.vno||'')+' installment '+billPayNo(p,l.billId)+' inst-'+billPayNo(p,l.billId)+' '+(l.billId?'':'mobilisation advance')).toLowerCase();
@@ -5054,8 +5055,8 @@ function pgMOP(){
   const rows=fUnits.map(u=>{const p=u.p,l=u.l,b=l.billId?(S.bills.find(z=>z.id===l.billId)||{}):{};const isAdv=!l.billId;
     const gross=n(l.amt),ded=payLineDeds(l)+(payGross(p)>0?n(p.advRec)*(gross/payGross(p)):0),net=gross-ded;
     return `<tr><td>${dfmt(p.date)}<div class="mini">${esc(p.vno||'')}</div></td><td>${isAdv?'—':'<b>'+esc(b.billNo||'?')+'</b>'}</td><td>${isAdv?'<span class="tag o">Mob./Other Adv.</span>'+((l.serial||p.serial)?' <span class="mini">'+esc(l.serial||p.serial)+'</span>':''):'—'}</td><td class="num"><b>${pmtVno(p)}</b></td><td class="num">${fmt(gross)}</td><td class="num">${fmt(ded)}</td><td class="num"><b>${fmt(net)}</b></td><td>${esc(p.chqNo||'—')}</td><td style="white-space:nowrap"><button class="btn2 btn-sm" onclick="mopView('${p.id}',${u.li})" title="View this MOP on screen">👁 View</button> <button class="btn2 btn-sm" onclick="mopBreakupView('${p.id}',${u.li})" title="Previous / This Bill / Cumulative statement (information only)">📊</button> <button class="btn2 btn-sm" onclick="mopPrint('${p.id}',${u.li})" title="Print / save as PDF this MOP">📄</button> <button class="btn2 btn-sm" onclick="mopPNG('${p.id}',${u.li})" title="Save this MOP as PNG">🖼</button></td></tr>`;}).join('');
-  const table=`<div class="card"><h3>👷 ${esc(g.con.contractor||'—')} <span class="mini">— ${esc(g.con.no||'')}${g.con.pkg?' ('+esc(g.con.pkg)+')':''}</span><span style="float:right"><button class="btn2 btn-sm" onclick="mopPrintContract('${g.cid}')">🖨 Print ALL MOPs (this contract)</button></span></h3>
-    <div class="tbl-wrap"><table><tr><th>Date</th><th>Bill / SPS No.</th><th>Mob. Advance</th><th class="num">Payment No.<div class="mini" style="font-weight:400">(date-wise)</div></th><th class="num">Bill Passed</th><th class="num">Deductions</th><th class="num">Net by Cheque</th><th>Cheque</th><th>MOP</th></tr>${rows||'<tr><td colspan="9" class="empty">No MOPs match the filter</td></tr>'}</table></div></div>`;
+  return `<div class="card"><h3>👷 ${esc(g.con.contractor||'—')} <span class="mini">— ${esc(g.con.no||'')}${g.con.pkg?' ('+esc(g.con.pkg)+')':''}</span><span style="float:right"><button class="btn2 btn-sm" onclick="mopPrintContract('${g.cid}')">🖨 Print ALL MOPs (this contract)</button></span></h3>
+    <div class="tbl-wrap"><table><tr><th>Date</th><th>Bill / SPS No.</th><th>Mob. Advance</th><th class="num">Payment No.<div class="mini" style="font-weight:400">(date-wise)</div></th><th class="num">Bill Passed</th><th class="num">Deductions</th><th class="num">Net by Cheque</th><th>Cheque</th><th>MOP</th></tr>${rows||'<tr><td colspan="9" class="empty">No MOPs match the filter</td></tr>'}</table></div></div>`;}).join('');
   return head+tabs+filt+table;
 }
 function pgPayments(){
