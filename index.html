@@ -336,15 +336,15 @@ table{width:100%;border-collapse:collapse;font-size:12.5px}
 th{
   background:#f1f5fb;text-align:left;padding:8px 9px;
   font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;
-  color:#3d5170;border-bottom:2px solid var(--bd);white-space:nowrap;
-  font-weight:700;
+  color:#3d5170;border-bottom:2px solid var(--bd);white-space:normal;
+  font-weight:700;overflow-wrap:break-word;
 }
 td{padding:7px 9px;border-bottom:1px solid #edf1f7;vertical-align:top;color:var(--tx2)}
 tr:hover td{background:#f5f8fd}
 tr:nth-child(even) td{background:var(--stripe)}
 tr:nth-child(even):hover td{background:#f0f5fb}
 .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;font-family:"Segoe UI",monospace}
-th.num{text-align:right}
+th.num{text-align:right;white-space:normal;overflow-wrap:break-word}
 table.paytbl input[type=number]{text-align:right}
 table.paytbl th{vertical-align:bottom}
 table.paytbl td{vertical-align:top}
@@ -592,7 +592,7 @@ div.frz-ctrl{justify-content:flex-end;margin:0 0 4px 0}
       <div class="ub-left">
         <span>⚠ ENTRIES UNLOCKED</span>
         <span class="ub-timer" id="ub-timer">—</span>
-        <span style="font-weight:400;font-size:12px">Edit · Delete · Pause buttons are active. Re-lock immediately after making changes.</span>
+        <span style="font-weight:400;font-size:12px">Edit · Delete · Pause buttons are active. Auto-locks after 30 min idle (resets while you work) — or click Lock Now when done.</span>
       </div>
       <button onclick="lockNow()">🔒 Lock Now</button>
     </div>
@@ -910,7 +910,12 @@ function togScheme(id){
 }
 /* ===== UNLOCK / LOCK SYSTEM ===== */
 let _ulTimer=null, _ulExpiry=0;
-const UL_TIMEOUT=300; // seconds until auto-relock (5 minutes)
+const UL_TIMEOUT=1800; // seconds of INACTIVITY before auto-relock (30 minutes idle). The timer resets on any activity — see _ulBump below.
+// Reset the idle countdown whenever the window is used (mouse, keyboard, scroll, touch). Only active while unlocked.
+function _ulBump(){ if(S.ui&&!S.ui.locked&&_ulExpiry>0){ _ulExpiry=Date.now()+UL_TIMEOUT*1000; } }
+['mousemove','mousedown','keydown','scroll','wheel','touchstart','click','input'].forEach(function(ev){
+  document.addEventListener(ev,_ulBump,{passive:true,capture:true});
+});
 
 function lockNow(){
   S.ui.locked=true;
@@ -953,7 +958,7 @@ function pcRemove(){
 function toggleEntryLock(){
   if(S.ui.locked){
     if(S.ui.passHash){var code=prompt('🔒 Enter passcode to unlock editing:');if(code===null)return;if(pcHash(code)!==S.ui.passHash){alert('❌ Wrong passcode — editing stays locked.');return;}}
-    // unlock (auto-relocks after 5 minutes)
+    // unlock (auto-relocks only after 30 minutes of inactivity — timer resets on any activity)
     S.ui.locked=false;
     _ulExpiry=Date.now()+UL_TIMEOUT*1000;
     if(_ulTimer)clearInterval(_ulTimer);
@@ -988,7 +993,7 @@ function lockSettings(){
   o.onclick=function(e){if(e.target===o)o.remove();};
   o.innerHTML='<div style="background:#fff;border-radius:10px;padding:18px 20px;max-width:430px;width:92%;box-shadow:0 12px 44px rgba(0,0,0,.32)">'+
     '<h3 style="margin:0 0 6px">🔒 Lock Settings</h3>'+
-    '<div style="font-size:12px;color:#5b6678;margin-bottom:12px;line-height:1.5">The lock protects all records from accidental editing, deletion or pausing. Click the <b>🔒 Locked</b> button to unlock — it auto-relocks after 5 minutes.</div>'+
+    '<div style="font-size:12px;color:#5b6678;margin-bottom:12px;line-height:1.5">The lock protects all records from accidental editing, deletion or pausing. Click the <b>🔒 Locked</b> button to unlock — it auto-relocks after 30 minutes of inactivity (the timer resets while you keep working).</div>'+
     '<div style="font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#374151;margin:8px 0 6px">When LOCKED, hide:</div>'+
     '<label style="display:flex;align-items:flex-start;gap:8px;margin:7px 0;text-transform:none;font-size:13px;font-weight:500;cursor:pointer"><input type="radio" name="lkm" value="both" '+(lm==='both'?'checked':'')+' style="margin-top:2px"><div>Edit, Delete &amp; Pause/Resume buttons<div style="font-size:11px;color:#6b7280;margin-top:1px">Most protected — recommended for shared/office computers</div></div></label>'+
     '<label style="display:flex;align-items:flex-start;gap:8px;margin:7px 0;text-transform:none;font-size:13px;font-weight:500;cursor:pointer"><input type="radio" name="lkm" value="del" '+(lm==='del'?'checked':'')+' style="margin-top:2px"><div>Delete &amp; Pause buttons only<div style="font-size:11px;color:#6b7280;margin-top:1px">Editing of entries still allowed without unlocking</div></div></label>'+
@@ -996,7 +1001,7 @@ function lockSettings(){
     '<div style="border-top:1px solid #e2e8f0;margin:14px 0 10px"></div>'+
     '<div style="font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#374151;margin-bottom:8px">Auto-lock Triggers:</div>'+
     '<label style="display:flex;align-items:flex-start;gap:8px;margin:7px 0;text-transform:none;font-size:13px;font-weight:500;cursor:pointer"><input type="checkbox" id="lkNewSch" '+(ns?'checked':'')+' style="margin-top:2px"><div>Re-lock automatically when a new project/scheme is added<div style="font-size:11px;color:#6b7280;margin-top:1px">Recommended — new schemes are protected immediately</div></div></label>'+
-    '<div style="background:#fef9c3;border:1px solid #fde047;border-radius:5px;padding:8px 10px;font-size:12px;color:#713f12;margin:12px 0">⏱ Auto-relock after 5 minutes of unlocked state — applies every time you unlock.</div>'+
+    '<div style="background:#fef9c3;border:1px solid #fde047;border-radius:5px;padding:8px 10px;font-size:12px;color:#713f12;margin:12px 0">⏱ Auto-relock after 30 minutes of <b>inactivity</b> — the countdown resets whenever you move the mouse, type or scroll, so it will not lock while you are working.</div>'+
     '<div style="border-top:1px solid #e2e8f0;margin:14px 0 10px"></div>'+
     '<div style="font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#374151;margin-bottom:6px">🔑 Passcode — view-only protection</div>'+
     '<div style="font-size:12px;color:#5b6678;margin-bottom:8px;line-height:1.5">'+(S.ui.passHash?'✅ A passcode is set. The books stay <b>view-only</b> and the code is required to unlock any editing, entry or deletion.':'No passcode set — anyone can unlock. Set one so nobody can add, edit or delete anything without the code (viewing stays free).')+'</div>'+
@@ -1080,8 +1085,15 @@ function payClearedForPay(p){if((p.kind||'sps')==='adv')return 0;var seen={},tot
 function payShortfallFund(p){return Math.max(0,payClearedForPay(p)-payBillPassed(p));}
 function payDedTotal(p,k){return (p.lines||[]).reduce((a,l)=>a+n(l.deds&&l.deds[k]),0);}
 function payAllDeds(p){return DEDS.reduce((a,[k])=>a+payDedTotal(p,k),0);}
-function payNet(p){return payGross(p)-payAllDeds(p)-n(p.advRec);}
-function payEff(p){return (p.lines||[]).reduce((a,l)=>a+(n(l.amt)-n(l.deds&&l.deds.ret)-n(l.deds&&l.deds.oth)),0);}
+function payRecov(p){return (p.recov||[]).reduce((a,r)=>a+n(r.amt),0);} // custom recoveries (with written reason) — reduce the cheque like a deduction
+// Per-line "Advance/other recovery" (l.advRec) reduces Effective Expenditure (sits before Retention).
+// Per-line "Recoveries" (l.recov) reduces only the net cheque (sits after Labour Cess). Both carry a purpose.
+function payLineAdvRec(p){return (p.lines||[]).reduce((a,l)=>a+n(l.advRec),0);}
+function payLineRecov(p){return (p.lines||[]).reduce((a,l)=>a+n(l.recov),0);}
+function payLineNet(l){return n(l.amt)-payLineDeds(l)-n(l.advRec)-n(l.recov);} // net paid for one bill line
+function payLineEff(l){return n(l.amt)-n(l.advRec)-n(l.deds&&l.deds.ret)-n(l.deds&&l.deds.oth);} // effective expenditure for one bill line
+function payNet(p){return payGross(p)-payAllDeds(p)-payLineAdvRec(p)-payLineRecov(p)-n(p.advRec)-payRecov(p);}
+function payEff(p){return (p.lines||[]).reduce((a,l)=>a+payLineEff(l),0)-n(p.advRec);} // effective expenditure nets out advance/other recovery per line + payment-level advance recovered
 function r2(v){return Math.round(v*100)/100;}
 function contractAdv(cid){
   const paid=S.payments.filter(p=>!p.draft&&p.contractId===cid).reduce((a,p)=>a+((p.kind==='adv')?payGross(p):(p.lines||[]).filter(l=>l.adv).reduce((x,l)=>x+n(l.amt),0)),0);
@@ -1151,7 +1163,7 @@ function bankFlows(id,filtered){
   let inn=0,out=0;
   S.releases.filter(f).forEach(r=>{if(r.bankId===id)inn+=n(r.amount);});
   S.transfers.filter(f).forEach(t=>{if(t.toBank===id)inn+=n(t.amount);if(t.fromBank===id)out+=n(t.amount);});
-  S.payments.filter(f).forEach(p=>{if(p.bankId===id)out+=payEff(p)-n(p.advRec);});
+  S.payments.filter(f).forEach(p=>{if(p.bankId===id)out+=payEff(p);}); // payEff already nets advance recovery
   S.cash.filter(f).forEach(e=>{if(e.bankId===id)e.type==='receipt'?inn+=n(e.amount):out+=n(e.amount);});
   S.others.filter(f).forEach(e=>{if(e.bankId===id)e.kind==='receipt'?inn+=n(e.amount):out+=n(e.amount);});
   S.remit.filter(f).forEach(m=>{if(m.bankId===id)out+=n(m.amount);});
@@ -3049,24 +3061,35 @@ function chqRegCancel(){CHF.edit='';render();}
 function chqRegSave(ek){
   if(S.ui.locked){alert('🔒 Entries are locked.\nClick the 🔒 Locked button at the top of the page to enable editing, then try again.');return;}
   const parts=String(ek).split('|'),kind=parts[0];
-  const ce=document.getElementById('ce_chq'),de=document.getElementById('ce_date'),be=document.getElementById('ce_bank');
-  const nchq=ce?String(ce.value).trim():null,ndate=de?de.value:null,nbank=be?be.value:null;
+  const ce=document.getElementById('ce_chq'),de=document.getElementById('ce_date'),be=document.getElementById('ce_bank'),ae=document.getElementById('ce_amt');
+  const nchq=ce?String(ce.value).trim():null,ndate=de?de.value:null,nbank=be?be.value:null,namt=ae?n(ae.value):null;
   let where='';
   if(kind==='pay'){const p=(S.payments||[]).find(x=>x.id===parts[1]);if(!p)return alert('Source payment not found (it may have been deleted).');if(nchq!=null)p.chqNo=nchq;if(ndate)p.date=ndate;if(nbank!=null)p.bankId=nbank;where='payment '+(p.vno||'');}
-  else if(kind==='ded'){const p=(S.payments||[]).find(x=>x.id===parts[1]);if(!p)return alert('Source payment not found (it may have been deleted).');p.dedChq=p.dedChq||{};if(nchq!=null)p.dedChq[parts[2]]=nchq;where='deduction cheque on payment '+(p.vno||'');}
+  else if(kind==='ded'){const p=(S.payments||[]).find(x=>x.id===parts[1]);if(!p)return alert('Source payment not found (it may have been deleted).');p.dedChq=p.dedChq||{};if(nchq!=null)p.dedChq[parts[2]]=nchq;
+    if(namt!=null&&(p.lines||[]).length===1){const ln=p.lines[0];ln.deds=ln.deds||{};ln.deds[parts[2]]=namt;} // edit the statutory-deduction amount (single-line payments only)
+    where='deduction on payment '+(p.vno||'');}
   else if(kind==='rem'){const m=(S.remit||[]).find(x=>x.id===parts[1]);if(!m)return alert('Source remittance not found (it may have been deleted).');if(nchq!=null)m.chqNo=nchq;if(ndate)m.date=ndate;if(nbank!=null)m.bankId=nbank;where='remittance';}
   else if(kind==='oth'){const e=(S.others||[]).find(x=>x.id===parts[1]);if(!e)return alert('Source entry not found (it may have been deleted).');if(nchq!=null)e.ref=nchq;if(ndate)e.date=ndate;if(nbank!=null)e.bankId=nbank;where='other expenditure';}
+  else if(kind==='rec'){const p=(S.payments||[]).find(x=>x.id===parts[1]);if(!p)return alert('Source payment not found (it may have been deleted).');const l=(p.lines||[])[parseInt(parts[2],10)];if(!l)return alert('Source recovery not found.');if(nchq!=null)l.recovChq=nchq;where='recovery cheque on payment '+(p.vno||'');}
   else return;
   logAudit('Edited cheque from register',where+' → cheque '+(nchq||'—'));
   CHF.edit='';save();render();
 }
+// Which bill(s)/SPS or mobilisation advance a payment is against — shown in the Cheque Register.
+function payAgainst(p){
+  if((p.kind||'sps')==='adv')return 'Mobilisation / other advance'+(p.serial?' ('+esc(p.serial)+')':'');
+  const names=[...new Set((p.lines||[]).filter(l=>l.billId).map(l=>{const b=S.bills.find(z=>z.id===l.billId);return b?(b.billNo||'?'):'?';}))];
+  return names.length?('Bill/SPS: '+names.join(', ')):(p.serial?('Serial '+esc(p.serial)):'');
+}
 function pgCheques(){
   let rows=[];
   S.payments.filter(p=>inF(p)&&!p.draft).forEach(p=>{const s=S.schemes.find(x=>x.id===p.schemeId)||{contracts:[]};const c=(s.contracts||[]).find(x=>x.id===p.contractId);
-    if(p.chqNo)rows.push({date:p.date,idate:p.invd||'',chq:p.chqNo,payee:c?c.contractor:'—',purpose:p.kind==='adv'?'Advance':'Contractor payment',bank:bankName(p.bankId),bankId:p.bankId,amt:payNet(p),sch:p.schemeId,comp:c?c.compId:'',sub:c?c.subId:'',contractor:c?c.contractor:'',con:c?c.id:'',type:'payment',ek:'pay|'+p.id,canDT:true});
+    const ag=payAgainst(p);const one=(p.lines||[]).length===1;
+    if(p.chqNo)rows.push({date:p.date,idate:p.invd||'',chq:p.chqNo,payee:c?c.contractor:'—',purpose:p.kind==='adv'?'Advance':'Contractor payment',against:ag,bank:bankName(p.bankId),bankId:p.bankId,amt:payNet(p),sch:p.schemeId,comp:c?c.compId:'',sub:c?c.subId:'',contractor:c?c.contractor:'',con:c?c.id:'',type:'payment',ek:'pay|'+p.id,canDT:true});
     const gstOne=!!p.gstOneChq;
-    DEDS.forEach(([k,l])=>{if(gstOne&&(k==='cgstTds'||k==='sgstTds'))return;const v=payDedTotal(p,k);const ch=p.dedChq&&p.dedChq[k];if(v>0&&ch)rows.push({date:p.date,idate:p.invd||'',chq:ch,payee:l,purpose:'Statutory deduction — '+l,bank:bankName(p.bankId),bankId:p.bankId,amt:v,sch:p.schemeId,comp:c?c.compId:'',sub:c?c.subId:'',contractor:c?c.contractor:'',con:c?c.id:'',type:'deduction',ek:'ded|'+p.id+'|'+k,canDT:false});});
-    if(gstOne){const v=payDedTotal(p,'cgstTds')+payDedTotal(p,'sgstTds');const ch=p.dedChq&&p.dedChq.cgstTds;if(v>0&&ch)rows.push({date:p.date,idate:p.invd||'',chq:ch,payee:'CGST + SGST TDS',purpose:'Statutory deduction — CGST + SGST TDS',bank:bankName(p.bankId),bankId:p.bankId,amt:v,sch:p.schemeId,comp:c?c.compId:'',sub:c?c.subId:'',contractor:c?c.contractor:'',con:c?c.id:'',type:'deduction',ek:'ded|'+p.id+'|cgstTds',canDT:false});}});
+    DEDS.forEach(([k,l])=>{if(gstOne&&(k==='cgstTds'||k==='sgstTds'))return;const v=payDedTotal(p,k);const ch=p.dedChq&&p.dedChq[k];if(v>0&&ch)rows.push({date:p.date,idate:p.invd||'',chq:ch,payee:l,purpose:'Statutory deduction — '+l,against:ag,bank:bankName(p.bankId),bankId:p.bankId,amt:v,sch:p.schemeId,comp:c?c.compId:'',sub:c?c.subId:'',contractor:c?c.contractor:'',con:c?c.id:'',type:'deduction',ek:'ded|'+p.id+'|'+k,canDT:false,oneLine:one,dedKey:k});});
+    if(gstOne){const v=payDedTotal(p,'cgstTds')+payDedTotal(p,'sgstTds');const ch=p.dedChq&&p.dedChq.cgstTds;if(v>0&&ch)rows.push({date:p.date,idate:p.invd||'',chq:ch,payee:'CGST + SGST TDS',purpose:'Statutory deduction — CGST + SGST TDS',against:ag,bank:bankName(p.bankId),bankId:p.bankId,amt:v,sch:p.schemeId,comp:c?c.compId:'',sub:c?c.subId:'',contractor:c?c.contractor:'',con:c?c.id:'',type:'deduction',ek:'ded|'+p.id+'|cgstTds',canDT:false,oneLine:one,gstCombined:true});}
+    (p.lines||[]).forEach((l,li)=>{if(n(l.recov)>0&&l.recovChq)rows.push({date:p.date,idate:p.invd||'',chq:l.recovChq,payee:'Recovery'+(l.recovP?' — '+l.recovP:''),purpose:'Recovery from contractor payment',against:ag,bank:bankName(p.bankId),bankId:p.bankId,amt:n(l.recov),sch:p.schemeId,comp:c?c.compId:'',sub:c?c.subId:'',contractor:c?c.contractor:'',con:c?c.id:'',type:'recovery',ek:'rec|'+p.id+'|'+li,canDT:false});});});
   S.remit.filter(inF).forEach(m=>{if(!m.chqNo)return;rows.push({date:m.date,idate:'',chq:m.chqNo,payee:dedLabel(m.dedType),purpose:'Remittance to authority',bank:bankName(m.bankId),bankId:m.bankId,amt:n(m.amount),sch:m.schemeId,comp:'',sub:'',contractor:'',type:'remittance',ek:'rem|'+m.id,canDT:true});});
   S.others.filter(e=>inF(e)&&!e.draft).filter(e=>e.kind==='payment'&&e.ref).forEach(e=>{rows.push({date:e.date,idate:'',chq:e.ref,payee:e.party||'—',purpose:e.cat,bank:bankName(e.bankId),bankId:e.bankId,amt:n(e.amount),sch:e.schemeId,comp:'',sub:'',contractor:e.party||'',type:'other',ek:'oth|'+e.id,canDT:true});});
   if(CHF.scheme)rows=rows.filter(r=>r.sch===CHF.scheme);
@@ -3108,12 +3131,15 @@ function pgCheques(){
   const grouped=(sortMode==='chq_asc'||sortMode==='chq_desc');
   const tot=rows.reduce((a,r)=>a+r.amt,0);
   const renderRow=r=>{
+    const purposeCell=`${esc(r.purpose)}${r.against?`<div class="mini" style="color:var(--mut)">${esc(r.against)}</div>`:''}`;
     if(CHF.edit===r.ek){
       const bankCell=r.canDT?`<select id="ce_bank">${(S.banks||[]).map(b=>`<option value="${b.id}" ${r.bankId===b.id?'selected':''}>${esc(b.name)}</option>`).join('')}</select>`:`${esc(r.bank||'—')}<div class="mini" style="color:var(--mut)">follows the payment</div>`;
       const dateCell=r.canDT?`<input type="date" id="ce_date" value="${esc(r.date||'')}">`:`${dfmt(r.date)}<div class="mini" style="color:var(--mut)">follows the payment</div>`;
-      return `<tr style="background:#fffbeb"><td>${dateCell}</td><td>${r.idate?dfmt(r.idate):'—'}</td><td><input id="ce_chq" value="${esc(r.chq)}" style="width:120px" placeholder="cheque / ref no."></td><td>${esc(r.payee)}</td><td>${esc(r.purpose)}</td><td>${esc(schemeName(r.sch))}</td><td>${bankCell}</td><td class="num"><b>${fmt(r.amt)}</b></td><td style="white-space:nowrap"><button class="btn btn-sm" onclick="chqRegSave('${r.ek}')">💾 Save</button> <button class="btn2 btn-sm" onclick="chqRegCancel()">✕</button></td></tr>`;
+      const dedEditable=(r.type==='deduction'&&r.oneLine&&!r.gstCombined);
+      const amtCell=dedEditable?`<input id="ce_amt" value="${esc(String(Math.round(n(r.amt))))}" style="width:100px;text-align:right" placeholder="amount">`:`<b>${fmt(r.amt)}</b>${(r.type==='deduction'&&(!r.oneLine||r.gstCombined))?`<div class="mini" style="color:var(--mut)">${r.gstCombined?'combined CGST+SGST':'multi-bill'} — edit amount in payment entry</div>`:''}`;
+      return `<tr style="background:#fffbeb"><td>${dateCell}</td><td>${r.idate?dfmt(r.idate):'—'}</td><td><input id="ce_chq" value="${esc(r.chq)}" style="width:120px" placeholder="cheque / ref no."></td><td>${esc(r.payee)}</td><td>${purposeCell}</td><td>${esc(schemeName(r.sch))}</td><td>${bankCell}</td><td class="num">${amtCell}</td><td style="white-space:nowrap"><button class="btn btn-sm" onclick="chqRegSave('${r.ek}')">💾 Save</button> <button class="btn2 btn-sm" onclick="chqRegCancel()">✕</button></td></tr>`;
     }
-    return `<tr><td>${dfmt(r.date)}</td><td>${r.idate?dfmt(r.idate):'—'}</td><td><b>${esc(r.chq)}</b></td><td>${esc(r.payee)}</td><td>${esc(r.purpose)}</td><td>${esc(schemeName(r.sch))}</td><td>${esc(r.bank||'—')}</td><td class="num"><b>${fmt(r.amt)}</b></td><td><button class="btn2 btn-sm" onclick="chqRegEdit('${r.ek}')" title="Edit this cheque — changes sync to the original entry">✏️ Edit</button></td></tr>`;
+    return `<tr><td>${dfmt(r.date)}</td><td>${r.idate?dfmt(r.idate):'—'}</td><td><b>${esc(r.chq)}</b></td><td>${esc(r.payee)}</td><td>${purposeCell}</td><td>${esc(schemeName(r.sch))}</td><td>${esc(r.bank||'—')}</td><td class="num"><b>${fmt(r.amt)}</b></td><td><button class="btn2 btn-sm" onclick="chqRegEdit('${r.ek}')" title="Edit this cheque — changes sync to the original entry">✏️ Edit</button></td></tr>`;
   };
   let _lastGrp=null;
   const bodyRows=rows.length?rows.map(r=>{
@@ -3137,14 +3163,14 @@ function pgCheques(){
       <div><label>Date to</label><input type="date" value="${esc(CHF.dt||'')}" onchange="CHF.dt=this.value;render()"></div>
       <div><label>Scheme</label><select onchange="CHF.scheme=this.value;render()"><option value="">All</option>${selSchemes().map(s=>`<option value="${s.id}" ${CHF.scheme===s.id?'selected':''}>${esc(s.name)}</option>`).join('')}</select></div>
       <div><label>Contractor</label><select onchange="CHF.contractor=this.value;render()"><option value="">All</option>${chfContractors().map(nm=>`<option ${CHF.contractor===nm?'selected':''}>${esc(nm)}</option>`).join('')}</select></div>
-      <div><label>Type</label><select onchange="CHF.type=this.value;render()">${[['','All'],['payment','Contractor payment'],['deduction','Statutory deduction'],['remittance','Remittance'],['other','Other expenditure']].map(([v,l])=>`<option value="${v}" ${CHF.type===v?'selected':''}>${l}</option>`).join('')}</select></div>
+      <div><label>Type</label><select onchange="CHF.type=this.value;render()">${[['','All'],['payment','Contractor payment'],['deduction','Statutory deduction'],['recovery','Recovery'],['remittance','Remittance'],['other','Other expenditure']].map(([v,l])=>`<option value="${v}" ${CHF.type===v?'selected':''}>${l}</option>`).join('')}</select></div>
       <div><label>Sort by</label><select onchange="CHF.sort=this.value;render()">${[['date_desc','Date of issue — newest first'],['date_asc','Date of issue — oldest first'],['chq_desc','Cheque sequence — by book (latest book & cheque on top)'],['chq_asc','Cheque sequence — by book (book 1 & oldest on top)']].map(([v,l])=>`<option value="${v}" ${sortMode===v?'selected':''}>${l}</option>`).join('')}</select></div>
       <div style="display:flex;align-items:flex-end"><button class="btn2 btn-sm" onclick="chfClear()">✕ Clear</button></div>
     </div>
     <div class="note" style="margin-top:4px">Showing <b>${rows.length}</b> cheque(s). The top-bar FY / period and Component / Sub-component / Contract filters also apply (a contract filter narrows to that contractor's payments &amp; their deduction cheques; remittances &amp; other expenditure are hidden while a contract filter is active).</div>
   </div>
   <div class="card"><h3>Cheques Issued</h3>
-    <div class="note" style="margin-bottom:6px">✏️ <b>Edit</b> changes the cheque no. (and, for contractor payments / remittances / other expenditure, the date &amp; bank a/c) directly on the original entry — so the correction syncs everywhere it appears. Requires entries to be <b>unlocked</b> (🔒 button at top).</div>
+    <div class="note" style="margin-bottom:6px">✏️ <b>Edit</b> changes the cheque no. directly on the original entry (also the date &amp; bank a/c for contractor payments / remittances / other expenditure, and the <b>amount</b> for a single-bill statutory deduction) — corrections sync everywhere they appear. The <b>Purpose</b> column shows which bill/SPS or mobilisation advance each cheque is against. Requires entries to be <b>unlocked</b> (🔒 button at top).</div>
     <div class="tbl-wrap"><table>
     <tr><th>Date</th><th>Invoice/Bill Date</th><th>Cheque / Ref No.</th><th>Payee</th><th>Purpose</th><th>Scheme</th><th>Bank A/c</th><th class="num">Amount</th><th>Edit</th></tr>
     ${rows.length?`<tr class="tot-pay"><td colspan="7"><b>TOTAL (${rows.length} cheque${rows.length>1?'s':''})</b></td><td class="num"><b>${fmt(tot)}</b></td><td></td></tr>`:''}
@@ -3167,7 +3193,7 @@ function chqTailNum(s){const m=String(s||'').match(/(\d+)\s*$/);return m?String(
 function chqIssuedMap(){
   const map={};
   const add=(bankId,chq)=>{if(chq==null||String(chq).trim()==='')return;const b=bankId||'';const o=map[b]||(map[b]={full:new Set(),num:new Set()});o.full.add(chqNorm(chq));const t=chqTailNum(chq);if(t)o.num.add(t);};
-  (S.payments||[]).forEach(p=>{add(p.bankId,p.chqNo);if(p.dedChq)Object.keys(p.dedChq).forEach(k=>add(p.bankId,p.dedChq[k]));});
+  (S.payments||[]).forEach(p=>{add(p.bankId,p.chqNo);if(p.dedChq)Object.keys(p.dedChq).forEach(k=>add(p.bankId,p.dedChq[k]));(p.lines||[]).forEach(l=>{if(l.recovChq)add(p.bankId,l.recovChq);});});
   (S.remit||[]).forEach(m=>add(m.bankId,m.chqNo));
   (S.others||[]).forEach(e=>{if(e.kind==='payment')add(e.bankId,e.ref);});
   return map;
@@ -3181,7 +3207,8 @@ function chqInfoMap(){
     if(p.chqNo)put(p.bankId,p.chqNo,{date:p.date,payee:c?c.contractor:'—',amt:payNet(p),purpose:p.kind==='adv'?'Advance':'Contractor payment'});
     const gstOne=!!p.gstOneChq;
     DEDS.forEach(([k,l])=>{if(gstOne&&(k==='cgstTds'||k==='sgstTds'))return;const v=payDedTotal(p,k);const ch=p.dedChq&&p.dedChq[k];if(v>0&&ch)put(p.bankId,ch,{date:p.date,payee:l,amt:v,purpose:'Statutory deduction'});});
-    if(gstOne){const v=payDedTotal(p,'cgstTds')+payDedTotal(p,'sgstTds');const ch=p.dedChq&&p.dedChq.cgstTds;if(v>0&&ch)put(p.bankId,ch,{date:p.date,payee:'CGST + SGST TDS',amt:v,purpose:'Statutory deduction'});}});
+    if(gstOne){const v=payDedTotal(p,'cgstTds')+payDedTotal(p,'sgstTds');const ch=p.dedChq&&p.dedChq.cgstTds;if(v>0&&ch)put(p.bankId,ch,{date:p.date,payee:'CGST + SGST TDS',amt:v,purpose:'Statutory deduction'});}
+    (p.lines||[]).forEach(l=>{if(n(l.recov)>0&&l.recovChq)put(p.bankId,l.recovChq,{date:p.date,payee:'Recovery'+(l.recovP?' — '+l.recovP:''),amt:n(l.recov),purpose:'Recovery'});});});
   (S.remit||[]).forEach(m=>{if(m.chqNo)put(m.bankId,m.chqNo,{date:m.date,payee:dedLabel(m.dedType),amt:n(m.amount),purpose:'Remittance'});});
   (S.others||[]).forEach(e=>{if(e.kind==='payment'&&e.ref)put(e.bankId,e.ref,{date:e.date,payee:e.party||'—',amt:n(e.amount),purpose:e.cat});});
   return map;
@@ -3192,7 +3219,8 @@ function forEachIssuedCheque(cb){
     if(p.chqNo)cb(p.bankId,p.chqNo,{date:p.date,payee:c?c.contractor:'—',amt:payNet(p),purpose:p.kind==='adv'?'Advance':'Contractor payment'});
     const gstOne=!!p.gstOneChq;
     DEDS.forEach(([k,l])=>{if(gstOne&&(k==='cgstTds'||k==='sgstTds'))return;const v=payDedTotal(p,k);const ch=p.dedChq&&p.dedChq[k];if(v>0&&ch)cb(p.bankId,ch,{date:p.date,payee:l,amt:v,purpose:'Statutory deduction'});});
-    if(gstOne){const v=payDedTotal(p,'cgstTds')+payDedTotal(p,'sgstTds');const ch=p.dedChq&&p.dedChq.cgstTds;if(v>0&&ch)cb(p.bankId,ch,{date:p.date,payee:'CGST + SGST TDS',amt:v,purpose:'Statutory deduction'});}});
+    if(gstOne){const v=payDedTotal(p,'cgstTds')+payDedTotal(p,'sgstTds');const ch=p.dedChq&&p.dedChq.cgstTds;if(v>0&&ch)cb(p.bankId,ch,{date:p.date,payee:'CGST + SGST TDS',amt:v,purpose:'Statutory deduction'});}
+    (p.lines||[]).forEach(l=>{if(n(l.recov)>0&&l.recovChq)cb(p.bankId,l.recovChq,{date:p.date,payee:'Recovery'+(l.recovP?' — '+l.recovP:''),amt:n(l.recov),purpose:'Recovery'});});});
   (S.remit||[]).forEach(m=>{if(m.chqNo)cb(m.bankId,m.chqNo,{date:m.date,payee:dedLabel(m.dedType),amt:n(m.amount),purpose:'Remittance'});});
   (S.others||[]).forEach(e=>{if(e.kind==='payment'&&e.ref)cb(e.bankId,e.ref,{date:e.date,payee:e.party||'—',amt:n(e.amount),purpose:e.cat});});
 }
@@ -3381,7 +3409,7 @@ function bankTxns(id){
   const t=[];
   S.releases.forEach(r=>{if(!r.draft&&r.bankId===id)t.push({id:r.id,date:r.date,desc:'Fund received — '+(r.source||''),inn:n(r.amount),out:0});});
   S.transfers.forEach(x=>{if(!x.draft&&x.toBank===id)t.push({id:x.id+'-in',date:x.date,desc:'Transfer in',inn:n(x.amount),out:0});if(!x.draft&&x.fromBank===id)t.push({id:x.id+'-out',date:x.date,desc:'Transfer out',inn:0,out:n(x.amount)});});
-  S.payments.forEach(p=>{if(!p.draft&&p.bankId===id)t.push({id:p.id,date:p.date,desc:'Payment'+(p.chqNo?' (Chq '+p.chqNo+')':''),inn:0,out:payEff(p)-n(p.advRec)});});
+  S.payments.forEach(p=>{if(!p.draft&&p.bankId===id)t.push({id:p.id,date:p.date,desc:'Payment'+(p.chqNo?' (Chq '+p.chqNo+')':''),inn:0,out:payEff(p)});});
   S.cash.forEach(e=>{if(e.bankId===id)t.push({id:e.id,date:e.date,desc:(e.note||e.part||'Cash entry'),inn:e.type==='receipt'?n(e.amount):0,out:e.type==='payment'?n(e.amount):0});});
   S.others.forEach(e=>{if(e.bankId===id)t.push({id:e.id,date:e.date,desc:e.cat+(e.party?' — '+e.party:''),inn:e.kind==='receipt'?n(e.amount):0,out:e.kind==='payment'?n(e.amount):0});});
   S.remit.forEach(m=>{if(m.bankId===id)t.push({id:m.id,date:m.date,desc:'Remittance '+dedLabel(m.dedType),inn:0,out:n(m.amount)});});
@@ -3422,7 +3450,7 @@ function bankStmtRows(id){
   S.transfers.forEach(x=>{
     if(!x.draft&&x.toBank===id)t.push({date:x.date,desc:'Transfer in ← '+(bankName(x.fromBank)||x.from||'—'),ref:x.note||'',sch:x.schemeId,inn:n(x.amount),out:0});
     if(!x.draft&&x.fromBank===id)t.push({date:x.date,desc:'Transfer out → '+(bankName(x.toBank)||x.to||'—'),ref:x.note||'',sch:x.schemeId,inn:0,out:n(x.amount)});});
-  S.payments.forEach(p=>{if(!p.draft&&p.bankId===id){const eff=payEff(p)-n(p.advRec);if(Math.abs(eff)<0.005)return;t.push({date:p.date,desc:(p.kind==='adv'?'Advance to ':'Payment to ')+(conContractorName(p.contractId)||'contractor')+(p.serial?' ('+p.serial+')':''),ref:p.chqNo||'',sch:p.schemeId,inn:0,out:eff});}});
+  S.payments.forEach(p=>{if(!p.draft&&p.bankId===id){const eff=payEff(p);if(Math.abs(eff)<0.005)return;t.push({date:p.date,desc:(p.kind==='adv'?'Advance to ':'Payment to ')+(conContractorName(p.contractId)||'contractor')+(p.serial?' ('+p.serial+')':''),ref:p.chqNo||'',sch:p.schemeId,inn:0,out:eff});}});
   S.cash.forEach(e=>{if(e.bankId===id&&!e.draft)t.push({date:e.date,desc:(e.part||e.note||'Cash entry'),ref:e.ref||'',sch:e.schemeId,inn:e.type==='receipt'?n(e.amount):0,out:e.type==='payment'?n(e.amount):0});});
   S.others.forEach(e=>{if(e.bankId===id&&!e.draft)t.push({date:e.date,desc:(e.cat||'Other')+(e.party?' — '+e.party:''),ref:e.ref||'',sch:e.schemeId,inn:e.kind==='receipt'?n(e.amount):0,out:e.kind==='payment'?n(e.amount):0});});
   S.remit.forEach(m=>{if(m.bankId===id&&!m.draft)t.push({date:m.date,desc:'Remittance — '+dedLabel(m.dedType),ref:m.chqNo||'',sch:m.schemeId,inn:0,out:n(m.amount)});});
@@ -4773,24 +4801,29 @@ function relPayCard(){
 // Shared: full drill-down of one payment — every SPS/bill line with all its deductions + the cheque/challan numbers.
 function payDetailHTML(p,opts){opts=opts||{};var rel=!!opts.release;
   const lines=(p.lines||[]).map(l=>{const b=S.bills.find(z=>z.id===l.billId)||{};
-    var amt=n(l.amt),lret=n(l.deds&&l.deds.ret),loth=n(l.deds&&l.deds.oth),leff=amt-lret-loth,lnet=amt-payLineDeds(l);
-    return `<tr><td>${l.billId?esc(b.billNo||'?'):'<b>Mob./Other Advance</b>'}</td><td>${esc(l.serial||p.serial||'—')}</td><td class="num">${fmt(amt)}</td><td class="num">${fmt(lret)}</td><td class="num">${fmt(loth)}</td><td class="num"><b>${fmt(leff)}</b></td>${DED_STAT.map(([k])=>`<td class="num">${fmt(l.deds&&l.deds[k])}</td>`).join('')}<td class="num"></td><td class="num"><b>${fmt(lnet)}</b></td></tr>`;}).join('');
-  const totRow=`<tr class="tot-pay"><td><b>TOTAL</b></td><td></td><td class="num"><b>${fmt(payGross(p))}</b></td><td class="num">${fmt(payDedTotal(p,'ret'))}</td><td class="num">${fmt(payDedTotal(p,'oth'))}</td><td class="num"><b>${fmt(payEff(p))}</b></td>${DED_STAT.map(([k])=>`<td class="num">${fmt(payDedTotal(p,k))}</td>`).join('')}<td class="num">${fmt(n(p.advRec))}</td><td class="num"><b>${fmt(payNet(p))}</b></td></tr>`;
+    var amt=n(l.amt),lret=n(l.deds&&l.deds.ret),loth=n(l.deds&&l.deds.oth),leff=payLineEff(l),lnet=payLineNet(l);
+    return `<tr><td>${l.billId?esc(b.billNo||'?'):'<b>Mob./Other Advance</b>'}</td><td>${esc(l.serial||p.serial||'—')}</td><td class="num">${fmt(amt)}</td><td class="num">${fmt(lret)}</td><td class="num">${fmt(loth)}</td><td class="num"><b>${fmt(leff)}</b></td>${DED_STAT.map(([k])=>`<td class="num">${fmt(l.deds&&l.deds[k])}</td>`).join('')}<td class="num">${l.advRec?fmt(n(l.advRec)):''}</td><td class="num"><b>${fmt(lnet)}</b></td></tr>`;}).join('');
+  const totRow=`<tr class="tot-pay"><td><b>TOTAL</b></td><td></td><td class="num"><b>${fmt(payGross(p))}</b></td><td class="num">${fmt(payDedTotal(p,'ret'))}</td><td class="num">${fmt(payDedTotal(p,'oth'))}</td><td class="num"><b>${fmt(payEff(p))}</b></td>${DED_STAT.map(([k])=>`<td class="num">${fmt(payDedTotal(p,k))}</td>`).join('')}<td class="num">${fmt(n(p.advRec)+payLineAdvRec(p))}</td><td class="num"><b>${fmt(payNet(p))}</b></td></tr>`;
   const gstOne=!!p.gstOneChq;
   // Cheques Issued lists ONLY heads for which a cheque/challan is actually drawn — the contractor's
   // net plus statutory deductions remitted to Govt. Retention & CSC adjustment are withheld (no
   // cheque), so they are excluded here. A TOTAL row shows the full amount paid out by cheque.
   const dedRows=DED_STAT.map(([k,lbl])=>{if(gstOne&&(k==='cgstTds'||k==='sgstTds'))return '';const v=payDedTotal(p,k);return v>0?`<tr><td>${esc(lbl)}</td><td class="num">${fmt(v)}</td><td>${esc((p.dedChq&&p.dedChq[k])||'—')}</td></tr>`:'';}).join('')+(gstOne?(function(){const v=payDedTotal(p,'cgstTds')+payDedTotal(p,'sgstTds');return v>0?`<tr><td>CGST + SGST TDS</td><td class="num">${fmt(v)}</td><td>${esc((p.dedChq&&p.dedChq.cgstTds)||'—')}</td></tr>`:'';})():'');
-  const chqTotal=payNet(p)+DED_STAT.reduce((a,[k])=>a+payDedTotal(p,k),0);
+  const lineRecovRows=(p.lines||[]).filter(l=>n(l.recov)>0).map(l=>{const b=S.bills.find(z=>z.id===l.billId)||{};return `<tr><td>Recovery — ${l.billId?esc(b.billNo||'?'):'Advance'}${l.recovP?': '+esc(l.recovP):''}</td><td class="num">${fmt(l.recov)}</td><td>${esc(l.recovChq||'—')}</td></tr>`;}).join('');
+  const recovRows=(p.recov||[]).filter(r=>n(r.amt)>0).map(r=>`<tr><td>Recovery — ${esc(r.label||'unspecified reason')}</td><td class="num">${fmt(r.amt)}</td><td>${esc(r.chq||'—')}</td></tr>`).join('')+lineRecovRows;
+  const chqTotal=payNet(p)+DED_STAT.reduce((a,[k])=>a+payDedTotal(p,k),0)+payRecov(p)+payLineRecov(p);
   const chqTotRow=`<tr class="tot-pay"><td><b>TOTAL CHEQUES ISSUED</b></td><td class="num"><b>${fmt(chqTotal)}</b></td><td></td></tr>`;
   const taxb=rel?'':(function(){var tc=payTaxCompHtml(p);return tc?'<b class="mini">TAXABLE VALUE OF BILL PASSED <span style="font-weight:400">(Gross = Taxable + GST + Cess; statutory TDS is computed on Taxable value)</span></b><div class="tbl-wrap">'+tc+'</div>':'';})();
   const chqTitle=rel?'CHEQUE(S) ISSUED — for this payment (covers the bill(s) / SPS / mob. advance listed above)':'CHEQUES / CHALLANS ISSUED';
   const chqCol=rel?'Cheque No.':'Cheque / Challan No.';
-  const challan=`<b class="mini">${chqTitle}</b><table style="width:auto;min-width:300px;max-width:520px"><tr><th style="text-align:left">Paid to</th><th class="num" style="white-space:nowrap">Amount</th><th style="white-space:nowrap">${chqCol}</th></tr><tr><td><b>Contractor (net)</b></td><td class="num" style="white-space:nowrap"><b>${fmt(payNet(p))}</b></td><td style="white-space:nowrap"><b>${esc(p.chqNo||'—')}</b></td></tr>${dedRows}${chqTotRow}</table>`;
+  const challan=`<b class="mini">${chqTitle}</b><table style="width:auto;min-width:300px;max-width:520px"><tr><th style="text-align:left">Paid to</th><th class="num" style="white-space:nowrap">Amount</th><th style="white-space:nowrap">${chqCol}</th></tr><tr><td><b>Contractor (net)</b></td><td class="num" style="white-space:nowrap"><b>${fmt(payNet(p))}</b></td><td style="white-space:nowrap"><b>${esc(p.chqNo||'—')}</b></td></tr>${dedRows}${recovRows}${chqTotRow}</table>`;
   return `<div class="tbl-wrap"><table><tr><th>SPS / Bill</th><th>Serial</th><th class="num">Bill Passed</th><th class="num">Retention</th><th class="num">Adj. by CSC</th><th class="num">Effective Exp.</th>${DED_STAT.map(([k,l])=>`<th class="num">${esc(l)}</th>`).join('')}<th class="num">Adv. Rec.</th><th class="num">Net</th></tr>${lines||`<tr><td colspan="${8+DED_STAT.length}" class="mini">no lines</td></tr>`}${lines?totRow:''}</table></div>
     ${taxb}
     ${challan}
-    ${n(p.advRec)>0?`<div class="mini" style="color:#991b1b">Less: Mobilisation advance recovered in this payment: ${fmt(p.advRec)}</div>`:''}`;
+    ${n(p.advRec)>0?`<div class="mini" style="color:#991b1b">Less: Mobilisation advance recovered in this payment: ${fmt(p.advRec)}</div>`:''}
+    ${(p.lines||[]).filter(l=>n(l.advRec)>0).length?`<div class="mini" style="color:#991b1b">Less: Advance/Other recovery (reduces effective expenditure) — ${(p.lines||[]).filter(l=>n(l.advRec)>0).map(l=>{const b=S.bills.find(z=>z.id===l.billId)||{};return (l.billId?esc(b.billNo||'?'):'Advance')+': '+fmt(l.advRec)+(l.advRecP?' — '+esc(l.advRecP):'');}).join(' · ')}</div>`:''}
+    ${(p.lines||[]).filter(l=>n(l.recov)>0).length?`<div class="mini" style="color:#991b1b">Less: Recoveries (from net cheque) — ${(p.lines||[]).filter(l=>n(l.recov)>0).map(l=>{const b=S.bills.find(z=>z.id===l.billId)||{};return (l.billId?esc(b.billNo||'?'):'Advance')+': '+fmt(l.recov)+(l.recovP?' — '+esc(l.recovP):'');}).join(' · ')}</div>`:''}
+    ${(p.recov||[]).filter(r=>n(r.amt)>0).length?`<div class="mini" style="color:#991b1b">Less: Other recoveries — ${(p.recov||[]).filter(r=>n(r.amt)>0).map(r=>esc(r.label||'unspecified')+': '+fmt(r.amt)+(r.chq?' (Chq '+esc(r.chq)+')':'')).join(' · ')}</div>`:''}`;
 }
 function releaseShareInline(r){var sh=(r.shares||[]).filter(function(x){return x&&x.name;});if(!sh.length)return '';return sh.map(function(s){return esc(s.name)+' '+fmt(s.amt);}).join(' · ');}
 let RSX=new Set();function togRS(id){RSX.has(id)?RSX.delete(id):RSX.add(id);render();}
@@ -4799,9 +4832,11 @@ function xpCopyHTML(html){try{var tmp=document.createElement('div');tmp.innerHTM
 function payHeadHTML(p){const s=S.schemes.find(x=>x.id===p.schemeId)||{contracts:[]};const c=(s.contracts||[]).find(x=>x.id===p.contractId)||{};const r=S.releases.find(z=>z.id===p.releaseId);return `<table><tr><td><b>Scheme:</b> ${esc(s.name||'—')}</td><td><b>Voucher:</b> ${esc(p.vno||'—')} · <b>Date:</b> ${dfmt(p.date)}</td></tr><tr><td><b>Contractor:</b> ${esc(c.contractor||'—')} (${esc(c.no||'—')})</td><td><b>Source / Share:</b> ${esc(paySource2(p)||p.source||'—')} · ${esc(payShareName(p)||p.share||'—')}</td></tr><tr><td><b>Against Release:</b> ${r?(r.note?esc(r.note)+' · ':'')+dfmt(r.date)+' · '+esc(r.source):'—'}</td><td><b>Paid from:</b> ${esc(bankName(p.bankId)||'—')}</td></tr></table>`;}
 function payCsvRows(p){const s=S.schemes.find(x=>x.id===p.schemeId)||{contracts:[]};const c=(s.contracts||[]).find(x=>x.id===p.contractId)||{};const rows=[['PAYMENT VOUCHER',p.vno||''],['Scheme',s.name||''],['Date',dfmt(p.date)],['Contractor',(c.contractor||'')+' ('+(c.no||'')+')'],['Source',paySource2(p)||p.source||''],['Share',payShareName(p)||p.share||''],['Contractor Cheque',p.chqNo||''],[]];
   rows.push(['SPS/Bill','Serial','Paid'].concat(DEDS.map(d=>d[1].split(' (')[0])).concat(['Net']));
-  (p.lines||[]).forEach(l=>{const b=S.bills.find(z=>z.id===l.billId)||{};rows.push([l.billId?(b.billNo||'?'):'Mob./Other Advance',l.serial||p.serial||'',n(l.amt)].concat(DEDS.map(([k])=>n(l.deds&&l.deds[k]))).concat([n(l.amt)-payLineDeds(l)]));});
+  (p.lines||[]).forEach(l=>{const b=S.bills.find(z=>z.id===l.billId)||{};rows.push([l.billId?(b.billNo||'?'):'Mob./Other Advance',l.serial||p.serial||'',n(l.amt)].concat(DEDS.map(([k])=>n(l.deds&&l.deds[k]))).concat([payLineNet(l)]));});
   rows.push(['TOTAL','',payGross(p)].concat(DEDS.map(([k])=>payDedTotal(p,k))).concat([payNet(p)]));
   rows.push([]);rows.push(['Deduction Cheque / Challan Nos:']);DEDS.forEach(([k,l])=>{const v=payDedTotal(p,k);if(v>0)rows.push([l.split(' (')[0],(p.dedChq&&p.dedChq[k])||'',v]);});
+  if(n(p.advRec)>0){rows.push([]);rows.push(['Advance recovered',,n(p.advRec)]);}
+  const _rc=(p.recov||[]).filter(r=>n(r.amt)>0);if(_rc.length){rows.push([]);rows.push(['Other Recoveries — reason, cheque, amount:']);_rc.forEach(r=>rows.push([r.label||'unspecified reason',r.chq||'',n(r.amt)]));}
   return rows;}
 function exportPayment(pid,mode){
   const p=S.payments.find(x=>x.id===pid);if(!p)return;
@@ -4857,7 +4892,7 @@ function releaseCsvRows(r){const rows=[['FUND RELEASE — SPENDING STATEMENT'],[
   releaseConSummary(r).forEach(x=>rows.push([x.con.no||'',x.con.contractor||'',x.gross,x.net,x.eff,x.nL]));rows.push([]);
   rows.push(['Pay Date','Voucher','Contract','Contractor','SPS/Bill','Serial','Paid'].concat(DEDS.map(d=>d[1].split(' (')[0])).concat(['Net','Contractor Chq']));
   const pays=S.payments.filter(p=>!p.draft&&p.releaseId===r.id).sort(relPaySort);let tot=0;
-  pays.forEach(p=>{const c=conById(p.contractId)||{};(p.lines||[]).forEach(l=>{const b=S.bills.find(z=>z.id===l.billId)||{};rows.push([dfmt(p.date),p.vno||'',c.no||'',c.contractor||'',l.billId?(b.billNo||'?'):'Mob./Other Advance',l.serial||p.serial||'',n(l.amt)].concat(DEDS.map(([k])=>n(l.deds&&l.deds[k]))).concat([n(l.amt)-payLineDeds(l),p.chqNo||'']));});tot+=payEff(p);});
+  pays.forEach(p=>{const c=conById(p.contractId)||{};(p.lines||[]).forEach(l=>{const b=S.bills.find(z=>z.id===l.billId)||{};rows.push([dfmt(p.date),p.vno||'',c.no||'',c.contractor||'',l.billId?(b.billNo||'?'):'Mob./Other Advance',l.serial||p.serial||'',n(l.amt)].concat(DEDS.map(([k])=>n(l.deds&&l.deds[k]))).concat([payLineNet(l),p.chqNo||'']));});tot+=payEff(p);});
   rows.push([]);rows.push(['Total Effective Spent from this release',tot],['Unspent',n(r.amount)-tot]);
   return rows;}
 function exportRelease(rid,mode){
@@ -5413,7 +5448,7 @@ function pgMOP(){
     const hay=((b.billNo||'')+' '+(l.serial||p.serial||'')+' '+(p.vno||'')+' installment '+billPayNo(p,l.billId)+' inst-'+billPayNo(p,l.billId)+' '+(l.billId?'':'mobilisation advance')).toLowerCase();
     return hay.indexOf(q)>=0;});
   const rows=fUnits.map(u=>{const p=u.p,l=u.l,b=l.billId?(S.bills.find(z=>z.id===l.billId)||{}):{};const isAdv=!l.billId;
-    const gross=n(l.amt),ded=payLineDeds(l)+(payGross(p)>0?n(p.advRec)*(gross/payGross(p)):0),net=gross-ded;
+    const gross=n(l.amt),ded=payLineDeds(l)+n(l.advRec)+n(l.recov)+(payGross(p)>0?n(p.advRec)*(gross/payGross(p)):0),net=gross-ded;
     return `<tr><td>${dfmt(p.date)}<div class="mini">${esc(p.vno||'')}</div></td><td>${isAdv?'—':'<b>'+esc(b.billNo||'?')+'</b>'}</td><td>${isAdv?'<span class="tag o">Mob./Other Adv.</span>'+((l.serial||p.serial)?' <span class="mini">'+esc(l.serial||p.serial)+'</span>':''):'—'}</td><td class="num"><b>${pmtVno(p)}</b></td><td class="num">${fmt(gross)}</td><td class="num">${fmt(ded)}</td><td class="num"><b>${fmt(net)}</b></td><td>${esc(p.chqNo||'—')}</td><td style="white-space:nowrap"><button class="btn2 btn-sm" onclick="mopView('${p.id}',${u.li})" title="View this MOP on screen">👁 View</button> <button class="btn2 btn-sm" onclick="mopBreakupView('${p.id}',${u.li})" title="Previous / This Bill / Cumulative statement (information only)">📊</button> <button class="btn2 btn-sm" onclick="mopPrint('${p.id}',${u.li})" title="Print / save as PDF this MOP">📄</button> <button class="btn2 btn-sm" onclick="mopPNG('${p.id}',${u.li})" title="Save this MOP as PNG">🖼</button></td></tr>`;}).join('');
   return `<div class="card"><h3>👷 ${esc(g.con.contractor||'—')} <span class="mini">— ${esc(g.con.no||'')}${g.con.pkg?' ('+esc(g.con.pkg)+')':''}</span><span style="float:right"><button class="btn2 btn-sm" onclick="mopPrintContract('${g.cid}')">🖨 Print ALL MOPs (this contract)</button></span></h3>
     <div class="tbl-wrap"><table><tr><th>Date</th><th>Bill / SPS No.</th><th>Mob. Advance</th><th class="num">Payment No.<div class="mini" style="font-weight:400">(date-wise)</div></th><th class="num">Bill Passed</th><th class="num">Deductions</th><th class="num">Net by Cheque</th><th>Cheque</th><th>MOP</th></tr>${rows||'<tr><td colspan="9" class="empty">No MOPs match the filter</td></tr>'}</table></div></div>`;}).join('');
@@ -5447,7 +5482,7 @@ function pgPayments(){
       const _pp=`<button class="${p.draft?'btn-resume':'btn-pause'}" onclick="${multi?`pausePays('${ids}',${p.draft?0:1})`:`togglePause('pay','${p.id}')`}" title="${p.draft?'Resume payment':'Pause payment — exclude from ledgers'}">${p.draft?'▶':'⏸'}</button>`;
       const gstOne=ps.some(q=>q.gstOneChq);
       const dedRows=DEDS.map(([k,lbl])=>{if(gstOne&&(k==='cgstTds'||k==='sgstTds'))return '';const v=dedTot(k);return v>0?`<tr><td>${lbl}</td><td class="num">${fmt(v)}</td><td>${esc(dedChqOf(k))}</td><td>${dfmt(p.date)}</td></tr>`:'';}).join('')+(gstOne?(function(){const v=dedTot('cgstTds')+dedTot('sgstTds');return v>0?`<tr><td>CGST + SGST TDS</td><td class="num">${fmt(v)}</td><td>${esc(dedChqOf('cgstTds'))}</td><td>${dfmt(p.date)}</td></tr>`:'';})():'');
-      const perBill=allLines.map(o=>{const l=o.l,q=o.q;const b=S.bills.find(x=>x.id===l.billId)||{};return `<tr><td>${l.billId?esc(b.billNo||'?')+' <span class="mini">('+dfmt(b.date)+')</span>':'<b>Mob./Other Advance</b>'}</td><td>${esc(l.serial||q.serial||'—')}</td><td class="num">${fmt(l.amt)}</td>${DEDS.map(([k])=>`<td class="num">${fmt(l.deds&&l.deds[k])}</td>`).join('')}<td class="num"><b>${fmt(n(l.amt)-payLineDeds(l))}</b></td></tr>`;}).join('');
+      const perBill=allLines.map(o=>{const l=o.l,q=o.q;const b=S.bills.find(x=>x.id===l.billId)||{};return `<tr><td>${l.billId?esc(b.billNo||'?')+' <span class="mini">('+dfmt(b.date)+')</span>':'<b>Mob./Other Advance</b>'}</td><td>${esc(l.serial||q.serial||'—')}</td><td class="num">${fmt(l.amt)}</td>${DEDS.map(([k])=>`<td class="num">${fmt(l.deds&&l.deds[k])}</td>`).join('')}<td class="num"><b>${fmt(payLineNet(l))}</b></td></tr>`;}).join('');
       const spsCov=ps.map(q=>q.kind==='adv'?'<span class="tag o">Mob./Other Advance</span>':(q.lines||[]).map(l=>{if(!l.billId)return `<span class="tag o">Mob./Other Adv${l.serial?' · '+esc(l.serial):''}: ${fmt(l.amt)}</span>`;const b=S.bills.find(x=>x.id===l.billId)||{};return `<span class="tag b">${esc(b.billNo||'?')}${(l.serial||q.serial)?' · '+esc(l.serial||q.serial):''}: ${fmt(l.amt)}</span>`;}).join(' ')).join(' ');
       return `<tr${p.draft?' class="paused"':''}><td>${dfmt(p.date)}${p.draft?'<span class="pausebadge">⏸ PAUSED</span>':''}${p.vno?'<div class="mini">'+esc(p.vno)+(multi?' +'+(ps.length-1)+' more':'')+'</div>':''}</td><td>${esc(schemeName(p.schemeId))}</td>
       <td>${c?esc(c.no)+(c.pkg?' <span class="mini">('+esc(c.pkg)+')</span>':'')+'<div class="mini">'+esc(c.contractor)+'</div>':'—'}</td>
@@ -5554,7 +5589,7 @@ function pgPayments(){
       <div><label>Against Release</label><select id="py_rel"></select></div>
       <div><label>Paid From Project A/c * <a style="cursor:pointer;color:var(--acc)" onclick="quickAddBank('py_bank')">+ new</a></label><select id="py_bank">${projBankOpts('')}</select></div>
       <div><label>Cheque No. — Paid to Contractor</label><input id="py_chq" placeholder="cheque / NEFT ref"><div class="mini" id="py_chq_amt" style="color:var(--ok);font-weight:700"></div></div>
-      <div><label>Less: Advance Recovery (₹)</label><input type="number" step="0.01" id="py_advrec" oninput="pyCalc()" placeholder="mob. adv recovered"></div>
+      <div><label>Less: Advance Recovery (₹) <span class="mini" style="font-weight:400">— reduces effective expenditure / net liability of this bill</span></label><input type="number" step="0.01" id="py_advrec" oninput="pyCalc()" placeholder="mob. adv recovered"></div>
       <div class="wide"><label>Note / Voucher No.</label><input id="py_note"></div>
       <div class="wide"><label>⚑ Flag adjustment pending for NEXT payment <span class="mini" style="font-weight:400">— if you forgot or mis-deducted something here, note it; you'll be reminded on this contractor's next payment</span></label><input id="py_pendadj" placeholder="e.g. recover retention short-deducted this time"></div>
       <div><label>Pending adjustment amount (₹, optional)</label><input type="number" step="0.01" id="py_pendadjamt" placeholder="0.00"></div>
@@ -5565,6 +5600,11 @@ function pgPayments(){
       ${DEDS.filter(([k])=>k!=='ret'&&k!=='oth').map(([k,l])=>`<div id="py_dchqwrap_${k}" style="flex:1 1 0;min-width:150px"><label>${l} — Chq No.</label><input id="py_dchq_${k}" style="width:100%"><div class="mini" id="py_dchq_amt_${k}" style="color:var(--mut);font-weight:600"></div></div>`).join('')}
       <div id="py_dchqwrap_gst" style="display:none;flex:1 1 0;min-width:150px"><label>CGST + SGST TDS — Chq No.</label><input id="py_dchq_gst" style="width:100%"><div class="mini" id="py_dchq_amt_gst" style="color:var(--mut);font-weight:600"></div></div>
     </div>
+    ${(ED.pay&&((S.payments.find(p=>p.id===ED.pay)||{}).recov||[]).some(r=>n(r.amt)>0))?`<div style="margin-top:12px;border-top:1px dashed var(--bd);padding-top:8px">
+      <b style="font-size:12.5px">Other Recoveries / Adjustments <span class="mini" style="font-weight:600">— legacy recoveries on this payment. For new recoveries use the per-bill <b>Recoveries</b> column above (amount, purpose &amp; cheque no. together).</span></b>
+      <div id="py_recov_rows" style="margin-top:8px"></div>
+      <button type="button" class="btn2 btn-sm" onclick="pyAddRecovRow()">➕ Add recovery</button>
+    </div>`:''}
     <div id="py_dev"></div>
     <div class="stick-act">
       <div id="py_tot" style="margin-right:auto;font-weight:700"></div>
@@ -5647,19 +5687,20 @@ function pgPayments(){
           <td class="num"><b style="color:${shortfall>0.005?'#dc2626':'#16a34a'}">${cleared?fmt(shortfall):'—'}</b></td>
           <td class="num">${(p.kind||'sps')!=='adv'?fmt(billPassed):'—'}</td>
           <td class="num"><b>${fmt(g)}</b></td>
-          ${DEDS.map(([k])=>`<td class="num">${fmt(payDedTotal(p,k))}</td>`).join('')}
+          <td class="num">${fmt(payDedTotal(p,'ret'))}</td><td class="num">${fmt(payDedTotal(p,'oth'))}</td>
+          <td class="num"><b>${fmt(eff)}</b></td>
+          ${DED_STAT.map(([k])=>`<td class="num">${fmt(payDedTotal(p,k))}</td>`).join('')}
           <td class="num">${fmt(payAllDeds(p))}</td>
           <td class="num">${adv?fmt(adv):''}</td>
           <td class="num"><b>${fmt(net)}</b><div class="mini">Chq: ${esc(p.chqNo||'—')}</div></td>
-          <td class="num"><b>${fmt(eff)}</b></td>
           <td>${esc(paySource2(p)||p.source||'—')}</td>
           <td>${esc(payShareName(p)||p.share||'—')}</td>
           <td style="white-space:nowrap"><button class="${p.draft?'btn-resume':'btn-pause'} btn-sm" onclick="event.stopPropagation();togglePause('pay','${p.id}')" title="${p.draft?'Resume — include this payment in ledgers &amp; totals again':'Pause — exclude this payment from ledgers, balances &amp; totals (not deleted)'}">${p.draft?'▶':'⏸'}</button> <button class="btn2 btn-sm" onclick="event.stopPropagation();exportPayment('${p.id}','pdf')" title="Save this payment (with details) as PDF">📄</button> <button class="btn2 btn-sm" onclick="event.stopPropagation();exportPayment('${p.id}','png')" title="Save as PNG image">🖼</button> <button class="btn2 btn-sm" onclick="event.stopPropagation();exportPayment('${p.id}','csv')" title="Download as CSV (Excel)">⬇</button> <button class="btn2 btn-sm" onclick="event.stopPropagation();exportPayment('${p.id}','copy')" title="Copy — paste into Word / Excel / email">📋</button> <button class="btn2 btn-sm" onclick="event.stopPropagation();exportPayment('${p.id}','report')" title="Add to combined report">➕</button></td></tr>`;
         let subs='';
         if(open){
-          lines.forEach(l=>{const b=S.bills.find(z=>z.id===l.billId)||{};const lineNet=n(l.amt)-payLineDeds(l);
-            subs+=`<tr style="background:#f8fafc"><td></td><td></td><td><span style="padding-left:20px">${l.billId?esc(b.billNo||'?'):'<b>Mob./Other Advance</b>'}${l.serial?' <span class="mini">'+esc(l.serial)+'</span>':''}</span>${l.billId?`<div class="mini" style="padding-left:20px;color:#475569">Amount ${fmt(billGross(b))} · Cleared ${fmt(billNetLiab(b)+billWhRel(b))} · Passed ${fmt(billPaid(b))} · Bal ${fmt(billPayable(b))}</div>`:''}</td><td></td><td></td><td class="num">${l.billId?fmt(l.amt):'—'}</td><td class="num">${fmt(l.amt)}</td>${DEDS.map(([k])=>`<td class="num">${fmt(l.deds&&l.deds[k])}</td>`).join('')}<td class="num">${fmt(payLineDeds(l))}</td><td></td><td class="num">${fmt(lineNet)}</td><td></td><td></td><td></td><td></td></tr>`;});
-          subs+=`<tr style="background:#eef4fb"><td></td><td></td><td><span class="mini" style="padding-left:20px">Cheque / Challan No. →</span></td><td></td><td></td><td></td><td></td>${DEDS.map(([k])=>`<td class="num" style="font-size:11px">${esc((p.dedChq&&p.dedChq[k])||'—')}</td>`).join('')}<td></td><td></td><td class="num" style="font-size:11px">${esc(p.chqNo||'—')}</td><td></td><td></td><td></td><td></td></tr>`;
+          lines.forEach(l=>{const b=S.bills.find(z=>z.id===l.billId)||{};const lineNet=payLineNet(l);
+            subs+=`<tr style="background:#f8fafc"><td></td><td></td><td><span style="padding-left:20px">${l.billId?esc(b.billNo||'?'):'<b>Mob./Other Advance</b>'}${l.serial?' <span class="mini">'+esc(l.serial)+'</span>':''}</span>${l.billId?`<div class="mini" style="padding-left:20px;color:#475569">Amount ${fmt(billGross(b))} · Cleared ${fmt(billNetLiab(b)+billWhRel(b))} · Passed ${fmt(billPaid(b))} · Bal ${fmt(billPayable(b))}</div>`:''}</td><td></td><td></td><td class="num">${l.billId?fmt(l.amt):'—'}</td><td class="num">${fmt(l.amt)}</td><td class="num">${fmt(l.deds&&l.deds.ret)}</td><td class="num">${fmt(l.deds&&l.deds.oth)}</td><td class="num"><b>${fmt(n(l.amt)-n(l.deds&&l.deds.ret)-n(l.deds&&l.deds.oth))}</b></td>${DED_STAT.map(([k])=>`<td class="num">${fmt(l.deds&&l.deds[k])}</td>`).join('')}<td class="num">${fmt(payLineDeds(l))}</td><td></td><td class="num">${fmt(lineNet)}</td><td></td><td></td><td></td></tr>`;});
+          subs+=`<tr style="background:#eef4fb"><td></td><td></td><td><span class="mini" style="padding-left:20px">Cheque / Challan No. →</span></td><td></td><td></td><td></td><td></td><td class="num" style="font-size:11px">${esc((p.dedChq&&p.dedChq.ret)||'—')}</td><td class="num" style="font-size:11px">${esc((p.dedChq&&p.dedChq.oth)||'—')}</td><td></td>${DED_STAT.map(([k])=>`<td class="num" style="font-size:11px">${esc((p.dedChq&&p.dedChq[k])||'—')}</td>`).join('')}<td></td><td></td><td class="num" style="font-size:11px">${esc(p.chqNo||'—')}</td><td></td><td></td><td></td></tr>`;
         }
         rowsList.push(main+subs);
       } else {
@@ -5680,11 +5721,12 @@ function pgPayments(){
             <td class="num"><b style="color:${shortfall>0.005?'#dc2626':'#16a34a'}">${cleared?fmt(shortfall):'—'}</b></td>
             <td class="num">${l.billId?fmt(lineGross):'—'}</td>
             <td class="num"><b>${fmt(lineGross)}</b></td>
-            ${DEDS.map(([k])=>`<td class="num">${fmt((l.deds&&l.deds[k])||0)}</td>`).join('')}
+            <td class="num">${fmt((l.deds&&l.deds.ret)||0)}</td><td class="num">${fmt((l.deds&&l.deds.oth)||0)}</td>
+            <td class="num"><b>${fmt(lineEff)}</b></td>
+            ${DED_STAT.map(([k])=>`<td class="num">${fmt((l.deds&&l.deds[k])||0)}</td>`).join('')}
             <td class="num">${fmt(lineDeds)}</td>
             <td class="num">${(idx===0&&p.advRec)?fmt(p.advRec):''}</td>
             <td class="num"><b>${fmt(lineNet)}</b><div class="mini">Chq: ${esc(p.chqNo||'—')}</div></td>
-            <td class="num"><b>${fmt(lineEff)}</b></td>
             <td>${esc(paySource2(p)||p.source||'—')}</td>
             <td>${esc(payShareName(p)||p.share||'—')}</td>
             <td style="white-space:nowrap">
@@ -5704,9 +5746,9 @@ function pgPayments(){
     const dedGrand=Object.keys(DT).reduce((a,k)=>a+DT[k],0);
     return `<div class="card" style="margin-bottom:16px"><h3>💳 Payment Details</h3>
       <div class="tbl-wrap"><table>
-      <tr><th>Date</th><th>Contract</th><th>SPS / Bill</th><th class="num">Cleared for Payment</th><th class="num">WH (Shortage of Fund)</th><th class="num">Bill Passed</th><th class="num">Gross (Bill + Adv.)</th>${DEDS.map(([k,l])=>`<th class="num">${esc(l)}</th>`).join('')}<th class="num">Total Ded.</th><th class="num">Adv. Rec.</th><th class="num">Net Paid</th><th class="num">Effective</th><th>Source</th><th>Share</th><th>Export</th></tr>
+      <tr><th>Date</th><th>Contract</th><th>SPS / Bill</th><th class="num">Cleared for Payment</th><th class="num">WH (Shortage of Fund)</th><th class="num">Bill Passed</th><th class="num">Gross (Bill + Adv.)</th><th class="num">${esc(DEDS[0][1])}</th><th class="num">${esc(DEDS[1][1])}</th><th class="num">Effective</th>${DED_STAT.map(([k,l])=>`<th class="num">${esc(l)}</th>`).join('')}<th class="num">Total Ded.</th><th class="num">Adv. Rec.</th><th class="num">Net Paid</th><th>Source</th><th>Share</th><th>Export</th></tr>
       ${rows||'<tr><td colspan="21" class="empty">No payments in this selection</td></tr>'}
-      ${ps.length?`<tr class="tot-pay"><td colspan="3"><b>TOTAL</b></td><td class="num"><b>${fmt(T.cl)}</b></td><td class="num"><b>${fmt(T.sh)}</b></td><td class="num"><b>${fmt(T.bp)}</b></td><td class="num"><b>${fmt(T.g)}</b></td>${DEDS.map(([k])=>`<td class="num">${fmt(DT[k])}</td>`).join('')}<td class="num"><b>${fmt(dedGrand)}</b></td><td class="num">${fmt(T.adv)}</td><td class="num"><b>${fmt(T.net)}</b></td><td class="num"><b>${fmt(T.eff)}</b></td><td colspan="3"></td></tr>`:''}
+      ${ps.length?`<tr class="tot-pay"><td colspan="3"><b>TOTAL</b></td><td class="num"><b>${fmt(T.cl)}</b></td><td class="num"><b>${fmt(T.sh)}</b></td><td class="num"><b>${fmt(T.bp)}</b></td><td class="num"><b>${fmt(T.g)}</b></td><td class="num">${fmt(DT['ret'])}</td><td class="num">${fmt(DT['oth'])}</td><td class="num"><b>${fmt(T.eff)}</b></td>${DED_STAT.map(([k])=>`<td class="num">${fmt(DT[k])}</td>`).join('')}<td class="num"><b>${fmt(dedGrand)}</b></td><td class="num">${fmt(T.adv)}</td><td class="num"><b>${fmt(T.net)}</b></td><td colspan="3"></td></tr>`:''}
       </table></div></div>`;
   })();
   const summaryEtc=`<div class="card" style="margin-bottom:16px">
@@ -5764,6 +5806,11 @@ function after_payments(){
         const a=document.getElementById('pa_'+id);if(a)a.value=l.amt;
         const se=document.getElementById('ps_'+id);if(se)se.value=l.serial||'';
         DEDS.forEach(([k])=>{const e=document.getElementById('pd_'+k+'_'+id);if(e&&l.deds&&l.deds[k])e.value=l.deds[k];});
+        const av=document.getElementById('par_'+id);if(av&&l.advRec)av.value=l.advRec;
+        const avp=document.getElementById('parp_'+id);if(avp&&l.advRecP)avp.value=l.advRecP;
+        const rv=document.getElementById('prc_'+id);if(rv&&l.recov)rv.value=l.recov;
+        const rvp=document.getElementById('prcp_'+id);if(rvp&&l.recovP)rvp.value=l.recovP;
+        const rvc=document.getElementById('prcc_'+id);if(rvc&&l.recovChq)rvc.value=l.recovChq;
       });
       document.getElementById('py_advrec').value=p.advRec||'';
     }
@@ -5776,6 +5823,7 @@ function after_payments(){
     document.getElementById('py_bank').innerHTML=projBankOpts(p.bankId||'');
     document.getElementById('py_chq').value=p.chqNo||'';
     DEDS.forEach(([k])=>{const e=document.getElementById('py_dchq_'+k);if(e)e.value=(p.dedChq&&p.dedChq[k])||'';});
+    {const rb=document.getElementById('py_recov_rows');if(rb){rb.innerHTML='';(p.recov||[]).forEach(r=>pyAddRecovRow(r.label,r.amt,r.chq));}}
     {const cgc=(p.dedChq&&p.dedChq.cgstTds)||'',sgc=(p.dedChq&&p.dedChq.sgstTds)||'';const one=!!p.gstOneChq||(!!cgc&&cgc===sgc);const cb=document.getElementById('py_gstone');if(cb)cb.checked=one;const ge=document.getElementById('py_dchq_gst');if(ge&&one)ge.value=cgc;togGstChq();}
     document.getElementById('py_note').value=p.note||'';
     {const pa=document.getElementById('py_pendadj');if(pa)pa.value=p.pendAdj||'';const pam=document.getElementById('py_pendadjamt');if(pam)pam.value=p.pendAdjAmt||'';}
@@ -5814,7 +5862,7 @@ function pyBills(){
   if(!bills.length){box.innerHTML='<div class="empty">No outstanding SPS/bills match the current filter'+(allCount?' (of '+allCount+' outstanding — '+'<a style="cursor:pointer;color:var(--acc)" onclick="pofClear()">clear filter</a>)':' for this contract 🎉')+'</div>';pyCalc();return;}
   PYB=bills.map(b=>b.id);PYB.push('ADV');
   box.innerHTML=`<div class="tbl-wrap"><table class="paytbl">
-    <tr><th>SPS/Bill</th><th style="min-width:95px">Serial/Name</th><th class="num">Net Payable</th><th class="num" style="min-width:120px">Withheld – Fund Shortage</th><th class="num" style="min-width:110px">Bill Passed Now</th><th class="num" style="min-width:90px">Retention</th><th class="num" style="min-width:105px">Adjustment by CSC</th><th class="num" style="min-width:120px">Effective Expenditure</th><th class="num" style="min-width:85px">IT TDS</th><th class="num" style="min-width:85px">CGST TDS</th><th class="num" style="min-width:85px">SGST TDS</th><th class="num" style="min-width:85px">IGST TDS</th><th class="num" style="min-width:85px">Labour Cess</th><th class="num">Net This Bill</th></tr>
+    <tr><th>SPS/Bill</th><th style="min-width:95px">Serial/Name</th><th class="num">Net Payable</th><th class="num" style="min-width:120px">Withheld – Fund Shortage</th><th class="num" style="min-width:110px">Bill Passed Now</th><th class="num" style="min-width:130px">Advance/Other Recovery</th><th class="num" style="min-width:90px">Retention</th><th class="num" style="min-width:105px">Adjustment by CSC</th><th class="num" style="min-width:120px">Effective Expenditure</th><th class="num" style="min-width:85px">IT TDS</th><th class="num" style="min-width:85px">CGST TDS</th><th class="num" style="min-width:85px">SGST TDS</th><th class="num" style="min-width:85px">IGST TDS</th><th class="num" style="min-width:85px">Labour Cess</th><th class="num" style="min-width:130px">Recoveries</th><th class="num">Net This Bill</th></tr>
     ${bills.map(b=>{
       const wrs=S.whRel.filter(w=>w.billId===b.id);
       const wp=wrs.filter(w=>(w.tax||'pending')==='pending').reduce((a,w)=>a+n(w.amount),0);
@@ -5826,11 +5874,13 @@ function pyBills(){
       <td class="num" id="wsf_${b.id}">—</td>
       <td><input type="number" step="0.01" id="pa_${b.id}" oninput="pyCalc()" placeholder="0.00">
         <button class="btn2 btn-sm" style="margin-top:3px" title="Auto taxes: IT 2%, CGST/SGST TDS 1%+1%, Cess 1% of (amount ÷ 1.19)" onclick="pdAuto('${b.id}')">⚡ auto</button></td>
+      <td><input type="number" step="0.01" id="par_${b.id}" oninput="pyCalc()" placeholder="0"><input id="parp_${b.id}" placeholder="purpose" title="What this advance/other recovery is for" style="width:100%;margin-top:3px;font-size:11px"></td>
       <td><input type="number" step="0.01" id="pd_ret_${b.id}" oninput="pyCalc()" placeholder="0"></td><td><input type="number" step="0.01" id="pd_oth_${b.id}" oninput="pyCalc()" placeholder="0"></td><td class="num" id="eff_${b.id}">₹0.00</td><td><input type="number" step="0.01" id="pd_itTds_${b.id}" oninput="pyCalc()" placeholder="0"></td><td><input type="number" step="0.01" id="pd_cgstTds_${b.id}" oninput="pyCalc()" placeholder="0"></td><td><input type="number" step="0.01" id="pd_sgstTds_${b.id}" oninput="pyCalc()" placeholder="0"></td><td><input type="number" step="0.01" id="pd_igstTds_${b.id}" oninput="pyCalc()" placeholder="0"></td><td><input type="number" step="0.01" id="pd_cess_${b.id}" oninput="pyCalc()" placeholder="0"></td>
+      <td><input type="number" step="0.01" id="prc_${b.id}" oninput="pyCalc()" placeholder="0"><input id="prcp_${b.id}" placeholder="purpose" title="What this recovery is for" style="width:100%;margin-top:3px;font-size:11px"><input id="prcc_${b.id}" placeholder="chq/challan no." title="Cheque/challan no. for this recovery" style="width:100%;margin-top:3px;font-size:11px"></td>
       <td class="num" id="pn_${b.id}">₹0.00</td></tr>`;}).join('')}
-    <tr style="background:#fffbeb"><td><b>Mobilisation / Other Advance</b><div class="mini">optional — paid in the same cheque</div>${_cCon?`<div class="mini" style="color:#475569;line-height:1.5">Permissible ${fmt(n(_cCon.mobAdv))} · Paid ${fmt(contractAdv(con).paid)} · <b style="color:${mobOut(_cCon)>0.005?'#b45309':'#16a34a'}">Pending ${fmt(mobOut(_cCon))}</b></div>`:''}</td><td><input id="ps_ADV" placeholder="e.g. Mob-1"></td><td class="num">—</td><td class="num">—</td><td><input type="number" step="0.01" id="pa_ADV" oninput="pyCalc()" placeholder="0.00"></td><td><input type="number" step="0.01" id="pd_ret_ADV" oninput="pyCalc()" placeholder="0"></td><td><input type="number" step="0.01" id="pd_oth_ADV" oninput="pyCalc()" placeholder="0"></td><td class="num" id="eff_ADV">₹0.00</td><td><input type="number" step="0.01" id="pd_itTds_ADV" oninput="pyCalc()" placeholder="0"></td><td><input type="number" step="0.01" id="pd_cgstTds_ADV" oninput="pyCalc()" placeholder="0"></td><td><input type="number" step="0.01" id="pd_sgstTds_ADV" oninput="pyCalc()" placeholder="0"></td><td><input type="number" step="0.01" id="pd_igstTds_ADV" oninput="pyCalc()" placeholder="0"></td><td><input type="number" step="0.01" id="pd_cess_ADV" oninput="pyCalc()" placeholder="0"></td><td class="num" id="pn_ADV">₹0.00</td></tr>
+    <tr style="background:#fffbeb"><td><b>Mobilisation / Other Advance</b><div class="mini">optional — paid in the same cheque</div>${_cCon?`<div class="mini" style="color:#475569;line-height:1.5">Permissible ${fmt(n(_cCon.mobAdv))} · Paid ${fmt(contractAdv(con).paid)} · <b style="color:${mobOut(_cCon)>0.005?'#b45309':'#16a34a'}">Pending ${fmt(mobOut(_cCon))}</b></div>`:''}</td><td><input id="ps_ADV" placeholder="e.g. Mob-1"></td><td class="num">—</td><td class="num">—</td><td><input type="number" step="0.01" id="pa_ADV" oninput="pyCalc()" placeholder="0.00"></td><td><input type="number" step="0.01" id="par_ADV" oninput="pyCalc()" placeholder="0"><input id="parp_ADV" placeholder="purpose" style="width:100%;margin-top:3px;font-size:11px"></td><td><input type="number" step="0.01" id="pd_ret_ADV" oninput="pyCalc()" placeholder="0"></td><td><input type="number" step="0.01" id="pd_oth_ADV" oninput="pyCalc()" placeholder="0"></td><td class="num" id="eff_ADV">₹0.00</td><td><input type="number" step="0.01" id="pd_itTds_ADV" oninput="pyCalc()" placeholder="0"></td><td><input type="number" step="0.01" id="pd_cgstTds_ADV" oninput="pyCalc()" placeholder="0"></td><td><input type="number" step="0.01" id="pd_sgstTds_ADV" oninput="pyCalc()" placeholder="0"></td><td><input type="number" step="0.01" id="pd_igstTds_ADV" oninput="pyCalc()" placeholder="0"></td><td><input type="number" step="0.01" id="pd_cess_ADV" oninput="pyCalc()" placeholder="0"></td><td><input type="number" step="0.01" id="prc_ADV" oninput="pyCalc()" placeholder="0"><input id="prcp_ADV" placeholder="purpose" style="width:100%;margin-top:3px;font-size:11px"><input id="prcc_ADV" placeholder="chq/challan no." style="width:100%;margin-top:3px;font-size:11px"></td><td class="num" id="pn_ADV">₹0.00</td></tr>
     <tr class="tot"><td>TOTAL</td><td></td><td class="num">${fmt(bills.reduce((a,b)=>a+billPayableEx(b,ex),0))}</td><td class="num" id="pt_wsf">—</td>
-      <td class="num" id="pt_amt">₹0.00</td><td class="num" id="pt_ret">₹0.00</td><td class="num" id="pt_oth">₹0.00</td><td class="num" id="pt_eff">₹0.00</td><td class="num" id="pt_itTds">₹0.00</td><td class="num" id="pt_cgstTds">₹0.00</td><td class="num" id="pt_sgstTds">₹0.00</td><td class="num" id="pt_igstTds">₹0.00</td><td class="num" id="pt_cess">₹0.00</td><td class="num" id="pt_net">₹0.00</td></tr>
+      <td class="num" id="pt_amt">₹0.00</td><td class="num" id="pt_par">₹0.00</td><td class="num" id="pt_ret">₹0.00</td><td class="num" id="pt_oth">₹0.00</td><td class="num" id="pt_eff">₹0.00</td><td class="num" id="pt_itTds">₹0.00</td><td class="num" id="pt_cgstTds">₹0.00</td><td class="num" id="pt_sgstTds">₹0.00</td><td class="num" id="pt_igstTds">₹0.00</td><td class="num" id="pt_cess">₹0.00</td><td class="num" id="pt_prc">₹0.00</td><td class="num" id="pt_net">₹0.00</td></tr>
   </table></div><div class="mini" style="margin-top:4px">Showing <b>${bills.length}</b> of ${allCount} outstanding SPS/bill(s)${(POF.q||POF.from||POF.to)?' (filtered — <a style="cursor:pointer;color:var(--acc)" onclick="pofClear()">clear</a>)':''}</div>`;
   pyCalc();pyReminders();
 }
@@ -5911,35 +5961,41 @@ function pyDevCheck(){
   if(!rows.length){el.innerHTML='';return;}
   el.innerHTML='<div class="card" style="background:#fff1f2;border-left:4px solid #dc2626;padding:8px 12px;margin:6px 0"><b class="mini" style="color:#b91c1c">⚠ Statutory deduction deviates from the taxable-value calculation</b><div class="mini" style="color:#64748b;margin:2px 0 4px">Taxable = Gross ÷ 1.19 · IT '+R.it+'% · GST TDS '+R.gstTds+'% · Cess '+R.cess+'% on taxable; Retention '+R.retention+'% on gross.</div>'+rows.map(function(r){return '<div class="mini" style="margin-top:3px"><b>'+esc(r.label)+':</b> '+r.iss.map(function(x){return esc(x);}).join(' · ')+'</div>';}).join('')+'<div class="mini" style="margin-top:4px;color:#64748b">CSC / Other adjustment is discretionary and not flagged. Override if this deviation is intentional.</div></div>';
 }
+function pyReadRecov(){var out=[];document.querySelectorAll('#py_recov_rows .recov-row').forEach(function(row){var re=row.querySelector('.rc-re'),am=row.querySelector('.rc-am'),ch=row.querySelector('.rc-ch');var amt=n(am&&am.value);var label=((re&&re.value)||'').trim();if(amt>0||label)out.push({label:label,amt:amt,chq:((ch&&ch.value)||'').trim()});});return out;}
+function pyRecovTotal(){return pyReadRecov().reduce(function(a,r){return a+n(r.amt);},0);}
 function pyCalc(){
   const adv=val('py_kind')==='adv';
-  let g=0,d=0;
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=fmt(v);};
+  let g=0,d=0,teff=0,tadv=0,trec=0;
   if(adv){
     g=nval('ad_amt');
     DEDS.forEach(([k])=>d+=nval('ad_d_'+k));
   }else{
-    const dt={};DEDS.forEach(([k])=>dt[k]=0);let tw=0,teff=0;
+    const dt={};DEDS.forEach(([k])=>dt[k]=0);let tw=0;
     PYB.forEach(id=>{
       const a=nval('pa_'+id);let bd=0;
       DEDS.forEach(([k])=>{const v=nval('pd_'+k+'_'+id);dt[k]+=v;bd+=v;});
-      g+=a;d+=bd;
-      const el=document.getElementById('pn_'+id);if(el)el.textContent=fmt(a-bd);
-      const eff=a-nval('pd_ret_'+id)-nval('pd_oth_'+id);const ee=document.getElementById('eff_'+id);if(ee)ee.textContent=fmt(eff);teff+=eff;
+      const av=nval('par_'+id),rv=nval('prc_'+id);           // per-line advance/other recovery & recoveries
+      g+=a;d+=bd;tadv+=av;trec+=rv;
+      const el=document.getElementById('pn_'+id);if(el)el.textContent=fmt(a-bd-av-rv);   // Net This Bill
+      const eff=a-av-nval('pd_ret_'+id)-nval('pd_oth_'+id);const ee=document.getElementById('eff_'+id);if(ee)ee.textContent=fmt(eff);teff+=eff;
       if(id!=='ADV'){const b=S.bills.find(x=>x.id===id);if(b){const np=billPayableEx(b,ED.pay||null);const we=document.getElementById('wsf_'+id);if(we)we.textContent=a>0?fmt(np-a):'—';if(a>0)tw+=(np-a);}}
     });
-    const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=fmt(v);};
-    set('pt_amt',g);DEDS.forEach(([k])=>set('pt_'+k,dt[k]));set('pt_net',g-d);set('pt_eff',teff);
+    set('pt_amt',g);set('pt_par',tadv);set('pt_prc',trec);DEDS.forEach(([k])=>set('pt_'+k,dt[k]));set('pt_net',g-d-tadv-trec);
     const wt=document.getElementById('pt_wsf');if(wt)wt.textContent=tw>0?fmt(tw):'—';
   }
   const ar=adv?0:nval('py_advrec');
-  const net=g-d-ar;
+  const rc=adv?0:pyRecovTotal();
+  if(!adv)set('pt_eff',teff-ar);   // effective expenditure / net liability, net of per-line advance/other recovery + payment-level advance recovered
+  const net=g-d-tadv-trec-ar-rc;
   DEDS.forEach(([k])=>{let tot=0;if(adv){tot=nval('ad_d_'+k);}else{PYB.forEach(id=>{tot+=nval('pd_'+k+'_'+id);});}const de=document.getElementById('py_dchq_amt_'+k);if(de)de.textContent=tot>0?('₹ '+fmt(tot).replace('₹','')):'';});
   {const cg=adv?nval('ad_d_cgstTds'):PYB.reduce((a,id)=>a+nval('pd_cgstTds_'+id),0);const sg=adv?nval('ad_d_sgstTds'):PYB.reduce((a,id)=>a+nval('pd_sgstTds_'+id),0);const ge=document.getElementById('py_dchq_amt_gst');if(ge)ge.textContent=(cg+sg)>0?('₹ '+fmt(cg+sg).replace('₹','')):'';}
   const ce=document.getElementById('py_chq_amt');if(ce)ce.textContent=net>0?('➜ Cheque amount: '+fmt(net)):'';
   const t=document.getElementById('py_tot');
-  if(t)t.innerHTML=g>0?`Gross: ${fmt(g)} &nbsp;|&nbsp; Deductions: ${fmt(d)}${ar>0?' &nbsp;|&nbsp; Adv. Recovery: '+fmt(ar):''} &nbsp;|&nbsp; <span style="color:var(--ok)">Cheque to Contractor: ${fmt(net)}</span>`:'';
+  if(t)t.innerHTML=g>0?`Gross: ${fmt(g)} &nbsp;|&nbsp; Deductions: ${fmt(d)}${tadv>0?' &nbsp;|&nbsp; Adv./Other Recovery: '+fmt(tadv):''}${trec>0?' &nbsp;|&nbsp; Recoveries (bill-wise): '+fmt(trec):''}${ar>0?' &nbsp;|&nbsp; Adv. Recovery: '+fmt(ar):''}${rc>0?' &nbsp;|&nbsp; Recoveries: '+fmt(rc):''} &nbsp;|&nbsp; <span style="color:var(--ok)">Cheque to Contractor: ${fmt(net)}</span>`:'';
   try{pyDevCheck();}catch(e){}
 }
+function pyAddRecovRow(re,amt,chq){var box=document.getElementById('py_recov_rows');if(!box)return;var row=document.createElement('div');row.className='recov-row';row.style.cssText='display:flex;gap:8px;align-items:center;margin-bottom:6px;flex-wrap:nowrap';row.innerHTML='<input class="rc-re" placeholder="Reason for recovery (e.g. short-deducted IT TDS, excess paid earlier, GST TDS recovery)" style="flex:2 1 240px;min-width:180px" value="'+esc(re||'')+'"><input type="number" step="0.01" class="rc-am" placeholder="Amount" style="flex:0 0 120px;width:120px" oninput="pyCalc()" value="'+((amt||amt===0)&&n(amt)?n(amt):'')+'"><input class="rc-ch" placeholder="Chq/Challan No." style="flex:0 0 130px;width:130px" value="'+esc(chq||'')+'"><button type="button" class="btn-del btn-sm" title="Remove this recovery" onclick="this.parentNode.remove();pyCalc()">✕</button>';box.appendChild(row);pyCalc();}
 function addPay(){
   const sch=val('py_sch'),con=val('py_con'),d=val('py_date');
   if(!sch||!con)return alert('Select scheme and contract');
@@ -5957,11 +6013,14 @@ function addPay(){
   PYB.forEach(id=>{
     const a=nval('pa_'+id);if(a<=0)return;
     const deds={};let dsum=0;DEDS.forEach(([k])=>{deds[k]=nval('pd_'+k+'_'+id);dsum+=deds[k];});
-    const ln={amt:a,deds:deds,serial:val('ps_'+id)||val('py_serial')};
-    if(id==='ADV'){if(dsum>a+0.005)bad='Deductions exceed the mobilisation/other advance amount';ln.billId='';ln.adv=true;lines.push(ln);return;}
+    const lav=nval('par_'+id),lrc=nval('prc_'+id);
+    const ln={amt:a,deds:deds,serial:val('ps_'+id)||val('py_serial'),advRec:lav,advRecP:val('parp_'+id),recov:lrc,recovP:val('prcp_'+id),recovChq:val('prcc_'+id)};
+    if(lav>0&&!ln.advRecP)bad='Please write the purpose of the Advance/Other Recovery ('+fmt(lav)+').';
+    if(lrc>0&&!ln.recovP)bad='Please write the purpose of the Recovery ('+fmt(lrc)+').';
+    if(id==='ADV'){if(dsum+lav+lrc>a+0.005)bad='Deductions & recoveries exceed the mobilisation/other advance amount';ln.billId='';ln.adv=true;lines.push(ln);return;}
     const b=S.bills.find(x=>x.id===id);
     if(a>billPayableEx(b,ex)+0.005)bad='Pay amount for '+b.billNo+' exceeds its payable balance ('+fmt(billPayableEx(b,ex))+')';
-    if(dsum>a+0.005)bad='Deductions exceed paid amount for '+b.billNo;
+    if(dsum+lav+lrc>a+0.005)bad='Deductions & recoveries exceed paid amount for '+b.billNo;
     ln.billId=id;lines.push(ln);
   });
   if(bad)return alert(bad);
@@ -5979,10 +6038,12 @@ function addPay(){
   const dedChq={};DEDS.forEach(([k])=>dedChq[k]=val('py_dchq_'+k));
   const gstCb=document.getElementById('py_gstone');const gstOne=!!(gstCb&&gstCb.checked);
   if(gstOne){const g=val('py_dchq_gst');dedChq.cgstTds=g;dedChq.sgstTds=g;}
+  const recov=(kind==='adv')?[]:pyReadRecov();
+  for(const r of recov){if(n(r.amt)>0&&!r.label)return alert('Please write the reason for the recovery of '+fmt(r.amt)+' (or remove that recovery row).');}
   const obj={date:d,schemeId:sch,contractId:con,kind:kind,serial:val('py_serial'),
     advRec:kind==='adv'?0:nval('py_advrec'),source:val('py_src'),
     head:val('py_src')==='State Budget'?val('py_head'):'',share:val('py_share'),releaseId:relId,bankId:val('py_bank'),
-    chqNo:val('py_chq'),dedChq:dedChq,gstOneChq:gstOne,lines:lines,note:val('py_note'),pendAdj:val('py_pendadj'),pendAdjAmt:nval('py_pendadjamt')};
+    chqNo:val('py_chq'),dedChq:dedChq,gstOneChq:gstOne,recov:recov,lines:lines,note:val('py_note'),pendAdj:val('py_pendadj'),pendAdjAmt:nval('py_pendadjamt')};
   if(ex){Object.assign(S.payments.find(p=>p.id===ex),obj);ED={};save();render();alert('Payment updated ✓');return;}
   S.payments.push(Object.assign({id:uid(),vno:nextVno(S.payments,'PYMT')},obj));
   save();render();alert('Payment recorded ✓');
@@ -6813,7 +6874,7 @@ function pgDaybook(){
   S.bills.filter(b=>inF(b)&&!b.draft).forEach(b=>rows.push({d:b.date,v:b.vno,t:'SPS / Bill',nat:'memo',cls:'o',sch:b.schemeId,part:'SPS/Bill '+b.billNo+' booked (gross value) — '+conName(b.contractId),amt:billGross(b),idt:b.date||'',pg:'bills',cid:b.contractId}));
   S.whRel.filter(w=>!w.draft&&inPeriod(w.date)&&inScheme(w.schemeId)).forEach(w=>{const b=S.bills.find(x=>x.id===w.billId)||{};
     rows.push({d:w.date,v:w.vno,t:'Withheld Release',nat:'memo',cls:'o',sch:w.schemeId,part:'Withheld released — '+(b.billNo||'?')+' · '+w.type+((w.tax||'pending')==='pending'?' (deduct taxes at payment)':' (taxes already done)'),amt:n(w.amount),pg:'withheld',cid:b.contractId});});
-  S.payments.filter(p=>inF(p)&&!p.draft).forEach(p=>rows.push({d:p.date,v:pmtVno(p),t:p.kind==='adv'?'Advance':'Payment',nat:'out',cls:'r',sch:p.schemeId,part:(p.kind==='adv'?'Mobilisation/Other advance to ':'Payment to ')+conName(p.contractId)+' against '+spsOf(p)+(p.serial?' · '+p.serial:'')+(p.chqNo?' · Cheque '+p.chqNo:''),amt:Math.max(0,payEff(p)-n(p.advRec)),idt:p.invd||'',pg:'payments',cid:p.contractId,src:paySource2(p)}));
+  S.payments.filter(p=>inF(p)&&!p.draft).forEach(p=>rows.push({d:p.date,v:pmtVno(p),t:p.kind==='adv'?'Advance':'Payment',nat:'out',cls:'r',sch:p.schemeId,part:(p.kind==='adv'?'Mobilisation/Other advance to ':'Payment to ')+conName(p.contractId)+' against '+spsOf(p)+(p.serial?' · '+p.serial:'')+(p.chqNo?' · Cheque '+p.chqNo:''),amt:Math.max(0,payEff(p)),idt:p.invd||'',pg:'payments',cid:p.contractId,src:paySource2(p)}));
   S.others.filter(e=>inF(e)&&!e.draft).forEach(e=>rows.push({d:e.date,v:(e.kind==='receipt'?rcptVno(e):pmtVno(e)),t:e.kind==='receipt'?'Other Receipt':'Other Expenditure',nat:e.kind==='receipt'?'in':'out',cls:e.kind==='receipt'?'g':'r',sch:e.schemeId,part:(e.kind==='receipt'?'Other receipt — ':'Other expenditure — ')+e.cat+(e.party?' · '+e.party:'')+(e.bankId?' · '+(bankName(e.bankId)||''):'')+(e.ref?' · '+e.ref:''),amt:n(e.amount),pg:'others'}));
   S.remit.filter(m=>inF(m)&&!m.draft).forEach(m=>rows.push({d:m.date,v:m.vno,t:'Remittance',nat:'out',cls:'r',sch:m.schemeId,part:'Remitted to Govt. — '+dedLabel(m.dedType)+(m.bankId?' from '+(bankName(m.bankId)||''):'')+(m.chqNo?' · Challan/Chq '+m.chqNo:''),amt:n(m.amount),pg:'remit'}));
   S.cash.filter(e=>inF(e)&&!e.draft).forEach(e=>rows.push({d:e.date,v:(e.type==='receipt'?rcptVno(e):pmtVno(e)),t:e.type==='receipt'?'Cash Receipt':'Cash Payment',nat:e.type==='receipt'?'in':'out',cls:e.type==='receipt'?'g':'r',sch:e.schemeId,part:e.part+(e.acct?' · '+esc(e.acct):'')+(e.ref?' · '+e.ref:'')+' (manual entry)',amt:n(e.amount),pg:'cashbook'}));
@@ -6875,7 +6936,7 @@ function printVoucher(pid){
     const payNoTxt=l.billId?'':((l.serial||p.serial)?('Serial '+esc(l.serial||p.serial)):'');
     return `<tr><td>${l.billId?esc(b.billNo||'?')+' ('+dfmt(b.date||'')+')':'Mobilisation / Other Advance'}${payNoTxt?'<div style="font-size:10px;color:#333">'+payNoTxt+'</div>':''}</td>
     <td class="r">${fmt(l.amt)}</td>${DEDS.map(([k])=>`<td class="r">${fmt(l.deds&&l.deds[k])}</td>`).join('')}
-    <td class="r"><b>${fmt(n(l.amt)-payLineDeds(l))}</b></td></tr>`;}).join('');
+    <td class="r"><b>${fmt(payLineNet(l))}</b></td></tr>`;}).join('');
   const _gstOne=!!p.gstOneChq;
   const dedChqRows=DEDS.map(([k,l])=>{if(_gstOne&&(k==='cgstTds'||k==='sgstTds'))return '';const v=payDedTotal(p,k);return v>0?`<tr><td>${l}</td><td class="r">${fmt(v)}</td><td>${esc((p.dedChq&&p.dedChq[k])||'—')}</td></tr>`:'';}).join('')+(_gstOne?(function(){const v=payDedTotal(p,'cgstTds')+payDedTotal(p,'sgstTds');return v>0?`<tr><td>CGST + SGST TDS</td><td class="r">${fmt(v)}</td><td>${esc((p.dedChq&&p.dedChq.cgstTds)||'—')}</td></tr>`:'';})():'');
   const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(p.vno||'Payment Voucher')}</title><style>
@@ -6903,9 +6964,10 @@ function printVoucher(pid){
   ${lines}
   <tr><th>TOTAL</th><th class="r">${fmt(gross)}</th>${DEDS.map(([k])=>`<th class="r">${fmt(payDedTotal(p,k))}</th>`).join('')}<th class="r">${fmt(gross-payAllDeds(p))}</th></tr></table>
   ${n(p.advRec)>0?`<p><b>Less: Mobilisation Advance recovered:</b> ${fmt(p.advRec)}</p>`:''}
+  ${(p.recov||[]).filter(x=>n(x.amt)>0).length?`<p><b>Less: Other recoveries:</b> ${(p.recov||[]).filter(x=>n(x.amt)>0).map(x=>esc(x.label||'unspecified')+' — '+fmt(x.amt)+(x.chq?' (Chq '+esc(x.chq)+')':'')).join('; ')}</p>`:''}
   <table><tr><th>Cheques Issued</th><th class="r">Amount</th><th>Cheque / Challan No.</th></tr>
   <tr><td><b>To Contractor (net)</b></td><td class="r"><b>${fmt(net)}</b></td><td><b>${esc(p.chqNo||'—')}</b></td></tr>
-  ${dedChqRows}</table>
+  ${dedChqRows}${(p.recov||[]).filter(x=>n(x.amt)>0).map(x=>`<tr><td>Recovery — ${esc(x.label||'unspecified reason')}</td><td class="r">${fmt(x.amt)}</td><td>${esc(x.chq||'—')}</td></tr>`).join('')}</table>
   <p><b>Net amount paid to contractor:</b> ${fmt(net)}<br><b>In words:</b> ${inWords(net)}</p>
   ${p.note?'<p><b>Narration:</b> '+esc(p.note)+'</p>':''}
   <div class="sig"><div>Prepared by</div><div>Checked by</div><div>Authorised Signatory</div></div>
@@ -6995,7 +7057,7 @@ function csvSection(which){
     S.payments.filter(inF).forEach(p=>{const s=S.schemes.find(x=>x.id===p.schemeId)||{contracts:[]};const c=(s.contracts||[]).find(x=>x.id===p.contractId)||{};
       const r=S.releases.find(z=>z.id===p.releaseId);
       (p.lines||[]).forEach((l,i)=>{const b=S.bills.find(z=>z.id===l.billId)||{};const d=l.deds||{};
-        rows.push([p.date,getFY(p.date),getQ(p.date),schemeName(p.schemeId),c.pkg||'',c.no||'',c.contractor||'',p.kind==='adv'?'Mob./Other Advance':'SPS Payment',p.serial||'',p.inv||'',l.billId?(b.billNo||''):'Advance',n(l.amt),n(d.itTds),n(d.cgstTds),n(d.sgstTds),n(d.igstTds),n(d.cess),n(d.ret),n(d.oth),i===0?n(p.advRec):0,n(l.amt)-payLineDeds(l)-(i===0?n(p.advRec):0),p.chqNo||'',p.source||'',p.share||'',r?((r.note?r.note+' ':'')+r.date+' '+r.source):'',bankName(p.bankId)]);});});
+        rows.push([p.date,getFY(p.date),getQ(p.date),schemeName(p.schemeId),c.pkg||'',c.no||'',c.contractor||'',p.kind==='adv'?'Mob./Other Advance':'SPS Payment',p.serial||'',p.inv||'',l.billId?(b.billNo||''):'Advance',n(l.amt),n(d.itTds),n(d.cgstTds),n(d.sgstTds),n(d.igstTds),n(d.cess),n(d.ret),n(d.oth),i===0?n(p.advRec):0,payLineNet(l)-(i===0?n(p.advRec):0),p.chqNo||'',p.source||'',p.share||'',r?((r.note?r.note+' ':'')+r.date+' '+r.source):'',bankName(p.bankId)]);});});
     return ['Payments',rows];
   }
   if(which==='cashbook'){
