@@ -1112,7 +1112,7 @@ function payNet(p){return payGross(p)-payAllDeds(p)-payLineAdvRec(p)-payLineReco
 function payEff(p){return (p.lines||[]).reduce((a,l)=>a+payLineEff(l),0)-n(p.advRec);} // effective expenditure nets out advance/other recovery per line + payment-level advance recovered
 function r2(v){return Math.round(v*100)/100;}
 function contractAdv(cid){
-  const paid=S.payments.filter(p=>!p.draft&&p.contractId===cid).reduce((a,p)=>a+((p.kind==='adv')?payGross(p):(p.lines||[]).filter(l=>l.adv).reduce((x,l)=>x+n(l.amt),0)),0);
+  const paid=S.payments.filter(p=>!p.draft&&p.contractId===cid).reduce((a,p)=>a+((p.kind==='adv')?payGross(p):(p.lines||[]).filter(l=>l.adv||!l.billId).reduce((x,l)=>x+n(l.amt),0)),0);
   const rec=S.payments.filter(p=>!p.draft&&p.contractId===cid).reduce((a,p)=>a+n(p.advRec),0);
   return {paid:paid,rec:rec,out:paid-rec};
 }
@@ -1854,6 +1854,35 @@ function pgMobAdv(){
       <td class="num"><b style="color:${pend>0.005?'#92400e':'#16a34a'}">${fmt(pend)}</b></td>
       <td><button class="btn2 btn-sm" onclick="setMobAdv('${s.id}','${c.id}')">💾 Save</button></td></tr>`;
   });});
+  // ── Individual mobilisation / other advance entries, with Edit + Delete ──
+  const advEntries=S.payments
+    .filter(p=>p.kind==='adv'&&inScheme(p.schemeId)&&inPeriod(p.date))
+    .sort((a,b)=>a.date!==b.date?(a.date<b.date?1:-1):(vnoNum(b.vno)-vnoNum(a.vno)));
+  let aRows='';const AT={g:0,d:0,net:0};
+  advEntries.forEach(p=>{
+    const sc=S.schemes.find(x=>x.id===p.schemeId)||{contracts:[]};
+    const c=(sc.contracts||[]).find(x=>x.id===p.contractId);
+    const g=payGross(p),d=payAllDeds(p),net=payNet(p);
+    if(!p.draft){AT.g+=g;AT.d+=d;AT.net+=net;}
+    aRows+=`<tr${p.draft?' class="paused"':''}>
+      <td>${dfmt(p.date)}${p.draft?'<span class="pausebadge">⏸ PAUSED</span>':''}${p.vno?'<div class="mini">'+esc(p.vno)+'</div>':''}${p.serial?'<div class="mini"><b>'+esc(p.serial)+'</b></div>':''}</td>
+      <td>${c?'<b>'+esc(c.no)+'</b>'+(c.pkg?' <span class="mini">('+esc(c.pkg)+')</span>':'')+'<div class="mini">'+esc(c.contractor||'')+'</div>':'—'}</td>
+      <td>${esc(schemeName(p.schemeId))}</td>
+      <td class="num">${fmt(g)}</td><td class="num">${fmt(d)}</td>
+      <td class="num"><b>${fmt(net)}</b><div class="mini">Chq: ${esc(p.chqNo||'—')}</div></td>
+      <td style="white-space:nowrap">
+        <button class="${p.draft?'btn-resume':'btn-pause'} btn-sm" onclick="togglePause('pay','${p.id}')" title="${p.draft?'Resume advance — include in ledgers & totals again':'Pause advance — exclude from ledgers, balances & totals (not deleted)'}">${p.draft?'▶':'⏸'}</button>
+        <button class="btn2 btn-sm" onclick="editPay('${p.id}')" title="Edit this advance — opens it in the Payments form">✎ Edit</button>
+        <button class="btn-del btn-sm" onclick="delPay('${p.id}')" title="Delete this advance">✕</button>
+      </td></tr>`;
+  });
+  const advCard=`<div class="card"><h3>💼 Mobilisation / Other Advance Entries</h3>
+  <div class="note" style="margin-bottom:8px">Every advance payment recorded (Payments · type <b>Advance</b>). <b>✎ Edit</b> opens the entry in the Payments form; <b>✕ Delete</b> removes it (advance balances are restored). Requires entries to be <b>unlocked</b> (🔒 button at top).</div>
+  <div class="tbl-wrap"><table>
+    <tr><th>Date</th><th>Contract</th><th>Scheme</th><th class="num">Gross Advance</th><th class="num">Deductions</th><th class="num">Net Paid</th><th>Action</th></tr>
+    ${aRows||'<tr><td colspan="7" class="empty">No mobilisation / other advance entries in this selection — record one under Payments (type: Advance)</td></tr>'}
+    ${aRows?`<tr class="tot-pay"><td colspan="3"><b>TOTAL</b></td><td class="num"><b>${fmt(AT.g)}</b></td><td class="num">${fmt(AT.d)}</td><td class="num"><b>${fmt(AT.net)}</b></td><td></td></tr>`:''}
+  </table></div></div>`;
   return `<h2 class="pg">Mobilisation Advances</h2>
   <div class="sub">${esc(periodLabel())} — set the advance permissible per contract and track paid, recovered and pending</div>
   <div class="card"><div class="note" style="margin-bottom:8px">Enter the <b>Advance Permissible</b> (maximum advance payable as per contract) and click Save. The unpaid part (<b>Pending to Pay</b> = permissible − paid) is a liability shown on the Payments dashboard. Record actual advance payments under <b>Payments</b> (type: Advance) — they reduce the pending amount and build the recoverable balance, which is recovered from running bills.</div>
@@ -1861,7 +1890,8 @@ function pgMobAdv(){
     <tr><th>Contract</th><th class="num">Advance Permissible</th><th class="num">Advance Paid</th><th class="num">Recovered</th><th class="num">Balance to Recover</th><th class="num">Pending to Pay</th><th>Action</th></tr>
     ${rows||'<tr><td colspan="7" class="empty">No contracts yet — add them under Projects / Schemes</td></tr>'}
     ${rows?`<tr class="tot-pay"><td><b>TOTAL</b></td><td class="num"><b>${fmt(T.perm)}</b></td><td class="num">${fmt(T.paid)}</td><td class="num">${fmt(T.rec)}</td><td class="num">${fmt(T.out)}</td><td class="num"><b>${fmt(T.pend)}</b></td><td></td></tr>`:''}
-  </table></div></div>`;
+  </table></div></div>
+  ${advCard}`;
 }
 var XPCSS="*{font-family:Arial,Helvetica,sans-serif;box-sizing:border-box;-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}body{padding:6px;color:#111}h1{font-size:12px;margin:0 0 1px}h2{font-size:10.5px;margin:4px 0 1px;color:#1a56a8}h3{font-size:10px;margin:4px 0 1px;color:#1a56a8}.xp-meta{font-size:8.5px;color:#666;margin-bottom:3px}table{border-collapse:collapse;font-size:9.5px;width:100%;margin-bottom:3px;background:#fff;color:#111}th,td{border:1px solid #cbd5e1;padding:1px 4px;text-align:left;line-height:1.2;overflow-wrap:break-word;word-break:normal}th{background:#1a56a8;color:#fff;white-space:normal;vertical-align:bottom}td.num,th.num{text-align:right}.tot,.tot-bal,.tot-pay{font-weight:bold;background:#eef2f7}.mini{font-size:9px;color:#555}.tag{padding:0 4px;border-radius:3px;font-size:9px;border:1px solid #ccc}.empty{color:#999}thead{display:table-header-group}thead th{background:#1a56a8;color:#fff}@media print{@page{size:A4 landscape;margin:8mm}table{page-break-inside:auto}tr,td,th{page-break-inside:avoid;break-inside:avoid}thead{display:table-header-group}tfoot{display:table-footer-group}h1,h2,h3{page-break-after:avoid;break-after:avoid}.xp-sec{page-break-inside:auto;break-inside:auto}}";
 function xpDate(){try{return new Date().toLocaleString("en-IN");}catch(e){return ""+new Date();}}
@@ -5820,7 +5850,7 @@ function after_payments(){
       DEDS.forEach(([k])=>{const e=document.getElementById('ad_d_'+k);if(e&&l.deds&&l.deds[k])e.value=l.deds[k];});
     }else{
       (p.lines||[]).forEach(l=>{
-        const id=l.billId||(l.adv?'ADV':'');if(!id)return;
+        const id=l.billId||'ADV'; // any non-bill line in a bill payment is a Mob./Other Advance → map to the ADV row
         const a=document.getElementById('pa_'+id);if(a)a.value=l.amt;
         const se=document.getElementById('ps_'+id);if(se)se.value=l.serial||'';
         DEDS.forEach(([k])=>{const e=document.getElementById('pd_'+k+'_'+id);if(e&&l.deds&&l.deds[k])e.value=l.deds[k];});
@@ -5849,7 +5879,7 @@ function after_payments(){
   }
 }
 function editPay(id){
-  if(S.ui.locked){alert("🔒 Entries are locked.\nClick the 🔒 Locked button (top of page) to enable editing.");return;}PAYTAB='pay';ED={pay:id};render();}
+  if(S.ui.locked){alert("🔒 Entries are locked.\nClick the 🔒 Locked button (top of page) to enable editing.");return;}S.ui.page='payhub';PAYTAB='pay';ED={pay:id};render();}
 function pySrc(){document.getElementById('py_headbox').style.display=val('py_src')==='State Budget'?'block':'none';}
 function pySchChange(){
   const sid=val('py_sch');
