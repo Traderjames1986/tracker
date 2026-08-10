@@ -370,12 +370,25 @@ table.paytbl td{vertical-align:top}
   background:#fee2e2 !important;font-weight:800;
   border-top:2px solid #dc2626;border-bottom:1.5px solid #fca5a5;color:#7f1d1d;
 }
-/* Subtotal / group — amber */
+/* Subtotal / group — amber (per-contract subtotal) */
 .subtot td{
   background:#fef9c3 !important;font-weight:700;
   border-top:1.5px solid #ca8a04;border-bottom:1px solid #fde047;
   color:#713f12;font-size:12.5px;
 }
+/* Per-contractor subtotal — teal (one tier above the amber contract subtotal, distinct from the navy grand total) */
+.con-sub td{
+  background:#ccfbf1 !important;font-weight:800;
+  border-top:2px solid #0d9488;border-bottom:2px solid #5eead4;
+  color:#134e4a;font-size:13px;
+}
+/* Filing group separator — blank gap between contractors */
+tr.filsep td{background:#fff !important;height:12px;border:none !important;padding:0 !important}
+/* Filing contractor box — each contractor is drawn as a separate bordered box */
+tr.fgrp>td:first-child{border-left:2px solid var(--acc)}
+tr.fgrp>td:last-child{border-right:2px solid var(--acc)}
+tr.fgrp-top>td{border-top:2px solid var(--acc)}
+tr.fgrp-bot>td{border-bottom:2px solid var(--acc)}
 /* Balance / net — teal */
 .tot-bal td{
   background:#ecfdf5 !important;font-weight:800;
@@ -564,6 +577,7 @@ div.frz-ctrl{justify-content:flex-end;margin:0 0 4px 0}
     <div class="nav-i" data-pg="payhub" onclick="go('payhub')">💸 <span class="txt">Payments / MOP / Note</span></div>
     <div class="nav-i" data-pg="release" onclick="go('release')">🧭 <span class="txt">Release wise Expenditure</span></div>
     <div class="nav-i" data-pg="remit" onclick="go('remit')">🏛️ <span class="txt">Deductions &amp; Remittances</span></div>
+    <div class="nav-i" data-pg="filing" onclick="go('filing')">🧾 <span class="txt">TDS / GST Filing Helper</span></div>
     <div class="nav-h">WITHHELDS &amp; RETENTION</div>
     <div class="nav-i" data-pg="withheld" onclick="go('withheld')">⏸️ <span class="txt">Withheld Tracker</span></div>
     <div class="nav-i" data-pg="retention" onclick="go('retention')">🔒 <span class="txt">Retention Ledger</span></div>
@@ -578,6 +592,7 @@ div.frz-ctrl{justify-content:flex-end;margin:0 0 4px 0}
     <div class="nav-h">6 · BANK</div>
     <div class="nav-i" data-pg="bankhub" onclick="go('bankhub')">💳 <span class="txt">Cheque / Bank A/c / Recon</span></div>
     <div class="nav-h">7 · REPORTING</div>
+    <div class="nav-i" data-pg="iufr" onclick="go('iufr')">🏦 <span class="txt">IUFR (Quarterly)</span></div>
     <div class="nav-i" data-pg="reports" onclick="go('reports')">📑 <span class="txt">Reports Centre</span></div>
     <div class="nav-i" data-pg="wa" onclick="go('wa')">🏦 <span class="txt">AIIB Withdrawal (WA)</span></div>
     <div class="nav-i" data-pg="export" onclick="go('export')">📤 <span class="txt">Export (Excel / PDF)</span></div>
@@ -731,6 +746,7 @@ function load(){
     }
     if(!d.bankTypes)d.bankTypes=['Receiving','Project','Other'];
     d.audit=d.audit||[];d.recon=d.recon||{};d.bgs=d.bgs||[];d.was=d.was||[];d.chqBooks=d.chqBooks||[];d.chqReasons=d.chqReasons||{};
+    d.filings=d.filings||[]; // saved/filed GST-TDS & IT-TDS returns (frozen snapshots kept for future reference)
     (d.schemes||[]).forEach(s=>{
       if(s.locked===undefined)s.locked=false; // existing projects start unlocked; lock each as needed
       if(!s.sources)s.sources=(d.sources||['SASCI','State Budget']).slice(); // sources now per-scheme; seed from old global list
@@ -754,7 +770,7 @@ function load(){
     });
     return d;}}catch(e){}
   return {schemes:[],banks:[],fys:[],bankTypes:['Receiving','Project','Other'],audit:[],recon:{},sources:['SASCI','State Budget'],shares:['State Share','AIIB/Central Share'],
-    releases:[],transfers:[],bills:[],whRel:[],payments:[],cash:[],others:[],remit:[],rcptCats:RC,payCats:PC,bgs:[],was:[],chqBooks:[],chqReasons:{},
+    releases:[],transfers:[],bills:[],whRel:[],payments:[],cash:[],others:[],remit:[],rcptCats:RC,payCats:PC,bgs:[],was:[],chqBooks:[],chqReasons:{},filings:[],
     dashboards:[
       {id:'d1',name:'Overall',kpis:null,slicers:['component','contract','package','contractor'],expCols:null},
       {id:'d2',name:'SPS Based',kpis:['spsSubmitted','adhocWh','cscWh','cleared','billPassed','currentLiab'],slicers:['component','subcomponent','contract','contractor'],expCols:['spsGross','adhocC','cscC','whrel','netLiabC','balance']},
@@ -1278,7 +1294,7 @@ function render(){
   else if(S.ui.page==='contractors'){CONTAB='ledger';S.ui.page='conhub';}else if(S.ui.page==='constmt'){CONTAB='stmt';S.ui.page='conhub';}
   else if(S.ui.page==='cheques'){BANKTAB='cheques';S.ui.page='bankhub';}else if(S.ui.page==='bankstmt'){BANKTAB='bankstmt';S.ui.page='bankhub';}else if(S.ui.page==='brs'){BANKTAB='brs';S.ui.page='bankhub';}
   const c=document.getElementById('content');
-  const pages={dashboard:pgDash,ask:pgAsk,daybook:pgDaybook,schemes:pgSchemes,fund:pgFund,transfers:pgTransfers,conhub:pgConHub,bankhub:pgBankHub,billhub:pgBillHub,bills:pgBills,mobadv:pgMobAdv,spsmgmt:pgSpsMgmt,withheld:pgWithheld,payhub:pgPayHub,contractors:pgContractors,retention:pgRetention,bg:pgBG,constmt:pgContractorStmt,balsheet:pgBalSheet,ageing:pgAgeing,cheques:pgCheques,brs:pgBRS,bankstmt:pgBankStmt,audit:pgAudit,import:pgImport,payments:pgPayments,release:pgReleaseSpend,mop:pgMOP,others:pgOthers,remit:pgRemit,rnp:pgRnp,cashbook:pgCash,export:pgExport,backup:pgBackup,reports:pgReports,health:pgHealth,wa:pgWA};
+  const pages={dashboard:pgDash,ask:pgAsk,daybook:pgDaybook,schemes:pgSchemes,fund:pgFund,transfers:pgTransfers,conhub:pgConHub,bankhub:pgBankHub,billhub:pgBillHub,bills:pgBills,mobadv:pgMobAdv,spsmgmt:pgSpsMgmt,withheld:pgWithheld,payhub:pgPayHub,contractors:pgContractors,retention:pgRetention,bg:pgBG,constmt:pgContractorStmt,balsheet:pgBalSheet,ageing:pgAgeing,cheques:pgCheques,brs:pgBRS,bankstmt:pgBankStmt,audit:pgAudit,import:pgImport,payments:pgPayments,release:pgReleaseSpend,mop:pgMOP,others:pgOthers,remit:pgRemit,filing:pgFiling,rnp:pgRnp,cashbook:pgCash,export:pgExport,backup:pgBackup,reports:pgReports,iufr:pgIUFR,health:pgHealth,wa:pgWA};
   c.innerHTML=(pages[S.ui.page]||pgDash)();
   if(window['after_'+S.ui.page])window['after_'+S.ui.page]();
   applyWorkMode();
@@ -2718,6 +2734,7 @@ function pgSchemes(){
         ${lk?'':`<td><button class="btn-del" onclick="delComp('${s.id}','${c.id}')">Delete</button></td>`}</tr>`).join('');
     const cons=(s.contracts||[]).map(c=>`
       <tr><td><b>${esc(c.no)}</b>${c.pkg?'<div class="mini">'+esc(c.pkg)+'</div>':''}</td><td>${esc(c.contractor)}
+        ${c.piu?`<div class="mini">🏢 PIU: ${esc(c.piu)}</div>`:''}
         ${(c.pan||c.gstin||c.phone||c.addr||c.cbank)?`<div class="mini">${c.pan?'PAN: '+esc(c.pan)+' ':''}${c.gstin?'GSTIN: '+esc(c.gstin)+' ':''}${c.phone?'📞 '+esc(c.phone)+' ':''}${c.cbank?'🏦 '+esc(c.cbank)+' ':''}${c.addr?'· '+esc(c.addr):''}</div>`:''}</td>
         <td>${esc(compName(s,c.compId))}</td><td>${esc(subName(s,c.compId,c.subId))}</td>
         ${lk?'':`<td><button class="btn2 btn-sm" onclick="editContract('${s.id}','${c.id}')">✎</button> <button class="btn-del" onclick="delContract('${s.id}','${c.id}')">Delete</button></td>`}</tr>`).join('');
@@ -2758,6 +2775,7 @@ function pgSchemes(){
           <div><label>Contractor Name *</label><input id="cn_nm_${s.id}" value="${ec?esc(ec.contractor):''}" placeholder="contractor / firm"></div>
           <div><label>Under Component *</label><select id="cn_cp_${s.id}" onchange="render_cnsub('${s.id}')">${compOpts(s,ec?ec.compId:'')}</select></div>
           <div><label>Sub-component</label><select id="cn_sb_${s.id}">${ec?subOpts(s,ec.compId,ec.subId):'<option value="">—</option>'}</select></div>
+          <div><label>PIU / Division <span class="mini">(for IUFR)</span></label><input id="cn_piu_${s.id}" value="${ec?esc(ec.piu||''):''}" placeholder="e.g. Imphal West Division"></div>
           <div><label>PAN</label><input id="cn_pan_${s.id}" value="${ec?esc(ec.pan||''):''}" placeholder="ABCDE1234F"></div>
           <div><label>GSTIN</label><input id="cn_gst_${s.id}" value="${ec?esc(ec.gstin||''):''}" placeholder="14ABCDE1234F1Z5"></div>
           <div><label>Mobile / Phone</label><input id="cn_ph_${s.id}" value="${ec?esc(ec.phone||''):''}"></div>
@@ -2888,7 +2906,7 @@ function addContract(sid){
   if(!no||!nm)return alert('Contract no. and contractor name required');
   if(!cp)return alert('Map the contract under a component (e.g. MUR CW 01 → Component A)');
   const s=S.schemes.find(x=>x.id===sid);
-  const obj={no:no,contractor:nm,compId:cp,subId:val('cn_sb_'+sid),pkg:val('cn_pk_'+sid),waDesc:val('cn_wd_'+sid),
+  const obj={no:no,contractor:nm,compId:cp,subId:val('cn_sb_'+sid),pkg:val('cn_pk_'+sid),piu:val('cn_piu_'+sid),waDesc:val('cn_wd_'+sid),
     pan:val('cn_pan_'+sid),gstin:val('cn_gst_'+sid),phone:val('cn_ph_'+sid),cbank:val('cn_bk_'+sid),addr:val('cn_ad_'+sid),
     cval:nval('cn_cval_'+sid),priorReview:val('cn_pr_'+sid)||'Yes',expCat:val('cn_ec_'+sid)||'CSR',catNo:val('cn_cno_'+sid)||'1',eligPct:(val('cn_elig_'+sid)===''?100:nval('cn_elig_'+sid))};
   if(ED.con&&ED.conSch===sid){Object.assign(s.contracts.find(c=>c.id===ED.con),obj);ED={};}
@@ -3657,8 +3675,8 @@ function impPay(){impRead('imp_pay',rows=>{const data=rows.slice(1);let ok=0;con
   const deds={itTds:n(v[6]),cgstTds:n(v[7]),sgstTds:n(v[8]),igstTds:n(v[9]),cess:n(v[10]),ret:n(v[11]),oth:n(v[12])};
   S.payments.push({id:uid(),vno:nextVno(S.payments,'PYMT'),date:d,schemeId:s.id,contractId:c.id,kind:'sps',serial:v[4]||'',inv:'',invd:'',advRec:n(v[13]),source:v[14]||'',head:'',share:v[15]||'',releaseId:'',bankId:bk?bk.id:'',chqNo:v[17]||'',dedChq:{},lines:[{billId:b.id,amt:n(v[5]),deds:deds}],note:v[18]||''});ok++;
   }catch(e){errs.push('Row '+(idx+2)+': '+e);}});impDone('payment(s)',ok,errs);});}
-const AIO_HEAD=['Type','Date (YYYY-MM-DD)','Scheme','Contract No','SPS/Bill No','Amount','Work Done','CGST','SGST','IGST','Labour Cess','Adhoc WH','CSC WH','Source','Head','Pay Share','Bank A/c','From Bank','To Bank','Category','Party','IT TDS','CGST TDS','SGST TDS','IGST TDS','Cess TDS','Retention','Other Ded','Adv Recovery','Serial','Chq/Ref','Remarks','Scheme Code','Loan No','Contractor','Package','PAN','GSTIN','Phone','Contractor Bank','Address','Component','Sub-Component','Bank Type','Acct No','Branch','IFSC','Deduction Type','Tax Treatment','Share1 Name','Share1 Amt','Share2 Name','Share2 Amt','Share3 Name','Share3 Amt'];
-const AIO_IDX={type:0,date:1,scheme:2,con:3,bill:4,amt:5,wd:6,cgst:7,sgst:8,igst:9,cess:10,adhoc:11,csc:12,source:13,head:14,share:15,bank:16,from:17,to:18,cat:19,party:20,it:21,ct:22,st:23,it2:24,cd:25,ret:26,oth:27,adv:28,serial:29,chq:30,rem:31,code:32,loan:33,contractor:34,pkg:35,pan:36,gstin:37,phone:38,cbank:39,addr:40,comp:41,sub:42,btype:43,acct:44,branch:45,ifsc:46,dedtype:47,tax:48,sh1n:49,sh1a:50,sh2n:51,sh2a:52,sh3n:53,sh3a:54};
+const AIO_HEAD=['Type','Date (YYYY-MM-DD)','Scheme','Contract No','SPS/Bill No','Amount','Work Done','CGST','SGST','IGST','Labour Cess','Adhoc WH','CSC WH','Source','Head','Pay Share','Bank A/c','From Bank','To Bank','Category','Party','IT TDS','CGST TDS','SGST TDS','IGST TDS','Cess TDS','Retention','Other Ded','Adv Recovery','Serial','Chq/Ref','Remarks','Scheme Code','Loan No','Contractor','Package','PAN','GSTIN','Phone','Contractor Bank','Address','Component','Sub-Component','Bank Type','Acct No','Branch','IFSC','Deduction Type','Tax Treatment','Share1 Name','Share1 Amt','Share2 Name','Share2 Amt','Share3 Name','Share3 Amt','PIU / Division'];
+const AIO_IDX={type:0,date:1,scheme:2,con:3,bill:4,amt:5,wd:6,cgst:7,sgst:8,igst:9,cess:10,adhoc:11,csc:12,source:13,head:14,share:15,bank:16,from:17,to:18,cat:19,party:20,it:21,ct:22,st:23,it2:24,cd:25,ret:26,oth:27,adv:28,serial:29,chq:30,rem:31,code:32,loan:33,contractor:34,pkg:35,pan:36,gstin:37,phone:38,cbank:39,addr:40,comp:41,sub:42,btype:43,acct:44,branch:45,ifsc:46,dedtype:47,tax:48,sh1n:49,sh1a:50,sh2n:51,sh2a:52,sh3n:53,sh3a:54,piu:55};
 function aioRow(o){const a=new Array(AIO_HEAD.length).fill('');for(const k in o)if(o[k]!=null&&o[k]!=='')a[AIO_IDX[k]]=String(o[k]);return a;}
 function aioCsv(rowsArr,fname){const csv='﻿'+rowsArr.map(r=>r.map(x=>{x=x==null?'':String(x);return /[",\n]/.test(x)?'"'+x.replace(/"/g,'""')+'"':x;}).join(',')).join('\r\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download=fname;a.click();}
 function tplAllInOne(){
@@ -3682,7 +3700,7 @@ function expAllData(){
   const out=[AIO_HEAD.slice()];const sn=id=>{const s=S.schemes.find(x=>x.id===id);return s?s.name:'';};
   S.schemes.forEach(s=>out.push(aioRow({type:'SCHEME',scheme:s.name,code:s.code,loan:s.loanNo,bank:s.bank})));
   S.banks.forEach(b=>out.push(aioRow({type:'BANK',scheme:b.schemeId?sn(b.schemeId):'',bank:b.name,btype:b.type,acct:b.acctNo,branch:b.branch,ifsc:b.ifsc})));
-  S.schemes.forEach(s=>(s.contracts||[]).forEach(c=>out.push(aioRow({type:'CONTRACT',scheme:s.name,con:c.no,contractor:c.contractor,pkg:c.pkg,pan:c.pan,gstin:c.gstin,phone:c.phone,cbank:c.cbank,addr:c.addr,comp:compName(s,c.compId),sub:c.subId?subName(s,c.compId,c.subId):''}))));
+  S.schemes.forEach(s=>(s.contracts||[]).forEach(c=>out.push(aioRow({type:'CONTRACT',scheme:s.name,con:c.no,contractor:c.contractor,pkg:c.pkg,piu:c.piu,pan:c.pan,gstin:c.gstin,phone:c.phone,cbank:c.cbank,addr:c.addr,comp:compName(s,c.compId),sub:c.subId?subName(s,c.compId,c.subId):''}))));
   S.bills.slice().sort((a,b)=>a.date<b.date?-1:1).forEach(b=>{const c=contractOf(b)||{};out.push(aioRow({type:'BILL',date:b.date,scheme:sn(b.schemeId),con:c.no,bill:b.billNo,wd:b.workDone,cgst:b.cgst,sgst:b.sgst,igst:b.igst,cess:b.cess,adhoc:b.adhoc,csc:b.cscWh,rem:b.note}));});
   S.releases.forEach(r=>{const sh=r.shares||[];out.push(aioRow({type:'RECEIPT',date:r.date,scheme:sn(r.schemeId),amt:r.amount,source:r.source,head:r.head,bank:bankName(r.bankId),rem:r.note,sh1n:sh[0]&&sh[0].name,sh1a:sh[0]&&sh[0].amt,sh2n:sh[1]&&sh[1].name,sh2a:sh[1]&&sh[1].amt,sh3n:sh[2]&&sh[2].name,sh3a:sh[2]&&sh[2].amt}));});
   S.transfers.forEach(t=>out.push(aioRow({type:'TRANSFER',date:t.date,scheme:sn(t.schemeId),amt:t.amount,from:bankName(t.fromBank),to:bankName(t.toBank),rem:t.note})));
@@ -3708,7 +3726,7 @@ function impAllInOne(){impRead('imp_all',rows=>{
     }else if(T==='CONTRACT'){needS();if(!v[3])throw 'contract no required';if((s.contracts||[]).some(x=>(x.no||'').toLowerCase()===v[3].toLowerCase()))return;
       let comp=(s.components||[]).find(cc=>(cc.name||'').toLowerCase()===(v[41]||'').toLowerCase());if(!comp&&v[41]){comp={id:uid(),name:v[41],subs:[]};(s.components=s.components||[]).push(comp);}
       let subId='';if(comp&&v[42]){let su=(comp.subs||[]).find(u=>(u.name||'').toLowerCase()===v[42].toLowerCase());if(!su){su={id:uid(),name:v[42]};(comp.subs=comp.subs||[]).push(su);}subId=su.id;}
-      (s.contracts=s.contracts||[]).push({id:uid(),no:v[3],contractor:v[34]||'',pkg:v[35]||'',compId:comp?comp.id:'',subId:subId,pan:v[36]||'',gstin:v[37]||'',phone:v[38]||'',cbank:v[39]||'',addr:v[40]||''});cnt.master++;
+      (s.contracts=s.contracts||[]).push({id:uid(),no:v[3],contractor:v[34]||'',pkg:v[35]||'',piu:v[55]||'',compId:comp?comp.id:'',subId:subId,pan:v[36]||'',gstin:v[37]||'',phone:v[38]||'',cbank:v[39]||'',addr:v[40]||''});cnt.master++;
     }else if(T==='BILL'||T==='SPS'){needS();okd();const c=findCon();if(!v[4])throw 'SPS/Bill No required';
       S.bills.push({id:uid(),vno:nextVno(S.bills,'SPS'),schemeId:s.id,compId:c.compId||'',subId:c.subId||'',contractId:c.id,billNo:v[4],date:d,workDone:n(v[6]),cgst:n(v[7]),sgst:n(v[8]),igst:n(v[9]),cess:n(v[10]),adhoc:n(v[11]),cscWh:n(v[12]),note:v[31]||''});cnt.bill++;
     }else if(T==='RECEIPT'||T==='FUND'){needS();okd();if(n(v[5])<=0)throw 'amount required';const bk=findBankByName(v[16]);const shares=[];[[49,50],[51,52],[53,54]].forEach(([ni,ai])=>{if(v[ni]&&n(v[ai]))shares.push({name:v[ni],amt:n(v[ai])});});{const _sh=shareOf(v[13]||'',v[14]||'');shares.length=0;shares.push({name:_sh,amt:n(v[5])});}
@@ -6647,6 +6665,366 @@ function toggleRemit(payId,k,on){
   save();render();
 }
 function setRemitChallan(payId,k,v){const m=remitMark(payId,k);if(m){m.challan=v;m.note=v?('Challan: '+v):'marked remitted';save();}}
+/* ================= TDS / GST-TDS FILING HELPER =================
+   Monthly GST TDS (GSTR-7) and quarterly Income-Tax TDS (Form 26Q):
+   pick a period, tick the payments to include, and get contractor-wise
+   subtotals + a grand (challan) total, drawn live from Payments. */
+let FILING_TAB='gst';           // 'gst' = monthly GST TDS | 'it' = quarterly IT TDS
+let FILING_MODE='detail';       // 'detail' = per-payment rows | 'summary' = contractor subtotals only
+let FILING_EX={gst:{},it:{}};   // excluded payment ids per tab (default: every payment included)
+let FILING_VIEW='';             // id of a saved/filed return currently expanded for viewing
+let FILING_GROUP='contractor';  // live grouping: 'contractor' merges a contractor's many contracts | 'contract' keeps each contract separate
+let FILING_VMODE='contractor';  // saved-filing view mode: payment | contract | contractor | summary
+
+function filingDedKeys(){return FILING_TAB==='gst'?['cgstTds','sgstTds','igstTds']:['itTds'];}
+function filingPayTds(p){return filingDedKeys().reduce((a,k)=>a+payDedTotal(p,k),0);}
+function filingPays(){
+  return S.payments.filter(p=>!p.draft&&inF(p)&&filingPayTds(p)>0.005)
+    .sort((a,b)=>a.date!==b.date?(a.date<b.date?-1:1):(vnoNum(a.vno)-vnoNum(b.vno)));
+}
+function filingSel(p){return !FILING_EX[FILING_TAB][p.id];}
+function filingToggle(id){if(FILING_EX[FILING_TAB][id])delete FILING_EX[FILING_TAB][id];else FILING_EX[FILING_TAB][id]=1;render();}
+function filingAll(on){const ps=filingPays();if(on){FILING_EX[FILING_TAB]={};}else{ps.forEach(p=>FILING_EX[FILING_TAB][p.id]=1);}render();}
+function filingSetTab(t){FILING_TAB=t;render();}
+function filingSetMode(m){FILING_MODE=m;render();}
+function filingSetGroup(g){FILING_GROUP=g;render();}
+function filingSetVMode(m){FILING_VMODE=m;render();}
+function filingBills(p){return [...new Set((p.lines||[]).map(l=>l.billId).filter(Boolean))].map(id=>{const b=S.bills.find(x=>x.id===id);return b?(b.billNo||''):'';}).filter(Boolean).join(', ');}
+function filingConKey(c){ // identity that treats the same contractor's different contracts as one deductee
+  const nm=((c&&c.contractor)||'').trim().toLowerCase();
+  return nm||((c&&c.pan)||'').trim().toLowerCase()||((c&&c.gstin)||'').trim().toLowerCase()||'__none';
+}
+function filingGroupsAll(){
+  const all=filingPays();const map={};
+  all.forEach(p=>{
+    const c=conById(p.contractId);
+    const key=(FILING_GROUP==='contract')?('ct:'+(p.contractId||'__none')):('cn:'+filingConKey(c));
+    if(!map[key])map[key]={c:c,nos:[],pays:[]};
+    map[key].pays.push(p);
+    if(c&&c.no&&map[key].nos.indexOf(c.no)<0)map[key].nos.push(c.no);
+  });
+  return Object.keys(map).map(k=>map[k]).sort((a,b)=>{const na=((a.c&&a.c.contractor)||'~').toLowerCase(),nb=((b.c&&b.c.contractor)||'~').toLowerCase();return na<nb?-1:na>nb?1:0;});
+}
+function filingGConNo(g){return (FILING_GROUP==='contract')?((g.c&&g.c.no)||'—'):((g.nos&&g.nos.length)?g.nos.join(', '):((g.c&&g.c.no)||'—'));}
+function filingGLabel(g){return (FILING_GROUP==='contract')?('Contract '+((g.c&&g.c.no)||'—')):((g.c&&g.c.contractor)||'(no contractor)');}
+function filingCompute(){
+  const isGst=FILING_TAB==='gst',dk=filingDedKeys();
+  const groups=filingGroupsAll().map(g=>{
+    const selPays=g.pays.filter(filingSel);
+    const sub={gross:0,tax:0,total:0,cnt:selPays.length};dk.forEach(k=>sub[k]=0);
+    selPays.forEach(p=>{const gr=payGross(p);sub.gross+=gr;sub.tax+=gr/1.19;dk.forEach(k=>sub[k]+=payDedTotal(p,k));});
+    sub.total=dk.reduce((a,k)=>a+sub[k],0);
+    return Object.assign({},g,{selPays,sub});
+  });
+  const grand={gross:0,tax:0,total:0,cnt:0};dk.forEach(k=>grand[k]=0);
+  groups.forEach(g=>{grand.gross+=g.sub.gross;grand.tax+=g.sub.tax;grand.total+=g.sub.total;grand.cnt+=g.sub.cnt;dk.forEach(k=>grand[k]+=g.sub[k]);});
+  return {isGst,dk,groups,grand};
+}
+function filingSubOf(pays){const dk=filingDedKeys();const s={gross:0,tax:0,total:0,cnt:0};dk.forEach(k=>s[k]=0);pays.forEach(p=>{const gr=payGross(p);s.gross+=gr;s.tax+=gr/1.19;s.cnt++;dk.forEach(k=>s[k]+=payDedTotal(p,k));});s.total=dk.reduce((a,k)=>a+s[k],0);return s;}
+function filingNumHeads(isGst){return isGst?['Gross Paid','Taxable Value','CGST TDS','SGST TDS','IGST TDS','Total GST TDS']:['Gross Paid','IT TDS'];}
+function filingStatNums(isGst,st){return isGst?[st.gross,st.tax,st.cgstTds,st.sgstTds,st.igstTds,st.total]:[st.gross,st.itTds];}
+function filingPayNums(isGst,p){const gr=payGross(p);const cg=payDedTotal(p,'cgstTds'),sg=payDedTotal(p,'sgstTds'),ig=payDedTotal(p,'igstTds');return isGst?[gr,gr/1.19,cg,sg,ig,cg+sg+ig]:[gr,payDedTotal(p,'itTds')];}
+function filingPeriodLabel(){
+  return (FILING_TAB==='gst'?'GST TDS (GSTR-7) · ':'IT TDS (26Q) · ')+periodLabel();
+}
+/* ---- Saved / filed returns: freeze the current filing so it stays available for reference ---- */
+function filingSnapshot(){
+  const isGst=FILING_TAB==='gst',dk=filingDedKeys();
+  const sel=filingPays().filter(filingSel); // only ticked payments
+  const map={};
+  sel.forEach(p=>{const id=p.contractId||'__none';if(!map[id]){map[id]={c:conById(p.contractId),pays:[]};}map[id].pays.push(p);});
+  const snapGroups=Object.keys(map).map(k=>{
+    const g=map[k],c=g.c;
+    const sub={gross:0,tax:0,total:0};dk.forEach(x=>sub[x]=0);
+    g.pays.forEach(p=>{const gr=payGross(p);sub.gross+=gr;sub.tax+=gr/1.19;dk.forEach(x=>sub[x]+=payDedTotal(p,x));});
+    sub.total=dk.reduce((a,x)=>a+sub[x],0);
+    return {
+      contractor:(c&&c.contractor)||'(no contractor)',
+      no:(c&&c.no)||'', pan:(c&&c.pan)||'', gstin:(c&&c.gstin)||'',
+      cnt:g.pays.length,
+      pays:g.pays.map(p=>({date:p.date,vno:p.vno||p.serial||'',bills:filingBills(p),chqNo:p.chqNo||'',nums:filingPayNums(isGst,p)})),
+      subNums:filingStatNums(isGst,sub)
+    };
+  }).sort((a,b)=>a.contractor.toLowerCase()<b.contractor.toLowerCase()?-1:a.contractor.toLowerCase()>b.contractor.toLowerCase()?1:0);
+  const grand={gross:0,tax:0,total:0,cnt:0};dk.forEach(x=>grand[x]=0);
+  sel.forEach(p=>{const gr=payGross(p);grand.gross+=gr;grand.tax+=gr/1.19;grand.cnt++;dk.forEach(x=>grand[x]+=payDedTotal(p,x));});
+  grand.total=dk.reduce((a,x)=>a+grand[x],0);
+  const nCon=new Set(snapGroups.map(g=>(g.contractor||'').trim().toLowerCase())).size; // distinct contractors (across contracts)
+  return {
+    id:uid(), savedAt:new Date().toISOString(), type:isGst?'gst':'it', isGst,
+    numHeads:filingNumHeads(isGst),
+    periodLabel:filingPeriodLabel(),
+    filingPeriod:'', // user-typed filing period / month for this record
+    period:{fys:(S.ui.fys||[]).slice(),quarters:(S.ui.quarters||[]).slice(),months:(S.ui.months||[]).slice(),from:S.ui.from||'',to:S.ui.to||'',schemeIds:(S.ui.schemeIds||[]).slice()},
+    groups:snapGroups,
+    grand:{nums:filingStatNums(isGst,grand),total:grand.total,cnt:grand.cnt,nCon:nCon,nContract:snapGroups.length},
+    filingDate:'',
+    note:''
+  };
+}
+function filingSave(){
+  const {grand}=filingCompute();
+  if(grand.cnt<1||grand.total<=0.005){alert('Nothing to save. Pick a period and tick at least one payment carrying '+(FILING_TAB==='gst'?'GST':'IT')+' TDS first.');return;}
+  const kind=FILING_TAB==='gst'?'GST TDS (GSTR-7)':'IT TDS (Form 26Q)';
+  const per=prompt('Save this '+kind+' filing for future reference.\n\nFiling period / month — type it exactly as it should appear on this record\n(e.g. '+(FILING_TAB==='gst'?'June 2026':'Q1 2026-27')+'):\n\nTotal TDS: '+fmt(grand.total),'');
+  if(per===null)return; // cancelled
+  const fdate=prompt('Optional — enter the filing date for this '+kind+' return (the date it was filed, e.g. '+dfmt(today())+'). Leave blank to skip:','');
+  if(fdate===null)return; // cancelled
+  const snap=filingSnapshot();snap.filingPeriod=(per||'').trim();snap.filingDate=(fdate||'').trim();snap.note=snap.filingDate;
+  S.filings=S.filings||[];S.filings.push(snap);
+  if(typeof logAudit==='function')logAudit('Filing saved',kind+' · '+(snap.filingPeriod||'(no period)')+' · '+fmt(snap.grand.total));
+  save();render();
+  alert('✓ Saved. This '+kind+' filing'+(snap.filingPeriod?' for '+snap.filingPeriod:'')+' is now stored under “Saved / Filed Returns” at the bottom of this page and will stay available for reference.');
+}
+function filingSavedList(){return (S.filings||[]).slice().sort((a,b)=>a.savedAt<b.savedAt?1:-1);}
+function filingViewSaved(id){FILING_VIEW=(FILING_VIEW===id?'':id);render();}
+function filingDelSaved(id){
+  const f=(S.filings||[]).find(x=>x.id===id);if(!f)return;
+  if(!confirm('Delete this saved '+(f.type==='gst'?'GST TDS':'IT TDS')+' return?\n\n'+(f.filingPeriod||f.periodLabel)+'\nTotal TDS: '+fmt(f.grand.total)+'\n\nThis only removes the saved reference record; your payments are not affected.'))return;
+  S.filings=(S.filings||[]).filter(x=>x.id!==id);
+  if(typeof logAudit==='function')logAudit('Filing deleted',(f.filingPeriod||f.periodLabel)+' · '+fmt(f.grand.total));
+  if(FILING_VIEW===id)FILING_VIEW='';
+  save();render();
+}
+function filNumTh(f){return f.numHeads.map(x=>'<th class="num">'+esc(x)+'</th>').join('');}
+function filNumTds(nums,bold){return nums.map(v=>'<td class="num">'+(bold?('<b>'+fmt(v)+'</b>'):fmt(v))+'</td>').join('');}
+function filingAggByContractor(f){ // merge a contractor's multiple contracts into one deductee row
+  const map={};
+  f.groups.forEach(g=>{
+    const key=(g.contractor||'').trim().toLowerCase()||'(no contractor)';
+    if(!map[key])map[key]={contractor:g.contractor,pan:g.pan,gstin:g.gstin,nos:[],pays:[],subNums:f.numHeads.map(()=>0),cnt:0};
+    const m=map[key];
+    if(g.no&&m.nos.indexOf(g.no)<0)m.nos.push(g.no);
+    g.pays.forEach(p=>m.pays.push(Object.assign({contractNo:g.no},p)));
+    g.subNums.forEach((v,i)=>m.subNums[i]+=v);
+    m.cnt+=g.cnt; if(!m.pan&&g.pan)m.pan=g.pan; if(!m.gstin&&g.gstin)m.gstin=g.gstin;
+  });
+  return Object.keys(map).map(k=>map[k]).sort((a,b)=>(a.contractor||'~').toLowerCase()<(b.contractor||'~').toLowerCase()?-1:1);
+}
+function filRowsPayment(f,screen){
+  const TOT=screen?'tot':'fil-grand';
+  const flat=[];f.groups.forEach(g=>g.pays.forEach(p=>flat.push({contractor:g.contractor,no:g.no,date:p.date,bills:p.bills,nums:p.nums})));
+  flat.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
+  let h='<table><thead><tr><th>Contractor</th><th>Contract</th><th>Date</th><th>SPS / Bill</th>'+filNumTh(f)+'</tr></thead><tbody>';
+  flat.forEach(p=>{h+='<tr><td>'+esc(p.contractor)+'</td><td>'+esc(p.no||'—')+'</td><td>'+dfmt(p.date)+'</td><td>'+esc(p.bills||'—')+'</td>'+filNumTds(p.nums)+'</tr>';});
+  h+='<tr class="'+TOT+'"><td colspan="4"><b>GRAND TOTAL</b></td>'+filNumTds(f.grand.nums,true)+'</tr></tbody></table>';return h;
+}
+function filRowsContract(f,screen){
+  const SUB=screen?'subtot':'fil-sub',TOT=screen?'tot':'fil-grand',NC=2+f.numHeads.length;
+  let h='<table><thead><tr><th>Date</th><th>SPS / Bill</th>'+filNumTh(f)+'</tr></thead><tbody>';
+  f.groups.slice().sort((a,b)=>String(a.no||'~').localeCompare(String(b.no||'~'))).forEach(g=>{
+    h+='<tr class="grp"><td colspan="'+NC+'" style="background:#eef3fb"><b>Contract '+esc(g.no||'—')+'</b> · '+esc(g.contractor)+' · PAN '+esc(g.pan||'—')+' · GSTIN '+esc(g.gstin||'—')+'</td></tr>';
+    g.pays.forEach(p=>{h+='<tr><td>'+dfmt(p.date)+'</td><td>'+esc(p.bills||'—')+'</td>'+filNumTds(p.nums)+'</tr>';});
+    h+='<tr class="'+SUB+'"><td colspan="2"><b>Subtotal — Contract '+esc(g.no||'—')+'</b></td>'+filNumTds(g.subNums,true)+'</tr>';
+  });
+  h+='<tr class="'+TOT+'"><td colspan="2"><b>GRAND TOTAL</b></td>'+filNumTds(f.grand.nums,true)+'</tr></tbody></table>';return h;
+}
+function filingConsGrouped(f){ // group the snapshot's per-contract groups under each contractor
+  const map={};
+  f.groups.forEach(g=>{const key=(g.contractor||'').trim().toLowerCase()||'(no contractor)';if(!map[key])map[key]={contractor:g.contractor,pan:g.pan,gstin:g.gstin,contracts:[]};const m=map[key];if(!m.pan&&g.pan)m.pan=g.pan;if(!m.gstin&&g.gstin)m.gstin=g.gstin;m.contracts.push(g);});
+  return Object.keys(map).map(k=>map[k]).sort((a,b)=>(a.contractor||'~').toLowerCase()<(b.contractor||'~').toLowerCase()?-1:1);
+}
+function filRowsContractor(f,screen){
+  const SUB=screen?'subtot':'fil-sub',CON=screen?'con-sub':'fil-con',TOT=screen?'tot':'fil-grand',NC=2+f.numHeads.length;
+  let h='<table><thead><tr><th>Date</th><th>SPS / Bill</th>'+filNumTh(f)+'</tr></thead><tbody>';
+  filingConsGrouped(f).forEach((con,ci)=>{
+    if(ci>0)h+='<tr class="filsep"><td colspan="'+NC+'"></td></tr>';
+    h+='<tr class="grp fgrp fgrp-top"><td colspan="'+NC+'" style="background:#dbe6f5;border-top:2px solid #1a56a8"><b>'+esc(con.contractor)+'</b> · PAN '+esc(con.pan||'—')+' · GSTIN '+esc(con.gstin||'—')+' · '+con.contracts.length+' contract'+(con.contracts.length===1?'':'s')+'</td></tr>';
+    const conSub=f.numHeads.map(()=>0);let conCnt=0;
+    con.contracts.slice().sort((a,b)=>String(a.no||'~').localeCompare(String(b.no||'~'))).forEach(c=>{
+      h+='<tr class="fgrp"><td colspan="'+NC+'" style="background:#eef3fb">&nbsp;&nbsp;&nbsp;<b>Contract '+esc(c.no||'—')+'</b></td></tr>';
+      c.pays.slice().sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0).forEach(p=>{h+='<tr class="fgrp"><td>'+dfmt(p.date)+'</td><td>'+esc(p.bills||'—')+'</td>'+filNumTds(p.nums)+'</tr>';});
+      h+='<tr class="'+SUB+' fgrp"><td colspan="2"><b>Subtotal — Contract '+esc(c.no||'—')+'</b></td>'+filNumTds(c.subNums,true)+'</tr>';
+      c.subNums.forEach((v,i)=>conSub[i]+=v);conCnt+=c.cnt;
+    });
+    h+='<tr class="'+CON+' fgrp fgrp-bot"><td colspan="2"><b>Total — '+esc(con.contractor)+'</b> <span class="mini">('+conCnt+' payment'+(conCnt===1?'':'s')+' · '+con.contracts.length+' contract'+(con.contracts.length===1?'':'s')+')</span></td>'+filNumTds(conSub,true)+'</tr>';
+  });
+  h+='<tr class="'+TOT+'"><td colspan="2"><b>GRAND TOTAL</b></td>'+filNumTds(f.grand.nums,true)+'</tr></tbody></table>';return h;
+}
+function filRowsSummary(f,screen){
+  const TOT=screen?'tot':'fil-grand';
+  const gs=filingAggByContractor(f);
+  let h='<table><thead><tr><th>Contractor</th><th>Contract(s)</th><th>PAN</th><th>GSTIN</th><th class="num">#Pmts</th>'+filNumTh(f)+'</tr></thead><tbody>';
+  gs.forEach(g=>{h+='<tr><td><b>'+esc(g.contractor)+'</b></td><td>'+esc(g.nos.join(', ')||'—')+'</td><td>'+esc(g.pan||'—')+'</td><td>'+esc(g.gstin||'—')+'</td><td class="num">'+g.cnt+'</td>'+filNumTds(g.subNums)+'</tr>';});
+  h+='<tr class="'+TOT+'"><td colspan="4"><b>GRAND TOTAL</b></td><td class="num"><b>'+f.grand.cnt+'</b></td>'+filNumTds(f.grand.nums,true)+'</tr></tbody></table>';return h;
+}
+function filingSavedRows(f,mode,screen){
+  mode=mode||'contractor';
+  if(mode==='payment')return filRowsPayment(f,screen);
+  if(mode==='contract')return filRowsContract(f,screen);
+  if(mode==='summary')return filRowsSummary(f,screen);
+  return filRowsContractor(f,screen);
+}
+function filingPrintSaved(id){
+  const f=(S.filings||[]).find(x=>x.id===id);if(!f)return;
+  const title=(f.isGst?'GST TDS Statement (GSTR-7) — Monthly':'Income-Tax TDS Statement (Form 26Q) — Quarterly');
+  const cert='<div class="rc-cert"><b>Total '+(f.isGst?'GST TDS':'Income-Tax TDS')+' to be filed: '+fmt(f.grand.total)+'</b> ('+esc(inWords(f.grand.total))+') across '+f.grand.nCon+' contractor(s).'+(f.filingDate?'<br>Filing date: <b>'+esc(f.filingDate)+'</b>':'')+'</div>';
+  const sig='<div class="rc-sig" style="justify-content:flex-end"><div>Checked by<br><span class="rc-sig-role">Sr. Div. Accounts Officer</span></div></div>';
+  const sub=(f.isGst?'GST TDS (GSTR-7)':'IT TDS (Form 26Q)')+(f.filingPeriod?' · '+f.filingPeriod:'')+' · '+({payment:'Payment-wise',contract:'Contract-wise',summary:'Contractor summary'}[FILING_VMODE]||'Contractor-wise');
+  rcDoc(title,filingSavedRows(f,FILING_VMODE)+cert+sig,{landscape:f.isGst,subtitle:sub,noSig:true,noFoot:true});
+}
+function filingCSVSaved(id){
+  const f=(S.filings||[]).find(x=>x.id===id);if(!f)return;
+  const head=['Contractor','Contract','PAN','GSTIN','Date','SPS/Bill'].concat(f.numHeads);
+  const rows=[head];
+  filingConsGrouped(f).forEach(con=>{ // each contract listed with its own subtotal, then a contractor subtotal
+    const conSub=f.numHeads.map(()=>0);
+    con.contracts.slice().sort((a,b)=>String(a.no||'~').localeCompare(String(b.no||'~'))).forEach(c=>{
+      c.pays.slice().sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0).forEach(p=>{rows.push([con.contractor,c.no||'',con.pan,con.gstin,p.date,p.bills].concat(p.nums.map(r2)));});
+      rows.push(['   Subtotal — Contract '+(c.no||''),'','','','',''].concat(c.subNums.map(r2)));
+      c.subNums.forEach((v,i)=>conSub[i]+=v);
+    });
+    rows.push(['Total — '+con.contractor,'','','','',''].concat(conSub.map(r2)));
+  });
+  rows.push(['GRAND TOTAL','','','','',''].concat(f.grand.nums.map(r2)));
+  const nm=(f.isGst?'GST_TDS':'IT_TDS')+'_FILED';
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([toCsv(rows)],{type:'text/csv;charset=utf-8'}));
+  a.download=nm+'_'+(f.savedAt||'').slice(0,10)+'.csv';a.click();
+}
+function pgFiling(){
+  const {isGst,groups,grand}=filingCompute();
+  const numHeads=filingNumHeads(isGst);
+  const summary=FILING_MODE==='summary';
+  const tabBtn=(id,label)=>`<button class="btn2 ${FILING_TAB===id?'on':''}" style="${FILING_TAB===id?'background:var(--acc);color:#fff':''}" onclick="filingSetTab('${id}')">${label}</button>`;
+  const modeBtn=(id,label)=>`<button class="btn2 ${FILING_MODE===id?'on':''}" style="${FILING_MODE===id?'background:var(--acc);color:#fff':''}" onclick="filingSetMode('${id}')">${label}</button>`;
+  const grpBtn=(id,label)=>`<button class="btn2 ${FILING_GROUP===id?'on':''}" style="${FILING_GROUP===id?'background:var(--acc);color:#fff':''}" onclick="filingSetGroup('${id}')">${label}</button>`;
+  const NC=summary?(5+numHeads.length):(3+numHeads.length);
+  const grpNoun=FILING_GROUP==='contract'?'Contract':'Contractor';
+  const th=summary
+    ? `<tr><th>Contractor</th><th>Contract(s)</th><th>PAN</th><th>GSTIN</th><th class="num">#Pmts</th>${numHeads.map(h=>`<th class="num">${h}</th>`).join('')}</tr>`
+    : `<tr><th class="noprint">✓</th><th>Date</th><th>SPS/Bill</th>${numHeads.map(h=>`<th class="num">${h}</th>`).join('')}</tr>`;
+  let rows='';
+  if(!groups.some(g=>g.pays.length)){
+    rows=`<tr><td colspan="${NC}" class="empty">No payments carrying ${isGst?'GST':'IT'} TDS in this selection. Adjust the period or scheme in the top filter bar.</td></tr>`;
+  }else if(summary){
+    groups.forEach(g=>{if(!g.selPays.length)return;
+      rows+=`<tr><td><b>${esc((g.c&&g.c.contractor)||'(no contractor)')}</b></td><td>${esc(filingGConNo(g))}</td><td>${esc((g.c&&g.c.pan)||'—')}</td><td>${esc((g.c&&g.c.gstin)||'—')}</td><td class="num">${g.sub.cnt}</td>${filingStatNums(isGst,g.sub).map(v=>`<td class="num">${fmt(v)}</td>`).join('')}</tr>`;});
+    rows+=`<tr class="tot"><td colspan="4"><b>GRAND TOTAL</b></td><td class="num"><b>${grand.cnt}</b></td>${filingStatNums(isGst,grand).map(v=>`<td class="num"><b>${fmt(v)}</b></td>`).join('')}</tr>`;
+  }else{
+    const payRow=(p,cls)=>{const on=filingSel(p);return `<tr class="${cls||''}" style="${on?'':'opacity:.4'}"><td class="noprint" style="text-align:center"><input type="checkbox" ${on?'checked':''} onchange="filingToggle('${p.id}')" style="width:16px;height:16px;cursor:pointer"></td><td>${dfmt(p.date)}</td><td>${esc(filingBills(p)||'—')}</td>${filingPayNums(isGst,p).map(v=>`<td class="num">${fmt(v)}</td>`).join('')}</tr>`;};
+    let firstGrp=true;
+    groups.forEach(g=>{if(!g.pays.length)return;
+      if(!firstGrp)rows+=`<tr class="filsep"><td colspan="${NC}"></td></tr>`;
+      firstGrp=false;
+      if(FILING_GROUP==='contractor'){
+        // contractor header, then each contract with its own subtotal, then the contractor subtotal — each contractor drawn as its own box
+        rows+=`<tr class="grp fgrp fgrp-top"><td class="noprint"></td><td colspan="${NC-1}" style="background:#dbe6f5;border-top:2px solid #1a56a8"><b>${esc((g.c&&g.c.contractor)||'(no contractor)')}</b> · PAN ${esc((g.c&&g.c.pan)||'—')} · GSTIN ${esc((g.c&&g.c.gstin)||'—')} · ${g.nos.length||1} contract${(g.nos.length||1)===1?'':'s'}</td></tr>`;
+        const byC={};g.pays.forEach(p=>{const k=p.contractId||'__none';(byC[k]||(byC[k]=[])).push(p);});
+        Object.keys(byC).map(cid=>({cc:conById(cid),pays:byC[cid]})).sort((a,b)=>String((a.cc&&a.cc.no)||'~').localeCompare(String((b.cc&&b.cc.no)||'~'))).forEach(cg=>{
+          rows+=`<tr class="fgrp"><td class="noprint"></td><td colspan="${NC-1}" style="background:#eef3fb">&nbsp;&nbsp;&nbsp;<b>Contract ${esc((cg.cc&&cg.cc.no)||'—')}</b></td></tr>`;
+          cg.pays.forEach(p=>{rows+=payRow(p,'fgrp');});
+          const csub=filingSubOf(cg.pays.filter(filingSel));
+          rows+=`<tr class="subtot fgrp"><td class="noprint"></td><td colspan="2"><b>Subtotal — Contract ${esc((cg.cc&&cg.cc.no)||'—')}</b></td>${filingStatNums(isGst,csub).map(v=>`<td class="num"><b>${fmt(v)}</b></td>`).join('')}</tr>`;
+        });
+        rows+=`<tr class="con-sub fgrp fgrp-bot"><td class="noprint"></td><td colspan="2"><b>Total — ${esc((g.c&&g.c.contractor)||'(no contractor)')}</b> <span class="mini">(${g.sub.cnt} of ${g.pays.length} selected)</span></td>${filingStatNums(isGst,g.sub).map(v=>`<td class="num"><b>${fmt(v)}</b></td>`).join('')}</tr>`;
+      }else{
+        rows+=`<tr class="grp"><td class="noprint"></td><td colspan="${NC-1}" style="background:#eef3fb"><b>${esc((g.c&&g.c.contractor)||'(no contractor)')}</b> · Contract ${esc(filingGConNo(g))} · PAN ${esc((g.c&&g.c.pan)||'—')} · GSTIN ${esc((g.c&&g.c.gstin)||'—')}</td></tr>`;
+        g.pays.forEach(p=>{rows+=payRow(p);});
+        rows+=`<tr class="subtot"><td class="noprint"></td><td colspan="2"><b>Subtotal — ${esc(filingGLabel(g))}</b> <span class="mini">(${g.sub.cnt} of ${g.pays.length} selected)</span></td>${filingStatNums(isGst,g.sub).map(v=>`<td class="num"><b>${fmt(v)}</b></td>`).join('')}</tr>`;
+      }});
+    rows+=`<tr class="tot"><td class="noprint"></td><td colspan="2"><b>GRAND TOTAL</b></td>${filingStatNums(isGst,grand).map(v=>`<td class="num"><b>${fmt(v)}</b></td>`).join('')}</tr>`;
+  }
+  const nCon=FILING_GROUP==='contract'?new Set(groups.filter(g=>g.selPays.length).map(g=>((g.c&&g.c.contractor)||'').toLowerCase())).size:groups.filter(g=>g.selPays.length).length;
+  const banner=`<div class="card" style="border-left:4px solid var(--acc)">
+    <div class="mini" style="text-transform:uppercase;letter-spacing:.5px">${isGst?'Total GST TDS to deposit (GSTR-7)':'Total Income-Tax TDS to deposit (Form 26Q)'}</div>
+    <div style="font-size:26px;font-weight:800;color:var(--acc);line-height:1.2">${fmt(grand.total)}</div>
+    <div class="mini">${esc(inWords(grand.total))}</div>
+    <div class="mini" style="margin-top:4px">${nCon} contractor${nCon===1?'':'s'} · ${grand.cnt} payment${grand.cnt===1?'':'s'} selected${isGst?` &nbsp;|&nbsp; CGST ${fmt(grand.cgstTds)} + SGST ${fmt(grand.sgstTds)} + IGST ${fmt(grand.igstTds)}`:''}</div>
+  </div>`;
+  return `<h2 class="pg">🧾 TDS / GST-TDS Filing Helper</h2>
+   <div class="card">
+     <div class="flex" style="gap:8px;flex-wrap:wrap;align-items:center">${tabBtn('gst','📅 GST TDS — Monthly (GSTR-7)')} ${tabBtn('it','🗓️ IT TDS — Quarterly (26Q)')}</div>
+     <div class="flex" style="gap:14px;flex-wrap:wrap;align-items:flex-end;margin-top:10px">
+       <div><div class="mini">Group by</div>${grpBtn('contractor','Contractor')} ${grpBtn('contract','Contract')}</div>
+       <div><div class="mini">View</div>${modeBtn('detail','Payment detail')} ${modeBtn('summary','Subtotals only')}</div>
+       <div style="margin-left:auto;text-align:right">${summary?'':`<button class="btn2" onclick="filingAll(true)">✓ Select all</button> <button class="btn2" onclick="filingAll(false)">✗ Clear</button> `}<button class="btn" onclick="filingSave()" title="Freeze these figures as a filed return you can look up later">💾 Save this filing</button> <button class="btn" onclick="filingPrint()">🖨 Print / PDF (official format)</button> <button class="btn2" onclick="filingCSV()">⬇ Excel (CSV)</button></div>
+     </div>
+   </div>
+   ${banner}
+   <div class="card"><div class="tbl-wrap"><table>${th}${rows}</table></div></div>
+   ${filingSavedSection()}`;
+}
+function filingSavedSection(){
+  const all=filingSavedList();
+  const list=all.filter(f=>f.type===FILING_TAB);
+  const kind=FILING_TAB==='gst'?'GST TDS (GSTR-7)':'IT TDS (Form 26Q)';
+  let inner;
+  if(!list.length){
+    inner=`<div class="empty" style="padding:14px">No saved ${kind} returns yet. Pick a period above, tick the payments, then click <b>💾 Save this filing</b> to keep a permanent record here.</div>`;
+  }else{
+    let rows=list.map(f=>{
+      const open=FILING_VIEW===f.id;
+      const head=`<tr>
+        <td><b>${esc(f.filingPeriod||f.periodLabel.replace(/^(GST TDS \(GSTR-7\)|IT TDS \(26Q\)) · /,'')||'—')}</b></td>
+        <td class="num"><b>${fmt(f.grand.total)}</b></td>
+        <td class="num">${f.grand.nCon}</td>
+        <td class="num">${f.grand.cnt}</td>
+        <td>${esc(f.filingDate||'—')}</td>
+        <td class="mini">${esc(new Date(f.savedAt).toLocaleDateString('en-IN'))}</td>
+        <td class="noprint" style="white-space:nowrap">
+          <button class="btn2 btn-sm" onclick="filingViewSaved('${f.id}')">${open?'▲ Hide':'👁 View'}</button>
+          <button class="btn2 btn-sm" onclick="filingPrintSaved('${f.id}')">🖨 Print</button>
+          <button class="btn2 btn-sm" onclick="filingCSVSaved('${f.id}')">⬇ CSV</button>
+          <button class="btn-del" onclick="filingDelSaved('${f.id}')">✕</button>
+        </td></tr>`;
+      const vmodes=[['payment','Payment-wise'],['contract','Contract-wise'],['contractor','Contractor-wise'],['summary','Summary']];
+      const vbtns=vmodes.map(([m,l])=>`<button class="btn2 ${FILING_VMODE===m?'on':''}" style="${FILING_VMODE===m?'background:var(--acc);color:#fff':''}" onclick="filingSetVMode('${m}')">${l}</button>`).join(' ');
+      const detail=open?`<tr><td colspan="7" style="background:#fafbfe"><div class="flex" style="gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px"><span class="mini">View:</span> ${vbtns} <span style="margin-left:auto"><button class="btn2 btn-sm" onclick="filingPrintSaved('${f.id}')">🖨 Print this view</button></span></div><div class="tbl-wrap">${filingSavedRows(f,FILING_VMODE,true)}</div></td></tr>`:'';
+      return head+detail;
+    }).join('');
+    inner=`<div class="tbl-wrap"><table>
+      <tr><th>Filing Period / Month</th><th class="num">Total TDS</th><th class="num">Contractors</th><th class="num">Payments</th><th>Filing Date</th><th>Saved</th><th class="noprint">Actions</th></tr>
+      ${rows}
+    </table></div>`;
+  }
+  return `<div class="card"><h3>📁 Saved / Filed Returns — ${esc(kind)}</h3>
+    ${inner}
+  </div>`;
+}
+function filingPrint(){
+  const {isGst,groups,grand}=filingCompute();
+  const numHeads=filingNumHeads(isGst);
+  const title=isGst?'GST TDS Statement (GSTR-7) — Monthly':'Income-Tax TDS Statement (Form 26Q) — Quarterly';
+  const lead=['Date','SPS / Bill'];
+  const NC=lead.length+numHeads.length;
+  let any=false;
+  let h='<table><thead><tr>'+lead.map(x=>'<th>'+esc(x)+'</th>').join('')+numHeads.map(x=>'<th class="num">'+esc(x)+'</th>').join('')+'</tr></thead><tbody>';
+  groups.forEach(g=>{
+    if(!g.selPays.length)return;any=true;
+    h+='<tr><td colspan="'+NC+'" style="background:#eef3fb"><b>'+esc((g.c&&g.c.contractor)||'(no contractor)')+'</b> · Contract'+(FILING_GROUP==='contract'?'':'(s)')+' '+esc(filingGConNo(g))+' · PAN '+esc((g.c&&g.c.pan)||'—')+' · GSTIN '+esc((g.c&&g.c.gstin)||'—')+'</td></tr>';
+    g.selPays.forEach(p=>{h+='<tr><td>'+dfmt(p.date)+'</td><td>'+esc(filingBills(p)||'—')+'</td>'+filingPayNums(isGst,p).map(v=>'<td class="num">'+fmt(v)+'</td>').join('')+'</tr>';});
+    h+='<tr class="fil-sub"><td colspan="'+lead.length+'"><b>Subtotal — '+esc(filingGLabel(g))+'</b></td>'+filingStatNums(isGst,g.sub).map(v=>'<td class="num"><b>'+fmt(v)+'</b></td>').join('')+'</tr>';
+  });
+  if(!any){alert('Nothing selected to print. Pick a period and tick some payments first.');return;}
+  h+='<tr class="fil-grand"><td colspan="'+lead.length+'"><b>GRAND TOTAL</b></td>'+filingStatNums(isGst,grand).map(v=>'<td class="num"><b>'+fmt(v)+'</b></td>').join('')+'</tr>';
+  h+='</tbody></table>';
+  const nConP=new Set(groups.filter(g=>g.selPays.length).map(g=>((g.c&&g.c.contractor)||'').toLowerCase())).size;
+  const cert='<div class="rc-cert"><b>Total '+(isGst?'GST TDS':'Income-Tax TDS')+' to be filed: '+fmt(grand.total)+'</b> ('+esc(inWords(grand.total))+') across '+nConP+' contractor(s).</div>';
+  const sig='<div class="rc-sig" style="justify-content:flex-end"><div>Checked by<br><span class="rc-sig-role">Sr. Div. Accounts Officer</span></div></div>';
+  rcDoc(title,h+cert+sig,{landscape:isGst,subtitle:filingPeriodLabel()+' · '+(FILING_GROUP==='contract'?'Contract-wise':'Contractor-wise'),noSig:true,noFoot:true});
+}
+function filingCSV(){
+  const {isGst,dk,groups,grand}=filingCompute();
+  const head=isGst
+    ? ['Contractor','Contract','PAN','GSTIN','Date','SPS/Bill','Gross Paid','Taxable Value','CGST TDS','SGST TDS','IGST TDS','Total GST TDS']
+    : ['Contractor','Contract','PAN','GSTIN','Date','SPS/Bill','Gross Paid','IT TDS'];
+  const rows=[head];
+  groups.forEach(g=>{
+    if(!g.selPays.length)return;
+    const cName=(g.c&&g.c.contractor)||'(no contractor)',cNo=filingGConNo(g),pan=(g.c&&g.c.pan)||'',gstin=(g.c&&g.c.gstin)||'';
+    g.selPays.forEach(p=>{
+      const base=[cName,cNo,pan,gstin,p.date,filingBills(p)];
+      rows.push(base.concat(filingPayNums(isGst,p).map(r2)));
+    });
+    rows.push(['Subtotal — '+cName,'','','','',''].concat(filingStatNums(isGst,g.sub).map(r2)));
+  });
+  rows.push(['GRAND TOTAL','','','','',''].concat(filingStatNums(isGst,grand).map(r2)));
+  const nm=(isGst?'GST_TDS':'IT_TDS');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([toCsv(rows)],{type:'text/csv;charset=utf-8'}));
+  a.download=nm+'_'+today()+'.csv';a.click();
+}
 function pgRemit(){
   const ss=selSchemes();
   let tC=0,tM=0;
@@ -7376,6 +7754,10 @@ function rcCSS(){
    +'th{background:#eef1f5}'
    +'td.num,th.num{text-align:right;white-space:nowrap}'
    +'tr.tot td{font-weight:bold;background:#f0f2f5}'
+   +'tr.fil-sub td{background:#fef9c3;font-weight:bold;border-top:1px solid #ca8a04;color:#713f12}'
+   +'tr.fil-con td{background:#ccfbf1;font-weight:800;border-top:2px solid #0d9488;border-bottom:2px solid #5eead4;color:#134e4a}'
+   +'tr.fil-grand td{background:#dbeafe;font-weight:800;border-top:2px solid #1a56a8;border-bottom:2px solid #1a56a8;color:#0d2a6e}'
+   +'tr.filsep td{background:#fff;height:12px;border:none;padding:0}'
    +'.rc-note{font-size:10.5px;color:#333;margin-top:6px}'
    +'.rc-cert{font-size:12px;line-height:1.7;margin:12px 0;text-align:justify}'
    +'.rc-sig{display:flex;justify-content:space-between;margin-top:56px;text-align:center;font-size:11.5px;font-weight:bold}'
@@ -7391,7 +7773,7 @@ function rcDoc(title,body,opts){
     +rcHeadHTML(title,opts.subtitle)
     +body
     +(opts.noSig?'':rcSigBlock())
-    +'<div class="rc-foot">Generated '+new Date().toLocaleString('en-IN')+' · PWD Fund &amp; Works Tracking System · '+esc(periodLabel())+'</div>'
+    +(opts.noFoot?'':'<div class="rc-foot">Generated '+new Date().toLocaleString('en-IN')+' · PWD Fund &amp; Works Tracking System · '+esc(periodLabel())+'</div>')
     +'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},300);};</scr'+'ipt></body></html>';
   var w=window.open('','_blank');
   if(!w)return alert('Pop-up blocked — please allow pop-ups to generate the report.');
@@ -7863,6 +8245,7 @@ function cloudConnect(){
       var d=snap.data();_cl.ready=true;
       if(!d||!d.stateJson)return;
       if(d.rev&&d.rev===_cl.myRev){clStat('Live ✓','ok');return;} // our own echo
+      if(d.stateJson===localStorage.getItem(KEY)){clStat('Live ✓','ok');return;} // cloud already matches this device — skip the redundant re-render at startup
       _cl.applying=true;
       try{S=JSON.parse(d.stateJson);localStorage.setItem(KEY,JSON.stringify(S));render();}catch(e){}
       _cl.applying=false;
@@ -8241,6 +8624,445 @@ function waExport(){
 }
 /* dead-template-removed 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 */
 window.__WA_TPL_B64=["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"].join("");
+
+/* ======================================================================
+   IUFR — Interim Unaudited Financial Report (quarterly, per project)
+   Auto-fills from bills/payments; manual cells saved per-project in S.
+   ====================================================================== */
+const IUFR_LINES=[
+  {k:'A',   name:'Component A: Road Rehabilitation and Improved Drainage'},
+  {k:'B',   name:'Component B: Sustainable Asset Management and Maintenance'},
+  {k:'C',   name:'Component C : Project Management'},
+  {k:'LAND',name:'Land Acquisition and Rehabilitation, Utility shifting, Forest and Environmental safeguard, Administrative charges'},
+  {k:'FEE', name:'Front-end Fees'}
+];
+// MURDAMIP Project Document budget (USD mn / INR mn) — used as editable defaults
+const IUFR_MURDAMIP={
+  loanNo:'L0723A', title:'India: Manipur Urban Road, Drainage and Asset Management Improvement Project (P000723)',
+  bank:'State Bank of India', acct:'44196999112',
+  budget:{A:[438.3,36019.494],B:[4.97,408.4346],C:[0.55,45.199],LAND:[71.69,5891.4842],FEE:[0.881,72.40058]},
+  srcBudget:{GoM:[91.41,7512.0738],AIIB:[352.4,28960.232]}
+};
+let IUFRUI={sid:'',fy:'',q:'',sheet:'sources'};
+function iufrCfg(s){
+  if(!s.iufr){
+    const mur=/murdamip|P000723/i.test((s.name||'')+' '+(s.loanNo||''))||/0723/.test(s.loanNo||'');
+    s.iufr={fixed:{aiibPct:100, gstDiv:1.19, compMap:{},
+      title: mur?IUFR_MURDAMIP.title:(s.name||''),
+      loanNo: s.loanNo||(mur?IUFR_MURDAMIP.loanNo:''),
+      bank: mur?IUFR_MURDAMIP.bank:'', acct: mur?IUFR_MURDAMIP.acct:'',
+      budget:{}, srcBudget:{}}, q:{}};
+    IUFR_LINES.forEach(L=>{s.iufr.fixed.budget[L.k]=mur?(IUFR_MURDAMIP.budget[L.k]||[0,0]):[0,0];});
+    s.iufr.fixed.srcBudget={GoM: mur?IUFR_MURDAMIP.srcBudget.GoM:[0,0], AIIB: mur?IUFR_MURDAMIP.srcBudget.AIIB:[0,0]};
+    // auto-map app components to IUFR lines by name
+    (s.components||[]).forEach(c=>{s.iufr.fixed.compMap[c.id]=iufrGuessKey(c.name);});
+  }
+  const f=s.iufr.fixed; if(!f.compMap)f.compMap={};
+  (s.components||[]).forEach(c=>{if(!f.compMap[c.id])f.compMap[c.id]=iufrGuessKey(c.name);});
+  return s.iufr;
+}
+function iufrGuessKey(nm){nm=(nm||'').toLowerCase();
+  if(/front|fee/.test(nm))return 'FEE';
+  if(/land|acquis|utility|forest|environ/.test(nm))return 'LAND';
+  if(/^\s*b[\.\)\s]/.test(nm)||/asset manage|maintenance/.test(nm))return 'B';
+  if(/^\s*c[\.\)\s]/.test(nm)||/project manage|capacity/.test(nm))return 'C';
+  return 'A';
+}
+function iufrScheme(){const s=S.schemes.find(x=>x.id===IUFRUI.sid);return s||S.schemes.find(x=>x.id===activeScheme())||S.schemes[0]||null;}
+function iufrGet(scope,key,def){const s=iufrScheme();if(!s)return def;const c=iufrCfg(s);
+  if(scope==='fixed'){const v=c.fixed[key];return (v===undefined||v==='')?def:v;}
+  const fq=IUFRUI.fy+'|'+IUFRUI.q;const b=c.q[fq]||{};const v=b[key];return (v===undefined||v==='')?def:v;}
+function iufrSet(scope,key,value){const s=iufrScheme();if(!s)return;const c=iufrCfg(s);
+  if(scope==='fixed'){c.fixed[key]=value;}
+  else{const fq=IUFRUI.fy+'|'+IUFRUI.q;c.q[fq]=c.q[fq]||{};c.q[fq][key]=value;}
+  save();}
+function iufrRange(fy,q){const y=parseInt(fy)||new Date().getFullYear();
+  const m={Q1:[y,4,y,6],Q2:[y,7,y,9],Q3:[y,10,y,12],Q4:[y+1,1,y+1,3]}[q||'Q4'];
+  const [ys,ms,ye,me]=m;
+  const pad=x=>String(x).padStart(2,'0');
+  const from=ys+'-'+pad(ms)+'-01';
+  const to=ye+'-'+pad(me)+'-'+pad(new Date(ye,me,0).getDate());
+  const prevTo=new Date(new Date(from).getTime()-86400000).toISOString().slice(0,10);
+  const ytdFrom=y+'-04-01';
+  const pyFrom=(y-1)+'-04-01', pyTo=y+'-03-31';
+  return {from,to,prevTo,ytdFrom,pyFrom,pyTo};
+}
+function iufrKey(s,compId){const c=iufrCfg(s);return (c.fixed.compMap&&c.fixed.compMap[compId])||iufrGuessKey(compName(s,compId));}
+// sum of PASSED (bill-passed, GST-incl) amounts by IUFR component key, within [from,to] (from may be null = no lower bound)
+function iufrExpSum(s,from,to){const by={A:0,B:0,C:0,LAND:0,FEE:0};let tot=0;
+  S.payments.filter(p=>!p.draft&&p.schemeId===s.id&&(!from||p.date>=from)&&(!to||p.date<=to)).forEach(p=>{
+    (p.lines||[]).forEach(l=>{if(!l.billId)return;const b=S.bills.find(x=>x.id===l.billId)||{};
+      const cmp=b.compId||(conById(b.contractId)||{}).compId||(conById(p.contractId)||{}).compId||'';
+      const k=iufrKey(s,cmp);const amt=n(l.amt);by[k]=(by[k]||0)+amt;tot+=amt;});});
+  return {by:by,total:tot};
+}
+// per-line detail rows for the reporting quarter
+function iufrLines(s,from,to){const out=[];
+  S.payments.filter(p=>!p.draft&&p.schemeId===s.id&&(!from||p.date>=from)&&(!to||p.date<=to)).forEach(p=>{
+    const pc=conById(p.contractId)||{};
+    (p.lines||[]).forEach(l=>{if(!l.billId)return;const b=S.bills.find(x=>x.id===l.billId)||{};
+      const bc=conById(b.contractId)||pc;const d=l.deds||{};const passed=n(l.amt);
+      const div=n(iufrGet('fixed','gstDiv',1.19))||1.19;const base=passed/div;
+      const recGst=n(d.cgstTds)+n(d.sgstTds)+n(d.igstTds);
+      out.push({date:p.date,vno:p.vno||'',billNo:b.billNo||'',pkg:bc.no||pc.no||'',piu:bc.piu||pc.piu||'',
+        contractor:bc.contractor||pc.contractor||'',compId:b.compId||bc.compId||pc.compId||'',
+        workVal:base,gst:base*0.18,cess:base*0.01,passed:passed,
+        recIt:n(d.itTds),recGst:recGst,recCgstIgst:n(d.cgstTds)+n(d.igstTds),recSgst:n(d.sgstTds),recCess:n(d.cess),recRet:n(d.ret),recOth:n(d.oth)});});});
+  out.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0);
+  out.forEach((r,i)=>{r.sno=i+1;r.totalRec=r.recIt+r.recGst+r.recCess+r.recRet+r.recOth;r.netPay=r.passed-r.totalRec;
+    const pct=n(iufrGet('fixed','aiibPct',100));r.aiib=r.passed*pct/100;r.gom=r.passed-r.aiib;});
+  return out;
+}
+function iufrBuild(){const s=iufrScheme();if(!s)return null;
+  const R=iufrRange(IUFRUI.fy,IUFRUI.q);
+  const lines=iufrLines(s,R.from,R.to);
+  // Current Quarter, Upto Previous Quarter & YTD are all within the CURRENT financial year (Apr–Mar).
+  // Previous Year = the whole previous FY. CTD = cumulative since expenditure began.
+  const cur=iufrExpSum(s,R.from,R.to), prev=iufrExpSum(s,R.ytdFrom,R.prevTo),
+        ytd=iufrExpSum(s,R.ytdFrom,R.to), py=iufrExpSum(s,R.pyFrom,R.pyTo), ctd=iufrExpSum(s,null,R.to);
+  // summary of bills — grouped by package
+  const g={}; lines.forEach(r=>{const k=r.pkg||'—';g[k]=g[k]||{pkg:k,passed:0,gst:0,aiib:0,gom:0};
+    g[k].passed+=r.passed;g[k].gst+=r.gst;g[k].aiib+=r.aiib;g[k].gom+=r.gom;});
+  const summary=Object.values(g).sort((a,b)=>String(a.pkg).localeCompare(String(b.pkg),undefined,{numeric:true}));
+  return {s:s,R:R,lines:lines,cur:cur,prev:prev,ytd:ytd,py:py,ctd:ctd,summary:summary,
+    usd:n(iufrGet('q','usdRate',94.35))||94.35};
+}
+function iN(v){return Math.round(n(v)).toLocaleString('en-IN');}
+function iM(v){return (n(v)/1e6).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function iufrInp(scope,key,def,w){return `<input type="text" value="${esc(iufrGet(scope,key,def))}" onchange="iufrSet('${scope}','${key}',this.value);render()" style="width:${w||90}px;text-align:right;padding:2px 4px">`;}
+function iufrTxt(scope,key,def,w){return `<input type="text" value="${esc(iufrGet(scope,key,def))}" onchange="iufrSet('${scope}','${key}',this.value)" style="width:${w||160}px;padding:2px 4px">`;}
+
+function iufrSetScheme(v){IUFRUI.sid=v;save();render();}
+function iufrSetFy(v){IUFRUI.fy=v;render();}
+function iufrSetQ(v){IUFRUI.q=v;render();}
+function iufrSetSheet(v){IUFRUI.sheet=v;render();}
+const IUFR_ORDER_DEF=['sources','soe','pes','la','da','bank','exp','summary'];
+let IUFR_DRAG=null;
+function iufrDragStart(e,k){IUFR_DRAG=k;try{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',k);}catch(_){}}
+function iufrDragOver(e){e.preventDefault();try{e.dataTransfer.dropEffect='move';}catch(_){}}
+function iufrDrop(e,k){e.preventDefault();const from=IUFR_DRAG;IUFR_DRAG=null;if(!from||from===k)return;
+  let ord=(S.ui.iufrOrder&&S.ui.iufrOrder.length)?S.ui.iufrOrder.slice():IUFR_ORDER_DEF.slice();
+  IUFR_ORDER_DEF.forEach(x=>{if(ord.indexOf(x)<0)ord.push(x);});
+  ord=ord.filter(x=>x!==from);const i=ord.indexOf(k);ord.splice(i<0?ord.length:i,0,from);
+  S.ui.iufrOrder=ord;save();render();}
+function iufrResetOrder(){if(S.ui)S.ui.iufrOrder=null;save();render();}
+function pgIUFR(){
+  if(!S.schemes.length)return `<div class="card"><div class="empty">Add a project first (Projects / Schemes), then generate its IUFR here.</div></div>`;
+  // Project, FY & Quarter are driven by the universal top filter bar
+  IUFRUI.sid=activeScheme()||S.schemes[0].id;
+  const _t=today();
+  const _fysSel=(S.ui.fys&&S.ui.fys.length)?S.ui.fys.slice().sort():[getFY(_t)];
+  IUFRUI.fy=String(parseInt(_fysSel[_fysSel.length-1]));
+  const _qSel=(S.ui.quarters&&S.ui.quarters.length)?S.ui.quarters.slice().sort():[getQ(_t)];
+  IUFRUI.q=_qSel[_qSel.length-1];
+  const s=iufrScheme();iufrCfg(s);
+  // Official reference order (matches the reviewed IUFR workbook). Users can drag chips to reorder; custom order persists in S.ui.iufrOrder.
+  const SHEET_DEF=[['sources','Sources & Uses of Funds'],['soe','SOE'],['pes','Project Expenditure Statement'],['la','LA Implementation'],['da','DA Reconciliation'],['bank','OP Bank Recon'],['exp','Expenditure Details'],['summary','Summary of Bills']];
+  const _lbl={};SHEET_DEF.forEach(([k,l])=>_lbl[k]=l);
+  let _ord=(S.ui&&S.ui.iufrOrder&&S.ui.iufrOrder.length)?S.ui.iufrOrder.filter(k=>_lbl[k]):[];
+  SHEET_DEF.forEach(([k])=>{if(_ord.indexOf(k)<0)_ord.push(k);});
+  const SHEETS=_ord.map(k=>[k,_lbl[k]]);
+  const R=iufrRange(IUFRUI.fy,IUFRUI.q);
+  const head=`<div class="card" style="padding:10px 14px;margin-bottom:10px">
+    <div class="flex" style="gap:14px;align-items:center;flex-wrap:wrap">
+      <b style="font-size:15px">🏦 IUFR — Quarterly</b>
+      <span class="mini" style="color:#555">Project <b>${esc(s.name)}</b> · <b>${esc(qLabel())}</b> · ${dfmt(R.from)} → ${dfmt(R.to)} <span style="opacity:.7">(set project, FY &amp; quarter in the top filter bar)</span></span>
+      <label class="mini">1 USD = ${iufrInp('q','usdRate',94.35,70)} INR</label>
+      <span style="flex:1"></span>
+      <button class="btn btn-ok" onclick="iufrExportXlsx()">⬇ Export Excel (8 sheets)</button>
+      <button class="btn2" onclick="iufrPrint()">🖨 Print / PDF</button>
+    </div>
+    <div class="flex" style="gap:6px;margin-top:8px;flex-wrap:wrap">
+      ${SHEETS.map(([k,l])=>`<span class="chip ${IUFRUI.sheet===k?'on':''}" draggable="true" ondragstart="iufrDragStart(event,'${k}')" ondragover="iufrDragOver(event)" ondrop="iufrDrop(event,'${k}')" onclick="iufrSetSheet('${k}')" title="Click to open · drag to reorder">⋮⋮ ${l}</span>`).join('')}
+      <span class="mini" style="color:#888">↔ drag tabs to reorder · <a href="#" onclick="iufrResetOrder();return false" style="color:#888">reset order</a></span>
+    </div>
+    <div class="note" style="margin-top:6px">Blue cells are <b>auto-filled from your bills &amp; payments</b>. White input boxes are <b>manual</b> — enter budget/plan/bank figures once; they are saved per project &amp; quarter.</div>
+  </div>`;
+  const D=iufrBuild();
+  const body={exp:iufrSheetExp,summary:iufrSheetSummary,pes:iufrSheetPES,sources:iufrSheetSources,
+    soe:iufrSheetSOE,la:iufrSheetLA,da:iufrSheetDA,bank:iufrSheetBank}[IUFRUI.sheet]||iufrSheetExp;
+  return head+`<div id="iufrDoc">`+body(D)+`</div>`;
+}
+function iufrCap(D){const s=D.s,c=iufrCfg(s).fixed;
+  return `<div style="text-align:center;margin-bottom:6px">
+    <div style="font-weight:700">${esc(c.title||s.name)}</div>
+    <div class="mini">Loan No. ${esc(c.loanNo||'')} &nbsp;·&nbsp; ${esc(qLabel(D))}</div></div>`;}
+function qLabel(D){const mn={Q1:'Apr–Jun',Q2:'Jul–Sep',Q3:'Oct–Dec',Q4:'Jan–Mar'}[IUFRUI.q];
+  return `${IUFRUI.q} FY ${IUFRUI.fy}-${String((parseInt(IUFRUI.fy)+1)%100).padStart(2,'0')} (${mn})`;}
+const IUFR_AUTO='background:#eaf2ff';
+function iufrFY(d){const dt=new Date(d);if(isNaN(dt))return '';let y=dt.getFullYear();if(dt.getMonth()+1<4)y--;return y+'-'+String((y+1)%100).padStart(2,'0');}
+function iufrSheetExp(D){const L=D.lines;
+  const t={};['workVal','gst','cess','gross','passed','recIt','recCgstIgst','recSgst','recCess','recRet','recOth','totalRec','netPay','netGst','aiib','gom'].forEach(k=>t[k]=0);
+  const cN=v=>v?iN(v):'';
+  const rows=L.map(r=>{const gross=r.workVal+r.gst+r.cess,netGst=r.passed-r.gst;
+    t.workVal+=r.workVal;t.gst+=r.gst;t.cess+=r.cess;t.gross+=gross;t.passed+=r.passed;t.recIt+=r.recIt;t.recCgstIgst+=r.recCgstIgst;t.recSgst+=r.recSgst;t.recCess+=r.recCess;t.recRet+=r.recRet;t.recOth+=r.recOth;t.totalRec+=r.totalRec;t.netPay+=r.netPay;t.netGst+=netGst;t.aiib+=r.aiib;t.gom+=r.gom;
+    return `<tr><td class="no">${r.sno}</td><td>${esc(iufrFY(r.date))}</td><td>${dfmt(r.date)}</td><td>${esc(r.billNo)}</td><td><b>${esc(r.pkg)}</b></td><td>${esc(r.piu||'—')}</td>`+
+    `<td class="r">${cN(r.workVal)}</td><td class="r"></td><td class="r"></td><td class="r"></td><td class="r">${cN(r.gst)}</td><td class="r">${cN(r.cess)}</td><td class="r"><b>${cN(gross)}</b></td>`+
+    `<td class="r"></td><td class="r"></td><td class="r"></td><td class="r"></td><td class="r"></td><td class="r">${cN(r.passed)}</td><td class="r"><b>${cN(r.passed)}</b></td>`+
+    `<td class="r"></td><td class="r">${cN(r.recIt)}</td><td class="r">${cN(r.recCgstIgst)}</td><td class="r">${cN(r.recSgst)}</td><td class="r">${cN(r.recCess)}</td><td class="r"></td><td class="r">${cN(r.recRet)}</td><td class="r"></td><td class="r">${cN(r.recOth)}</td><td class="r"></td><td class="r"><b>${cN(r.totalRec)}</b></td><td class="r">${cN(r.netPay)}</td><td class="r">${cN(netGst)}</td><td class="r"><b>${cN(r.aiib)}</b></td><td class="r">${cN(r.gom)}</td><td></td></tr>`;}).join('')
+    ||`<tr><td colspan="36" class="empty">No bill-passed payments in ${esc(qLabel(D))}. Enter payments in the app for this quarter.</td></tr>`;
+  const H=(l,cls)=>`<th class="${cls||''}">${l}</th>`;
+  const head1=['S.No','FY','Date','CFMS Bill No','Package No.','Name of PIU','Total Value of Work Done','Tender Premium','Seigniorage Charges','NAC','GST @18%','Labour Cess @1%','Total\n(Gross Amount)','Withheld released','Withheld deducted','Deduct Previous payment','QC Recovery','Recovaries EOAT Fine','CFMS Total Passed Amount','Total Passed Amount','Seigniorage Charges','Income tax @2%','CGST/IGST @1%','SGST @1%','Labour Cess @1%','NAC','Contractors EMD-FSD-ASD','WS&SR&R – RWS & PR','Other Receipts Major','Professional Tax','Total Recoveries','NET Pay Amount','Total Passed Amount Net off GST','*AIIB share','GOM share','Remarks'].map((l,i)=>H(l.replace(/\n/g,'<br>'),i>=6?'r':'')).join('');
+  const nums=['','','','','','','1','2','3','4','5','6','7= (1+2+3+4+5+6)','8','9','10','11','12','13 = (7)-(8+9+10+11+12)','13 = (7)-(8+9+10+11+12)','14','15','16','17','18','19','20','21','22','23','24 = sum(14 to 23)','25 = (13-24)','26 = (13-5)','27','28=(13-27)','Column 6 added for Labour Cess'].map(x=>`<td class="r">${esc(x)}</td>`).join('');
+  const tot=`<tr class="ntot"><td colspan="6" style="text-align:right"><b>Total:</b></td>`+
+    `<td class="r"><b>${cN(t.workVal)}</b></td><td></td><td></td><td></td><td class="r"><b>${cN(t.gst)}</b></td><td class="r"><b>${cN(t.cess)}</b></td><td class="r"><b>${cN(t.gross)}</b></td>`+
+    `<td></td><td></td><td></td><td></td><td></td><td class="r"><b>${cN(t.passed)}</b></td><td class="r"><b>${cN(t.passed)}</b></td>`+
+    `<td></td><td class="r"><b>${cN(t.recIt)}</b></td><td class="r"><b>${cN(t.recCgstIgst)}</b></td><td class="r"><b>${cN(t.recSgst)}</b></td><td class="r"><b>${cN(t.recCess)}</b></td><td></td><td class="r"><b>${cN(t.recRet)}</b></td><td></td><td class="r"><b>${cN(t.recOth)}</b></td><td></td><td class="r"><b>${cN(t.totalRec)}</b></td><td class="r"><b>${cN(t.netPay)}</b></td><td class="r"><b>${cN(t.netGst)}</b></td><td class="r"><b>${cN(t.aiib)}</b></td><td class="r"><b>${cN(t.gom)}</b></td><td></td></tr>`;
+  return `<div class="card">${iufrCap(D)}<h3>Statement Showing Bills Passed (Period)</h3>
+   <div class="tbl-wrap" style="overflow:auto"><table class="tt" style="font-size:9.5px;white-space:nowrap">
+   <tr>${head1}</tr>
+   <tr class="sec">${nums}</tr>
+   ${rows}
+   ${tot}
+   </table></div>
+   <div class="note" style="margin-top:8px">Columns match the official reference workbook. Cells the app does not capture (Tender Premium, Seigniorage, NAC, Withheld, QC/EOAT recovery, WS&amp;SR&amp;R, Professional Tax, Remarks) are left blank. Value of Work Done, GST &amp; Cess are derived from the passed amount (÷${esc(iufrGet('fixed','gstDiv',1.19))}); retention shown under EMD-FSD-ASD and CSC adjustment under Other Receipts to preserve totals. AIIB share = ${esc(iufrGet('fixed','aiibPct',100))}% of passed.</div></div>`;
+}
+function iufrSheetSummary(D){const g=D.summary;
+  const t=g.reduce((a,r)=>{a.passed+=r.passed;a.gst+=r.gst;a.aiib+=r.aiib;a.gom+=r.gom;return a;},{passed:0,gst:0,aiib:0,gom:0});
+  const rate=D.usd;
+  const U=v=>(n(v)/rate).toFixed(2);
+  const rows=g.map((r,i)=>{const net=r.passed-r.gst;return `<tr><td class="no">${i+1}</td><td><b>${esc(r.pkg)}</b></td>
+    <td class="r">${iN(r.passed)}</td><td class="r">${U(r.passed)}</td>
+    <td class="r">${iN(r.gst)}</td><td class="r">${U(r.gst)}</td>
+    <td class="r">${iN(net)}</td><td class="r">${U(net)}</td>
+    <td class="r"><b>${iN(r.aiib)}</b></td><td class="r">${U(r.aiib)}</td>
+    <td class="r">${iN(r.gom)}</td><td class="r">${U(r.gom)}</td></tr>`;}).join('')
+    ||`<tr><td colspan="12" class="empty">No bills in this quarter.</td></tr>`;
+  const netT=t.passed-t.gst;
+  return `<div class="card">${iufrCap(D)}<h3>Summary Statement showing Expenditure in Quarter</h3>
+   <div class="tbl-wrap"><table class="tt">
+   <tr><th rowspan="2">S.N.</th><th rowspan="2">Particulars</th><th colspan="2">Total Passed Amount</th><th colspan="2">GST Component in the passed amount</th><th colspan="2">Total Passed Amount Net off GST</th><th colspan="2">AIIB share</th><th colspan="2">GOM share</th></tr>
+   <tr><th class="r">Rupees</th><th class="r">US $*</th><th class="r">Rupees</th><th class="r">US $</th><th class="r">Rupees</th><th class="r">US $</th><th class="r">Rupees</th><th class="r">US $</th><th class="r">Rupees</th><th class="r">US $</th></tr>
+   ${rows}
+   <tr class="ntot"><td></td><td><b>Total:</b></td><td class="r"><b>${iN(t.passed)}</b></td><td class="r"><b>${U(t.passed)}</b></td><td class="r"><b>${iN(t.gst)}</b></td><td class="r"><b>${U(t.gst)}</b></td><td class="r"><b>${iN(netT)}</b></td><td class="r"><b>${U(netT)}</b></td><td class="r"><b>${iN(t.aiib)}</b></td><td class="r"><b>${U(t.aiib)}</b></td><td class="r"><b>${iN(t.gom)}</b></td><td class="r"><b>${U(t.gom)}</b></td></tr>
+   </table></div><div class="note" style="margin-top:8px">* US$ figures use 1 USD = ${rate} INR (set at top). GoM share defaults to 0 (all passed expenditure treated AIIB-eligible); change AIIB % on the Sources &amp; Uses tab.</div></div>`;
+}
+function iufrSheetPES(D){const ctd=D.ctd.by;
+  const rows=IUFR_LINES.map(L=>`<tr><td>${esc(L.name)}</td><td class="r" style="${IUFR_AUTO}">${iN(ctd[L.k]||0)}</td><td class="r">${iufrInp('q','pesAT_'+L.k,0,90)}</td><td class="r">${iufrInp('q','pesCIP_'+L.k,0,90)}</td></tr>`).join('');
+  return `<div class="card">${iufrCap(D)}<h3>Statement of Project Expenditures (Figures in INR)</h3>
+   <div class="tbl-wrap"><table class="tt">
+   <tr><th rowspan="2">Particulars</th><th colspan="3">Project Expenditure</th></tr>
+   <tr><th class="r">Cumulative Amount</th><th class="r">Assets Transferred</th><th class="r">Construction in Progress</th></tr>
+   ${rows}
+   <tr class="ntot"><td><b>Total</b></td><td class="r" style="${IUFR_AUTO}"><b>${iN(D.ctd.total)}</b></td><td class="r"></td><td class="r"></td></tr>
+   </table></div>
+   <div class="note" style="margin-top:8px">Note: The figure is the Actual Expenditure incurred from the Project Account, after adjusting the retention money. The retention money so adjusted will be paid to the contractor after the specified time period as agreed upon. (Assets Transferred &amp; Construction in Progress are entered manually.)</div></div>`;
+}
+function iufrSheetSources(D){const s=D.s,f=iufrCfg(s).fixed;const rate=D.usd;
+  const cur=D.cur.by,prev=D.prev.by,ytd=D.ytd.by,py=D.py.by,ctd=D.ctd.by;
+  const setBar=`<div class="flex" style="gap:16px;margin-bottom:8px;flex-wrap:wrap">
+    <label class="mini">AIIB eligible % ${iufrInp('fixed','aiibPct',100,60)}</label>
+    <label class="mini">GST+Cess divisor ${iufrInp('fixed','gstDiv',1.19,60)}</label>
+    <span class="mini" style="color:#555">Uses "Actual" columns auto-fill from passed expenditure (in ₹ mn). Budget &amp; Plan cells are manual.</span></div>`;
+  const usesRow=L=>{const actC=(cur[L.k]||0)/1e6,actP=(prev[L.k]||0)/1e6,actY=(ytd[L.k]||0)/1e6,actPY=(py[L.k]||0)/1e6,actCtd=(ctd[L.k]||0)/1e6;
+    const bu=(f.budget[L.k]||[0,0]);
+    return `<tr><td>${esc(L.name)}</td>
+      <td class="r">${iufrInp('fixed','budU_'+L.k,bu[0],70)}</td><td class="r">${iufrInp('fixed','budI_'+L.k,bu[1],80)}</td>
+      <td class="r">${iufrInp('q','plnC_'+L.k,0,60)}</td><td class="r" style="${IUFR_AUTO}">${actC.toFixed(2)}</td>
+      <td class="r">${iufrInp('q','plnP_'+L.k,0,60)}</td><td class="r" style="${IUFR_AUTO}">${actP.toFixed(2)}</td>
+      <td class="r">${iufrInp('q','plnY_'+L.k,0,60)}</td><td class="r" style="${IUFR_AUTO}">${actY.toFixed(2)}</td>
+      <td class="r">${iufrInp('q','plnPY_'+L.k,0,60)}</td><td class="r" style="${IUFR_AUTO}">${actPY.toFixed(2)}</td>
+      <td class="r">${iufrInp('q','plnCtd_'+L.k,0,60)}</td><td class="r" style="${IUFR_AUTO}">${actCtd.toFixed(2)}</td>
+      <td class="r" style="${IUFR_AUTO}">${(actCtd/rate).toFixed(3)}</td></tr>`;};
+  const srcRow=key=>{const bu=(f.srcBudget[key]||[0,0]);
+    return `<tr><td><b>${key}</b></td>
+      <td class="r">${iufrInp('fixed','sbU_'+key,bu[0],70)}</td><td class="r">${iufrInp('fixed','sbI_'+key,bu[1],80)}</td>
+      <td class="r">${iufrInp('q','splnC_'+key,0,60)}</td><td class="r">${iufrInp('q','sactC_'+key,0,60)}</td>
+      <td class="r">${iufrInp('q','splnP_'+key,0,60)}</td><td class="r">${iufrInp('q','sactP_'+key,0,60)}</td>
+      <td class="r">${iufrInp('q','splnY_'+key,0,60)}</td><td class="r">${iufrInp('q','sactY_'+key,0,60)}</td>
+      <td class="r">${iufrInp('q','splnPY_'+key,0,60)}</td><td class="r">${iufrInp('q','sactPY_'+key,0,60)}</td>
+      <td class="r">${iufrInp('q','splnCtd_'+key,0,60)}</td><td class="r">${iufrInp('q','sactCtd_'+key,0,60)}</td>
+      <td class="r">${iufrInp('q','susd_'+key,0,60)}</td></tr>`;};
+  const sT=(sc,pfx)=>['GoM','AIIB'].reduce((a,key)=>a+n(iufrGet(sc,pfx+key,0)),0);
+  const totSrcRow=()=>`<tr class="ntot"><td><b>Total Sources of Funds</b></td>
+      <td class="r"><b>${sT('fixed','sbU_').toFixed(2)}</b></td><td class="r"><b>${sT('fixed','sbI_').toFixed(2)}</b></td>
+      <td class="r"><b>${sT('q','splnC_').toFixed(2)}</b></td><td class="r"><b>${sT('q','sactC_').toFixed(2)}</b></td>
+      <td class="r"><b>${sT('q','splnP_').toFixed(2)}</b></td><td class="r"><b>${sT('q','sactP_').toFixed(2)}</b></td>
+      <td class="r"><b>${sT('q','splnY_').toFixed(2)}</b></td><td class="r"><b>${sT('q','sactY_').toFixed(2)}</b></td>
+      <td class="r"><b>${sT('q','splnPY_').toFixed(2)}</b></td><td class="r"><b>${sT('q','sactPY_').toFixed(2)}</b></td>
+      <td class="r"><b>${sT('q','splnCtd_').toFixed(2)}</b></td><td class="r"><b>${sT('q','sactCtd_').toFixed(2)}</b></td>
+      <td class="r"><b>${sT('q','susd_').toFixed(2)}</b></td></tr>`;
+  const usesTotActC=D.cur.total/1e6,usesTotActCtd=D.ctd.total/1e6;
+  return `<div class="card">${iufrCap(D)}<h3>Statement of Sources and Uses of Funds (Figures in INR million; 1 USD = ${rate} INR)</h3>
+   ${setBar}
+   <div class="tbl-wrap"><table class="tt" style="font-size:10.5px">
+   <tr><th rowspan="2">Particulars</th><th rowspan="2" class="r">Project Budget<br>in USD million<br>(as per PD)</th><th rowspan="2" class="r">Project Budget<br>in INR million<br>(as per PD)</th><th colspan="2">Current Quarter</th><th colspan="2">Upto Previous Quarter</th><th colspan="2">YTD</th><th colspan="2">Previous Year</th><th colspan="2">CTD</th><th rowspan="2" class="r">Actual CTD<br>Values in<br>USD million</th></tr>
+   <tr><th class="r">Plan</th><th class="r">Actual</th><th class="r">Plan</th><th class="r">Actual</th><th class="r">Annual Plan</th><th class="r">Actual</th><th class="r">Annual Plan</th><th class="r">Actual</th><th class="r">Plans</th><th class="r">Actual</th></tr>
+   <tr class="sec"><td colspan="14"><b>SOURCES OF FUNDS</b></td></tr>
+   ${srcRow('GoM')}${srcRow('AIIB')}
+   ${totSrcRow()}
+   <tr class="sec"><td colspan="14"><b>USES OF FUNDS</b></td></tr>
+   ${IUFR_LINES.map(usesRow).join('')}
+   <tr class="ntot"><td><b>Total Uses of Funds</b></td><td></td><td></td><td></td><td class="r" style="${IUFR_AUTO}"><b>${usesTotActC.toFixed(2)}</b></td><td></td><td class="r" style="${IUFR_AUTO}"><b>${(D.prev.total/1e6).toFixed(2)}</b></td><td></td><td class="r" style="${IUFR_AUTO}"><b>${(D.ytd.total/1e6).toFixed(2)}</b></td><td></td><td class="r" style="${IUFR_AUTO}"><b>${(D.py.total/1e6).toFixed(2)}</b></td><td></td><td class="r" style="${IUFR_AUTO}"><b>${usesTotActCtd.toFixed(2)}</b></td><td class="r" style="${IUFR_AUTO}"><b>${(usesTotActCtd/rate).toFixed(3)}</b></td></tr>
+   </table></div>
+   <div style="margin-top:8px"><b class="mini">Notes (manual):</b><br>${iufrTxt('q','note1','',600)}<br>${iufrTxt('q','note2','',600)}</div></div>`;
+}
+function iufrSheetSOE(D){const s=D.s,f=iufrCfg(s).fixed;const rate=D.usd;
+  const byc={};D.lines.forEach(r=>{const k=r.pkg||'—';byc[k]=byc[k]||{pkg:k,contractor:r.contractor,passed:0};byc[k].passed+=r.passed;});
+  const rows=Object.values(byc).map((r)=>{const pct=n(iufrGet('q','soePct_'+r.pkg,100));const el=r.passed*pct/100;
+    return `<tr><td><b>${esc(r.pkg)}</b></td><td>${esc(r.contractor||'')}</td>
+    <td>${iufrTxt('q','soeCdate_'+r.pkg,'',85)}</td><td>${iufrTxt('q','soeExpl_'+r.pkg,'',150)}</td>
+    <td class="r">${iufrTxt('q','soeAmt_'+r.pkg,'',90)}</td><td>${iufrTxt('q','soeNOC_'+r.pkg,'',85)}</td>
+    <td class="r">${iN(r.passed)}</td><td>${iufrTxt('q','soeInv_'+r.pkg,'',75)}</td><td>${iufrTxt('q','soePdate_'+r.pkg,'',85)}</td>
+    <td class="r">${iN(r.passed)}</td><td class="r">${iufrInp('q','soePct_'+r.pkg,100,55)}</td>
+    <td class="r">${iN(el)}</td><td class="r">${rate}</td><td class="r">${(el/rate).toFixed(2)}</td></tr>`;}).join('')
+    ||`<tr><td colspan="14" class="empty">No contracts with expenditure this quarter.</td></tr>`;
+  return `<div class="card">${iufrCap(D)}<h3>STATEMENT OF EXPENDITURES</h3>
+   <div class="frm" style="margin-bottom:8px">
+     <div><label>1. Project/Credit/Loan No</label>${iufrTxt('fixed','loanNo','',160)}</div>
+     <div><label>2. Application nr.</label>${iufrTxt('q','soeApp','',120)}</div>
+     <div><label>3. SOE nr.</label>${iufrTxt('q','soeNo','',120)}</div>
+     <div><label>4. Reporting Period (from date to date)</label><input type="text" value="${esc(qLabel(D))}" readonly style="width:200px;padding:2px 4px;background:#eaf2ff"></div>
+     <div><label>5. Date</label>${iufrTxt('q','soeDate','',120)}</div>
+   </div>
+   <div class="tbl-wrap"><table class="tt" style="font-size:10px">
+   <tr><th>Contract number</th><th>Supplier</th><th>Contract date</th><th>Brief explanation of the activity and component</th><th class="r">Total amount of contract (indicate currency)</th><th>Date of Bank's No Objection to contract</th><th class="r">Cumulative value paid</th><th>Invoice nr.</th><th>Payment date</th><th class="r">Amount Paid</th><th class="r">% elegible by AIIB</th><th class="r">Elegible Value</th><th class="r">Exhange rate</th><th class="r">Value to Document in USD</th></tr>
+   <tr class="sec"><td class="r">1</td><td class="r">2</td><td class="r">3</td><td class="r">4</td><td class="r">5</td><td class="r">6</td><td class="r">7</td><td class="r">8</td><td class="r">9</td><td class="r">10</td><td class="r">11</td><td class="r">12</td><td class="r">13</td><td class="r">14</td></tr>
+   ${rows}
+   </table></div>
+   <div class="note" style="margin-top:8px">Supporting documentation for this SOE is retained at ${iufrTxt('q','soeDocLoc','',300)} &nbsp;(2 signatures: preparer and reviewer)</div></div>`;
+}
+function iufrSheetLA(D){const rate=D.usd;const cats=[
+  ['la1','(1) Goods, works, non-consulting services and consulting services'],
+  ['la2','(2) Initial Funding for the Road Fund'],
+  ['la3','(3) Front-end Fee'],
+  ['laDA','Designated Advance']];
+  const rows=cats.map(([k,l])=>`<tr><td>${esc(l)}</td>
+    <td class="r">${iufrInp('fixed','laLoan_'+k,0,80)}</td>
+    <td class="r">${iufrInp('q','laCur_'+k,0,80)}</td>
+    <td class="r">${iufrInp('q','laPrev_'+k,0,80)}</td>
+    <td class="r">${iufrInp('q','laCum_'+k,0,80)}</td></tr>`).join('');
+  const laT=(sc,pfx)=>cats.reduce((a,[k])=>a+n(iufrGet(sc,pfx+k,0)),0);
+  return `<div class="card">${iufrCap(D)}<h3>Statement of Implementation of Loan Agreement (Figures in USD)</h3>
+   <div class="tbl-wrap"><table class="tt">
+   <tr><th>Category</th><th class="r">Loan Amount</th><th class="r">Current-period Withdrawals</th><th class="r">Previous Period Withdrawls</th><th class="r">Cumulative Withdrawals</th></tr>
+   ${rows}
+   <tr class="ntot"><td><b>Total</b></td><td class="r"><b>${laT('fixed','laLoan_').toFixed(2)}</b></td><td class="r"><b>${laT('q','laCur_').toFixed(2)}</b></td><td class="r"><b>${laT('q','laPrev_').toFixed(2)}</b></td><td class="r"><b>${laT('q','laCum_').toFixed(2)}</b></td></tr>
+   </table></div><div class="note" style="margin-top:8px">Designated-account / disbursement figures are entered manually (USD). Reporting period: ${esc(qLabel(D))}.</div></div>`;
+}
+function iufrSheetDA(D){const rows=[
+  ['da1','Beginning Balance of Designated Account'],
+  ['da2','Amount Advanced to Designated Acount by AIIB'],
+  ['da3','Total Amount Available for the Period (3=1+2)'],
+  ['da4','Closing Balance of Designated Account (as of date '+dfmt(D.R.to)+')'],
+  ['da5','Total Amount Disbursed from Designated Account and Liquidated'],
+  ['da6','Total Amount Disbursed from Designated Account and not yet Liquidated'],
+  ['da7','Net Interest Earned'],
+  ['da8','Total Amount Advanced to Designated Account (8=4+5+6-7)']].map(([k,l],i)=>`<tr><td class="no">${i+1}</td><td>${esc(l)}</td><td class="r">${iufrInp('q',k,0,120)}</td></tr>`).join('');
+  return `<div class="card">${iufrCap(D)}<h3>Statement of Designated Account (Figures in USD)</h3>
+   <div class="tbl-wrap"><table class="tt"><tr><th>S.N.</th><th>Description</th><th class="r">AMOUNT</th></tr>${rows}
+   <tr><td class="no">9</td><td colspan="2">Explanation of Any Differences between the Totals Aprearing on Line 3 and 8: ${iufrTxt('q','daNote','',420)}</td></tr>
+   </table></div>
+   <div class="note" style="margin-top:8px">Note: ${iufrTxt('q','daNote2','',500)}</div></div>`;
+}
+function iufrSheetBank(D){const s=D.s,f=iufrCfg(s).fixed;
+  const rows=[
+   ['bk1','Opening Balance'],
+   ['bk2','AMOUNT TRANSFERRED FROM DESIGNATED ACCOUNT'],
+   ['bk3','ADD: INTEREST'],
+   ['bk4','TOTAL (1+2+3)'],
+   ['bk5','Eligible Project Expenditures'],
+   ['bk6','CLOSING BALANCE (4-5)'],
+   ['bk7','CLOSING BALANCE AS PER BANK STATEMENT'],
+   ['bk8','DIFFERENCE (6-7)*']].map(([k,l],i)=>{
+     const auto=(k==='bk5')?iN(D.cur.total):null;
+     return `<tr><td class="no">${i+1}</td><td>${esc(l)}</td><td class="r">${auto!==null?`<span style="${IUFR_AUTO};padding:2px 6px">${auto}</span>`:iufrInp('q',k,0,130)}</td></tr>`;}).join('');
+  return `<div class="card">${iufrCap(D)}<h3>PROJECT OPERATING BANK ACCOUNT RECONCILIATION STATEMENT</h3>
+   <div class="frm" style="margin-bottom:8px">
+     <div><label>ACCOUNT NUMBER</label>${iufrTxt('fixed','acct','',160)}</div>
+     <div><label>BANK Name</label>${iufrTxt('fixed','bank','',200)}</div>
+   </div>
+   <div class="tbl-wrap"><table class="tt"><tr><th>S.N.</th><th>DESCRIPTION</th><th class="r">AMOUNT IN INR</th></tr>${rows}</table></div>
+   <div class="note" style="margin-top:8px">Line 5 (Eligible Project Expenditures) is auto-filled from this quarter's passed expenditure. Enter bank balances &amp; transfers manually. * Explanation for any difference: ${iufrTxt('q','bkNote','',300)} &nbsp; DATE: ${iufrTxt('q','bkDate','',110)}</div></div>`;
+}
+function iufrPrint(){const el=document.getElementById('iufrDoc');if(!el)return;
+  const w=window.open('','_blank');if(!w)return alert('Allow pop-ups to print.');
+  w.document.write('<html><head><title>IUFR</title><style>@page{size:A4 landscape;margin:8mm}body{font-family:Arial;font-size:10px;padding:6px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #333;padding:2px 4px}th{background:#f0f0f0}.r{text-align:right}h3{margin:6px 0;text-align:center}input{border:none;font-size:10px;text-align:right;width:auto}.sec td{background:#eef;font-weight:bold}.ntot td{font-weight:bold;background:#f3f4f6}.tbl-wrap{overflow:visible}</style></head><body>'+el.innerHTML+'<scr'+'ipt>window.onload=function(){window.print();}<\/scr'+'ipt></body></html>');w.document.close();}
+function after_iufr(){}
+function iufrLoadXLSX(cb){if(window.XLSX)return cb();
+  const sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  sc.onload=()=>cb();sc.onerror=()=>alert('Could not load the Excel library. You need internet access the first time. Meanwhile you can use Print / PDF.');
+  document.head.appendChild(sc);}
+function iufrExportXlsx(){iufrLoadXLSX(function(){try{iufrBuildXlsx();}catch(e){alert('Export error: '+e.message);}});}
+function iufrBuildXlsx(){
+  const D=iufrBuild();if(!D)return;const s=D.s,f=iufrCfg(s).fixed,rate=D.usd;
+  const num=v=>Math.round(n(v));const g=(sc,k,d)=>{const v=iufrGet(sc,k,d);return v===''?d:v;};
+  const wb=XLSX.utils.book_new();
+  const add=(name,aoa)=>{const ws=XLSX.utils.aoa_to_sheet(aoa);XLSX.utils.book_append_sheet(wb,ws,name.slice(0,31));};
+  const cap=[f.title||s.name],loan=['Loan No. '+(f.loanNo||'')],per=['Period: '+qLabel(D)];
+  // Sources & Uses of Funds — placed first per official IUFR format
+  {const aoa=[cap,['Statement of Sources and Uses of Funds'],['Figures in INR million; 1 USD = '+rate+' INR'],per,[],
+    ['Particulars','Project Budget in USD million (as per PD)','Project Budget in INR million (as per PD)','Current Quarter Plan','Current Quarter Actual','Upto Previous Quarter Plan','Upto Previous Quarter Actual','YTD Annual Plan','YTD Actual','Previous Year Annual Plan','Previous Year Actual','CTD Plans','CTD Actual','Actual CTD Values in USD million']];
+   aoa.push(['SOURCES OF FUNDS']);
+   const sTot=new Array(13).fill(0);
+   ['GoM','AIIB'].forEach(key=>{const bu=(f.srcBudget[key]||[0,0]);
+     const row=[+g('fixed','sbU_'+key,bu[0]),+g('fixed','sbI_'+key,bu[1]),+g('q','splnC_'+key,0),+g('q','sactC_'+key,0),+g('q','splnP_'+key,0),+g('q','sactP_'+key,0),+g('q','splnY_'+key,0),+g('q','sactY_'+key,0),+g('q','splnPY_'+key,0),+g('q','sactPY_'+key,0),+g('q','splnCtd_'+key,0),+g('q','sactCtd_'+key,0),+g('q','susd_'+key,0)];
+     row.forEach((v,i)=>sTot[i]+=(+v||0));aoa.push([key,...row]);});
+   aoa.push(['Total Sources of Funds',...sTot.map(v=>+v.toFixed(2))]);
+   aoa.push(['USES OF FUNDS']);
+   IUFR_LINES.forEach(L=>{const bu=(f.budget[L.k]||[0,0]);
+     aoa.push([L.name,+g('fixed','budU_'+L.k,bu[0]),+g('fixed','budI_'+L.k,bu[1]),+g('q','plnC_'+L.k,0),+((D.cur.by[L.k]||0)/1e6).toFixed(2),+g('q','plnP_'+L.k,0),+((D.prev.by[L.k]||0)/1e6).toFixed(2),+g('q','plnY_'+L.k,0),+((D.ytd.by[L.k]||0)/1e6).toFixed(2),+g('q','plnPY_'+L.k,0),+((D.py.by[L.k]||0)/1e6).toFixed(2),+g('q','plnCtd_'+L.k,0),+((D.ctd.by[L.k]||0)/1e6).toFixed(2),+((D.ctd.by[L.k]||0)/1e6/rate).toFixed(3)]);});
+   aoa.push(['Total Uses of Funds','','','',+(D.cur.total/1e6).toFixed(2),'',+(D.prev.total/1e6).toFixed(2),'',+(D.ytd.total/1e6).toFixed(2),'',+(D.py.total/1e6).toFixed(2),'',+(D.ctd.total/1e6).toFixed(2),+(D.ctd.total/1e6/rate).toFixed(3)]);
+   aoa.push([]);aoa.push(['Note:',g('q','note1','')]);aoa.push(['',g('q','note2','')]);
+   add('Sources & Uses of Funds',aoa);}
+  // 2 SOE (official 14-column layout)
+  {const aoa=[cap,['STATEMENT OF EXPENDITURES'],['1. Project/Credit/Loan No',f.loanNo||''],['2. Application nr.',g('q','soeApp','')],['3. SOE nr.',g('q','soeNo','')],['4. Reporting Period (from date to date)',qLabel(D)],['5. Date',g('q','soeDate','')],[],
+    ['Contract number','Supplier','Contract date','Brief explanation of the activity and component','Total amount of contract (indicate currency)',"Date of Bank's No Objection to contract",'Cumulative value paid','Invoice nr.','Payment date','Amount Paid','% elegible by AIIB','Elegible Value','Exhange rate','Value to Document in USD'],
+    [1,2,3,4,5,6,7,8,9,10,11,12,13,14]];
+   const byc={};D.lines.forEach(r=>{const k=r.pkg||'—';byc[k]=byc[k]||{pkg:k,contractor:r.contractor,passed:0};byc[k].passed+=r.passed;});
+   Object.values(byc).forEach((r)=>{const pct=n(g('q','soePct_'+r.pkg,100));const el=r.passed*pct/100;
+     aoa.push([r.pkg,r.contractor||'',g('q','soeCdate_'+r.pkg,''),g('q','soeExpl_'+r.pkg,''),g('q','soeAmt_'+r.pkg,''),g('q','soeNOC_'+r.pkg,''),num(r.passed),g('q','soeInv_'+r.pkg,''),g('q','soePdate_'+r.pkg,''),num(r.passed),pct,num(el),rate,+(el/rate).toFixed(2)]);});
+   aoa.push([]);aoa.push(['Supporting documentation for this SOE is retained at',g('q','soeDocLoc','')]);aoa.push(['(2 signatures: preparer and reviewer)']);
+   add('SOE',aoa);}
+  // 3 Project Expenditure Statement (Cumulative / Assets Transferred / Construction in Progress)
+  {const aoa=[cap,loan,['Statement of Project Expenditures'],per,['Figures in INR'],[],
+    ['Particulars','Cumulative Amount','Assets Transferred','Construction in Progress']];
+   IUFR_LINES.forEach(L=>aoa.push([L.name,num(D.ctd.by[L.k]||0),+g('q','pesAT_'+L.k,0),+g('q','pesCIP_'+L.k,0)]));
+   aoa.push(['Total',num(D.ctd.total),'','']);
+   aoa.push([]);aoa.push(['Note: The figure is the Actual Expenditure incurred from the Project Account, after adjusting the retention money.']);
+   add('Project Expenditure Statement',aoa);}
+  // 4 LA Implementation
+  {const aoa=[cap,loan,['Statement of Implementation of Loan Agreement'],per,['Figures in USD'],[],
+    ['Category','Loan Amount','Current-period Withdrawals','Previous Period Withdrawls','Cumulative Withdrawals']];
+   const cats=[['la1','(1) Goods, works, non-consulting services and consulting services'],['la2','(2) Initial Funding for the Road Fund'],['la3','(3) Front-end Fee'],['laDA','Designated Advance']];
+   const lt=[0,0,0,0];cats.forEach(([k,l])=>{const row=[+g('fixed','laLoan_'+k,0),+g('q','laCur_'+k,0),+g('q','laPrev_'+k,0),+g('q','laCum_'+k,0)];row.forEach((v,i)=>lt[i]+=(+v||0));aoa.push([l,...row]);});
+   aoa.push(['Total',...lt]);
+   add('LA Implementation',aoa);}
+  // 5 DA Reconciliation
+  {const aoa=[cap,['Statement of Designated Account'],per,['Figures in USD'],[],['S.N.','Description','AMOUNT']];
+   [['da1','Beginning Balance of Designated Account'],['da2','Amount Advanced to Designated Acount by AIIB'],['da3','Total Amount Available for the Period (3=1+2)'],['da4','Closing Balance of Designated Account (as of date '+dfmt(D.R.to)+')'],['da5','Total Amount Disbursed from Designated Account and Liquidated'],['da6','Total Amount Disbursed from Designated Account and not yet Liquidated'],['da7','Net Interest Earned'],['da8','Total Amount Advanced to Designated Account (8=4+5+6-7)']].forEach(([k,l],i)=>aoa.push([i+1,l,+g('q',k,0)]));
+   aoa.push([9,'Explanation of Any Differences between the Totals Aprearing on Line 3 and 8',g('q','daNote','')]);
+   aoa.push(['Note:',g('q','daNote2','')]);
+   add('DA Reconciliation',aoa);}
+  // 6 OP Bank Recon
+  {const aoa=[cap,['PROJECT OPERATING BANK ACCOUNT RECONCILIATION STATEMENT'],loan,['ACCOUNT NUMBER',g('fixed','acct','')],['BANK Name',g('fixed','bank','')],per,[],['S.N.','DESCRIPTION','AMOUNT IN INR']];
+   [['bk1','Opening Balance'],['bk2','AMOUNT TRANSFERRED FROM DESIGNATED ACCOUNT'],['bk3','ADD: INTEREST'],['bk4','TOTAL (1+2+3)'],['bk5','Eligible Project Expenditures'],['bk6','CLOSING BALANCE (4-5)'],['bk7','CLOSING BALANCE AS PER BANK STATEMENT'],['bk8','DIFFERENCE (6-7)*']].forEach(([k,l],i)=>{
+     aoa.push([i+1,l, k==='bk5'?num(D.cur.total):+g('q',k,0)]);});
+   aoa.push(['','* Explanation for any difference',g('q','bkNote','')]);aoa.push(['','DATE:',g('q','bkDate','')]);
+   add('OP Bank Recon',aoa);}
+  // 7 Expenditure Details (official 36-column layout; blanks where the app has no data)
+  {const h1=['S.No','FY','Date','CFMS Bill No','Package No.','Name of PIU','Total Value of Work Done','Tender Premium','Seigniorage Charges','NAC','GST @18%','Labour Cess @1%','Total (Gross Amount)','Withheld released','Withheld deducted','Deduct Previous payment','QC Recovery','Recovaries EOAT Fine','CFMS Total Passed Amount','Total Passed Amount','Seigniorage Charges','Income tax @2%','CGST/IGST @1%','SGST @1%','Labour Cess @1%','NAC','Contractors EMD-FSD-ASD','WS&SR&R – RWS & PR','Other Receipts Major','Professional Tax','Total Recoveries','NET Pay Amount','Total Passed Amount Net off GST','*AIIB share','GOM share','Remarks'];
+   const h2=['','','','','','','1','2','3','4','5','6','7= (1+2+3+4+5+6)','8','9','10','11','12','13 = (7)-(8+9+10+11+12)','13 = (7)-(8+9+10+11+12)','14','15','16','17','18','19','20','21','22','23','24 = sum(14 to 23)','25 = (13-24)','26 = (13-5)','27','28=(13-27)','Column 6 added for Labour Cess'];
+   const aoa=[cap,['Statement Showing Bills Passed (Period)'],per,[],h1,h2];const t={};const K=['workVal','gst','cess','gross','passed','recIt','recCgstIgst','recSgst','recCess','recRet','recOth','totalRec','netPay','netGst','aiib','gom'];K.forEach(k=>t[k]=0);
+   const bl='';
+   D.lines.forEach(r=>{const gross=r.workVal+r.gst+r.cess,netGst=r.passed-r.gst;
+     t.workVal+=r.workVal;t.gst+=r.gst;t.cess+=r.cess;t.gross+=gross;t.passed+=r.passed;t.recIt+=r.recIt;t.recCgstIgst+=r.recCgstIgst;t.recSgst+=r.recSgst;t.recCess+=r.recCess;t.recRet+=r.recRet;t.recOth+=r.recOth;t.totalRec+=r.totalRec;t.netPay+=r.netPay;t.netGst+=netGst;t.aiib+=r.aiib;t.gom+=r.gom;
+     aoa.push([r.sno,iufrFY(r.date),r.date,r.billNo,r.pkg,r.piu,num(r.workVal),bl,bl,bl,num(r.gst),num(r.cess),num(gross),bl,bl,bl,bl,bl,num(r.passed),num(r.passed),bl,num(r.recIt),num(r.recCgstIgst),num(r.recSgst),num(r.recCess),bl,num(r.recRet),bl,num(r.recOth),bl,num(r.totalRec),num(r.netPay),num(netGst),num(r.aiib),num(r.gom),bl]);});
+   aoa.push(['','','','','','Total:',num(t.workVal),bl,bl,bl,num(t.gst),num(t.cess),num(t.gross),bl,bl,bl,bl,bl,num(t.passed),num(t.passed),bl,num(t.recIt),num(t.recCgstIgst),num(t.recSgst),num(t.recCess),bl,num(t.recRet),bl,num(t.recOth),bl,num(t.totalRec),num(t.netPay),num(t.netGst),num(t.aiib),num(t.gom),bl]);
+   add('Expenditure Details',aoa);}
+  // 8 Summary of Bills (paired Rupees / US$ columns)
+  {const U=v=>+(n(v)/rate).toFixed(2);
+   const aoa=[cap,['Summary Statement showing Expenditure in Quarter'],per,[],
+    ['S.N.','Particulars','Total Passed Amount','','GST Component in the passed amount','','Total Passed Amount Net off GST','','AIIB share','','GOM share',''],
+    ['','','Rupees','US $*','Rupees','US $','Rupees','US $','Rupees','US $','Rupees','US $']];
+   const t={passed:0,gst:0,aiib:0,gom:0};
+   D.summary.forEach((r,i)=>{const net=r.passed-r.gst;aoa.push([i+1,r.pkg,num(r.passed),U(r.passed),num(r.gst),U(r.gst),num(net),U(net),num(r.aiib),U(r.aiib),num(r.gom),U(r.gom)]);t.passed+=r.passed;t.gst+=r.gst;t.aiib+=r.aiib;t.gom+=r.gom;});
+   const netT=t.passed-t.gst;
+   aoa.push(['','Total:',num(t.passed),U(t.passed),num(t.gst),U(t.gst),num(netT),U(netT),num(t.aiib),U(t.aiib),num(t.gom),U(t.gom)]);
+   add('Summary of Bills',aoa);}
+  const fn='IUFR_'+(s.name||'Project').replace(/[^a-z0-9]+/gi,'_')+'_'+IUFRUI.q+'_FY'+IUFRUI.fy+'.xlsx';
+  XLSX.writeFile(wb,fn);
+}
 
 </script>
 
